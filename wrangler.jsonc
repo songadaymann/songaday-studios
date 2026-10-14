@@ -1,0 +1,21 @@
+{
+  "name": "songaday-studios",
+  "account_id": "a79a1faef6e8f94566f3320429d54006",
+  "compatibility_date": "2026-09-16",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "routes": [
+    {
+      "pattern": "songaday.studio",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.songaday.studio",
+      "custom_domain": true
+    }
+  ],
+  "main": "worker.mjs"
+}

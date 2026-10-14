@@ -1,0 +1,39 @@
+# Assets
+
+The MIT license covers code only. The public repository contains no media files;
+the existing local bundle is excluded in `private-assets/site/` and exposed to
+local previews through the ignored `assets` symlink.
+
+## 1. Ours
+
+Media wholly authored by Jonathan Mann is CC BY 4.0 unless separately licensed.
+Credit "Jonathan Mann (Song A Day)". This does not license third-party content
+appearing in videos, screenshots, game art, or branding. The mixed site bundle
+has not been audited for redistribution, so it is not included in the repository.
+
+## 2. Free third-party assets included under their own licenses
+
+None are bundled in the public source. Remote media references do not grant
+permission to redistribute that media.
+
+## 3. Paid or restricted assets not included
+
+| Asset | Source | Terms |
+| --- | --- | --- |
+| Optional Aperçu webfonts | https://www.colophon-foundry.org/typefaces/apercu | Requires an appropriate font license. No font binaries are supplied; the site falls back to system fonts. |
+
+## 4. Third-party or unverified media not included
+
+| Local path | Source / exclusion |
+| --- | --- |
+| `private-assets/site/brand/endaoment-wordmark-white.svg` | Monochrome logo paths from https://endaoment.org/, retrieved October 14, 2026; brand kit: https://www.figma.com/design/PU2pJCQLvWYnHjMinrQ3mo/Endaoment-Brand-Kit. Trademark rights remain with Endaoment; no general redistribution license has been verified. |
+| `private-assets/site/images/` | Photos, game screenshots, and logos from the existing site bundle. Sources and redistribution rights have not been established for each file. |
+| `private-assets/site/gifs/` | Game trailers may include third-party or NFT collection artwork, including Punks and Meebits. Collection terms must be established before licensing or publishing those files. |
+| `private-assets/site/icons/` | Existing site artwork; individual provenance has not been verified. |
+| `private-assets/site/video/` | Large video originals and trailers, some containing third-party imagery. Excluded from Git; existing public versions are served from https://songaday.studio/assets/video/. |
+
+## Running without the private bundle
+
+`node build.mjs` and `node build-production.mjs` use the site's hosted media when
+local `assets` is absent. They do not download or redistribute that media.
+Replace these references with your own assets for an independent deployment.

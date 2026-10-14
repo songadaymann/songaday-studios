@@ -1,0 +1,327 @@
+<div class="labs-page" id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" aria-label="Song A Day Studios">
+    <a class="brand" href="#top" aria-label="Song A Day Studios home">
+      <img class="brand-mark" src="assets/icons/tunes.png" alt="" aria-hidden="true">
+      <span>SONG A DAY <b>STUDIOS</b></span>
+    </a>
+    <nav aria-label="Profile navigation">
+      <a href="#mission">Mission</a>
+      <a href="#studios">Studios</a>
+      <a href="#goal">Goal</a>
+      <a class="nav-donate" href="#goal">Donate monthly</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="mission" aria-labelledby="mission-title">
+      <div class="hero-stage-wrap">
+        <div class="hero-side-icons hero-side-icons-left" aria-hidden="true">
+          <img src="assets/icons/musician.png" alt="">
+          <img src="assets/icons/night.png" alt="">
+          <img src="assets/icons/nature.png" alt="">
+          <img src="assets/icons/tunes.png" alt="">
+          <img src="assets/icons/raccoon.png" alt="">
+          <img src="assets/icons/mythology.png" alt="">
+        </div>
+
+        <div class="hero-stage">
+          <h1 class="hero-headline" id="mission-title"><span class="hero-headline-line">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-headline-line">Help me write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span>.</span></h1>
+
+          <div class="hero-video">
+            <div class="hero-video-player">
+              <video
+                id="hero-video"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="metadata"
+                poster="assets/video/welcome-to-song-a-day-poster.webp"
+                aria-label="Welcome to Song A Day">
+                <source src="assets/video/welcome-to-song-a-day.mp4" type="video/mp4">
+              </video>
+              <div class="hero-video-controls">
+                <div
+                  class="hero-video-seek"
+                  id="hero-video-seek"
+                  role="slider"
+                  tabindex="0"
+                  aria-valuemin="0"
+                  aria-valuemax="1000"
+                  aria-valuenow="0"
+                  aria-label="Seek through the Welcome to Song A Day video">
+                  <span class="hero-video-seek-thumb" aria-hidden="true"></span>
+                </div>
+                <output class="hero-video-time" id="hero-video-time">0:00 / 2:58</output>
+              </div>
+            </div>
+            <button class="hero-sound-toggle" id="hero-sound-toggle" type="button" aria-pressed="false">
+              <span class="hero-sound-icon" id="hero-sound-icon" aria-hidden="true">🔇</span>
+              <span id="hero-sound-label">TURN SOUND ON</span>
+            </button>
+          </div>
+
+          <aside class="hero-donate" aria-label="Song A Day Studios donation form">
+            <div class="crypto-donate" id="crypto-donate" hidden>
+              <h2>Donate with crypto</h2>
+              <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
+              <button class="crypto-donate-alternative" id="donate-by-card" type="button">Donate by card or bank</button>
+            </div>
+            <div class="zeffy-embed-shell" id="zeffy-donate" tabindex="-1">
+              <noscript><a class="donation-link" href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios" target="_blank" rel="noreferrer">Donate through Zeffy</a></noscript>
+              <div data-zeffy-embed data-form-url="/embed/donation-form/song-a-day-studios"></div>
+              <div class="zeffy-embed-fallback" data-zeffy-embed-fallback style="display:none;">
+                <div class="zeffy-fallback-frame">
+                  <iframe class="zeffy-fallback-iframe" title="Donate to Song A Day Studios" data-zeffy-embed-src="https://www.zeffy.com/embed/donation-form/song-a-day-studios" allowpaymentrequest allowTransparency="true"></iframe>
+                </div>
+              </div>
+            </div>
+            <script
+              src="https://www.zeffy.com/embed/v2/zeffy-embed.js"
+              onerror="document.querySelectorAll('[data-zeffy-embed-fallback]').forEach(function(el){el.style.display='block';el.querySelectorAll('iframe[data-zeffy-embed-src]').forEach(function(f){f.src=f.getAttribute('data-zeffy-embed-src');});});">
+            </script>
+            <p class="donation-match">Once community contributions reach <strong>$62,500</strong>, C.Y. Lee will match additional contributions dollar for dollar, up to another <strong>$37,500</strong>.</p>
+          </aside>
+        </div>
+
+        <div class="hero-side-icons hero-side-icons-right" aria-hidden="true">
+          <img src="assets/icons/explorer.png" alt="">
+          <img src="assets/icons/gamer.png" alt="">
+          <img src="assets/icons/science.png" alt="">
+          <img src="assets/icons/politics.png" alt="">
+          <img src="assets/icons/wanderer.png" alt="">
+          <img src="assets/icons/death.png" alt="">
+        </div>
+      </div>
+
+      <dl class="funding-summary" id="goal" aria-label="Annual funding">
+        <div>
+          <dt>C.Y. Lee’s support for this year</dt>
+          <dd>$62,500</dd>
+        </div>
+        <div>
+          <dt>Annual funding goal</dt>
+          <dd>$300,000</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="catalog-ticker" aria-labelledby="catalog-ticker-summary">
+      <p class="visually-hidden" id="catalog-ticker-summary"></p>
+      <div class="catalog-ticker-viewport" aria-hidden="true">
+        <div class="catalog-ticker-track" id="catalog-ticker-track"></div>
+      </div>
+    </section>
+
+    <section class="editorial-story" aria-labelledby="business-title">
+      <div class="editorial-story-grid">
+        <div class="business-layout">
+          <section class="story-block story-business" aria-labelledby="business-title">
+            <h3 id="business-title">Song A Day has never fit neatly into any business model.</h3>
+            <div class="story-copy story-copy-cards">
+            <button class="story-text-blob story-video-card" type="button" data-video-id="50R5qPDSXF0" data-video-title="Video contests">
+              <span class="story-text-copy">In the early days of Song A Day, I made a living entering video contests.</span>
+              <span class="story-video-note">Watch video <span aria-hidden="true">↗</span></span>
+            </button>
+            <button class="story-text-blob story-video-card" type="button" data-video-id="HCdwY4B3Ln8" data-video-start="1" data-video-title="The Conference Troubadour">
+              <span class="story-text-copy">For about 10 years, I went on the conference circuit and became the Conference Troubadour.</span>
+              <span class="story-video-note">Watch video <span aria-hidden="true">↗</span></span>
+            </button>
+            <button class="story-text-blob story-video-card" type="button" data-video-id="WjEB7W1NSTg" data-video-title="The long story">
+              <span class="story-text-copy">Then I sold my songs as NFTs, made $3 million, and lost it again (long story).</span>
+              <span class="story-video-note">Watch video <span aria-hidden="true">↗</span></span>
+            </button>
+              <p class="story-text-blob">Commissions used to be a big part of my income, but with the advent of AI-generated music, they've mostly dried up.</p>
+            </div>
+          </section>
+
+          <figure class="story-figure story-figure-early">
+            <img src="assets/images/song-a-day-early.webp" alt="Jonathan Mann in a homemade Song A Day costume, surrounded by recording equipment in the early days" loading="lazy" decoding="async">
+            <figcaption>The early days of Song A Day.</figcaption>
+          </figure>
+        </div>
+
+        <p class="story-emphasis">Through all these 18 years, I've had one dream: make enough money that I can focus solely on what I do best.</p>
+
+        <figure class="story-figure story-figure-conference">
+          <img src="assets/images/conference-troubadour.webp" alt="Jonathan Mann performing for an outdoor audience beside a lake" loading="lazy" decoding="async">
+          <figcaption>The Conference Troubadour.</figcaption>
+        </figure>
+
+        <div class="story-license-copy business-license">
+          <img src="assets/images/creative-commons.svg" alt="Creative Commons" width="64" height="64">
+          <p>Every Song A Day song lives under a Creative Commons license. Anyone is free to cover, remix, and use it — part of Song A Day's life as a public good. <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noreferrer">Learn about Creative Commons ↗</a></p>
+        </div>
+
+        <section class="story-block story-patronage" aria-labelledby="patronage-title">
+          <h3 id="patronage-title">Patronage</h3>
+          <div class="patronage-boxes">
+            <article class="patronage-box">
+              <div class="patronage-box-media">
+                <img src="assets/images/patronage-platforms.svg" alt="Patreon, YouTube, and Bandcamp logos" loading="lazy" decoding="async">
+              </div>
+              <p>I've tried Patreon, paid YouTube subscribers, and a Bandcamp fan club. Until now, none has made up more than one-sixteenth of my income.</p>
+              <img class="patronage-box-icon" src="assets/icons/musician.png" alt="" aria-hidden="true">
+            </article>
+            <article class="patronage-box">
+              <div class="patronage-box-media">
+                <img src="assets/images/cy-lee.webp" alt="C.Y. Lee holding an ice cream cone outside" loading="lazy" decoding="async">
+              </div>
+              <p>Recently, C.Y. Lee — an early Microsoft and RealPlayer employee — became a friend and mentor. He now uses his resources to fund hundreds of artists across the country.</p>
+              <img class="patronage-box-icon" src="assets/icons/explorer.png" alt="" aria-hidden="true">
+            </article>
+            <article class="patronage-box">
+              <div class="patronage-box-media">
+                <img src="assets/images/fridays-at-the-park.webp" alt="Jonathan Mann and a collaborator at a keyboard in a recording studio" loading="lazy" decoding="async">
+              </div>
+              <p>I'm fiscally sponsored by Fridays at The Park, an LA recording collective and nonprofit. That means every donation is tax-deductible.</p>
+              <img class="patronage-box-icon" src="assets/icons/tunes.png" alt="" aria-hidden="true">
+            </article>
+          </div>
+          <div class="patronage-match">
+            <strong>$100,000</strong>
+            <p>C.Y. Lee’s maximum contribution for the year, including his initial $62,500.</p>
+          </div>
+        </section>
+
+        <section class="story-block video-games-section" aria-labelledby="video-games-title">
+          <div class="video-games-heading">
+            <img class="video-games-heading-icon" src="assets/icons/gamer.png" alt="" aria-hidden="true">
+            <div class="video-games-heading-copy">
+              <h3 id="video-games-title">VIDEO GAMES</h3>
+              <p>In addition to continuing Song A Day, I've turned my attention back to my other major love</p>
+            </div>
+          </div>
+          <div class="video-games-grid">
+            <article class="video-game-card">
+              <div class="video-game-card-media">
+                <video src="assets/video/game-a-day-quick-cut.mp4" poster="assets/images/game-a-day-quick-cut-poster.webp" autoplay loop muted playsinline preload="metadata" aria-label="Quick-cut montage of Game A Day projects"></video>
+              </div>
+              <div class="video-game-card-copy">
+                <div class="video-game-card-heading">
+                  <h4>GAME A DAY</h4>
+                  <img class="video-game-card-icon" src="assets/icons/tunes.png" alt="" aria-hidden="true">
+                </div>
+                <p>I made a Game A Day in January 2026.</p>
+              </div>
+            </article>
+
+            <button class="video-game-card video-game-card-button" type="button" data-video-src="assets/video/wamp-trailer.mp4" data-video-title="WAMP">
+              <div class="video-game-card-media">
+                <img src="assets/images/wamp-world.webp" alt="Screenshot of the WAMP world, a collaborative platformer" loading="lazy" decoding="async">
+              </div>
+              <div class="video-game-card-copy">
+                <div class="video-game-card-heading">
+                  <h4>WAMP</h4>
+                  <img class="video-game-card-icon" src="assets/icons/gamer.png" alt="" aria-hidden="true">
+                </div>
+                <p>Since March, I've been working on the game of my dreams: We All Make A Platformer (or WAMP).</p>
+                <p>WAMP already has one employee: an incredible pixel artist named Alex Florez.</p>
+                <span class="video-game-card-action">Watch trailer <span aria-hidden="true">↗</span></span>
+              </div>
+            </button>
+
+            <button class="video-game-card video-game-card-button" type="button" data-video-src="assets/video/political-satire-trailer.mp4" data-video-title="Political Satire">
+              <div class="video-game-card-media">
+                <img src="assets/images/political-satire-splices.gif" alt="Quick-cut montage of topical Game A Day games" loading="lazy" decoding="async">
+              </div>
+              <div class="video-game-card-copy">
+                <div class="video-game-card-heading">
+                  <h4>POLITICAL SATIRE</h4>
+                  <img class="video-game-card-icon" src="assets/icons/politics.png" alt="" aria-hidden="true">
+                </div>
+                <p>Like with Song A Day, I've been making topical games that comment on the news of the day.</p>
+                <span class="video-game-card-action">Watch video <span aria-hidden="true">↗</span></span>
+              </div>
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </section>
+
+    <div class="video-modal" id="video-modal" hidden role="dialog" aria-modal="true" aria-labelledby="video-modal-title">
+      <button class="video-modal-backdrop" type="button" data-video-close aria-label="Close video"></button>
+      <div class="video-modal-panel">
+        <button class="video-modal-close" id="video-modal-close" type="button" data-video-close>Close <span aria-hidden="true">×</span></button>
+        <h2 class="visually-hidden" id="video-modal-title">Video</h2>
+        <div class="video-modal-frame">
+          <iframe id="video-modal-frame" title="Video" src="about:blank" allow="autoplay; encrypted-media; picture-in-picture; web-share" allowfullscreen></iframe>
+          <video id="video-modal-video" title="Video" controls playsinline preload="metadata" hidden></video>
+        </div>
+      </div>
+    </div>
+
+    <section class="work-section studios-section" id="studios" aria-labelledby="studios-title">
+      <div class="section-heading">
+        <h2 id="studios-title">SONG A DAY STUDIOS</h2>
+      </div>
+      <div class="studios-grid">
+        <article class="studios-card">
+          <div class="studios-card-media">
+            <img src="assets/images/motba.webp" alt="The Museum of Time Based Art timeline interface showing past, present, and future artworks" loading="lazy" decoding="async">
+          </div>
+          <div class="studios-card-copy">
+            <h3>MOTBA</h3>
+            <p>I've created a website called The Museum of Time Based Art, dedicated to artists for whom time is a central theme in their work.</p>
+          </div>
+        </article>
+
+        <article class="studios-card">
+          <div class="studios-card-media">
+            <img src="assets/images/jamuary.webp" alt="Jamuary invitation to make and share a song every day in January" loading="lazy" decoding="async">
+          </div>
+          <div class="studios-card-copy">
+            <h3>#JAMUARY</h3>
+            <p>This January, I am bringing back #Jamuary: An invitation to make and share one song every day that month.</p>
+          </div>
+        </article>
+
+        <article class="studios-card">
+          <div class="studios-card-media">
+            <img src="assets/images/songaday-studios.webp" alt="Song A Day Studios graphic with bold black lettering and icons on a red background" loading="lazy" decoding="async">
+          </div>
+          <div class="studios-card-copy">
+            <h3>YOUR DONATION</h3>
+            <p>Your generosity keeps the songs, the games, the experiments chugging along. Who knows what the future holds?!</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="thank-you-section" aria-labelledby="thank-you-title">
+      <h2 id="thank-you-title">THANK YOU!</h2>
+      <div class="story-image-trio" aria-label="Song A Day and Game A Day milestones">
+        <figure class="story-figure story-trio-every-day">
+          <img src="assets/images/game-a-day-every-day.webp" alt="Jonathan Mann playing ukulele beneath an Every Day sign" loading="lazy" decoding="async">
+          <figcaption>Every day means every day.</figcaption>
+        </figure>
+        <figure class="story-figure story-trio-illustration">
+          <img src="assets/images/game-a-day-illustration.webp" alt="Illustrated Song A Day scene with a guitarist and colorful characters" loading="lazy" decoding="async">
+          <figcaption>Games as songs you can step inside.</figcaption>
+        </figure>
+        <figure class="story-figure story-trio-guinness">
+          <img src="assets/images/guinness-record.webp" alt="Jonathan Mann holding up his Guinness World Records certificate" loading="lazy" decoding="async">
+          <figcaption>Guinness World Record certificate, 2014.</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <strong>SONG A DAY STUDIOS</strong>
+      <p>Daily, relentless creativity. Open-source software and music.</p>
+    </div>
+    <nav aria-label="Social links">
+      <a href="https://www.youtube.com/channel/UCvj5S3f10rO6CoibatfRGzg" target="_blank" rel="noreferrer">YouTube</a>
+      <a href="https://www.instagram.com/songadaymann/" target="_blank" rel="noreferrer">Instagram</a>
+      <a href="https://x.com/songadaymann" target="_blank" rel="noreferrer">X / Twitter</a>
+      <a href="https://mann.cool" target="_blank" rel="noreferrer">mann.cool</a>
+      <a href="https://wamp.land" target="_blank" rel="noreferrer">WAMP</a>
+    </nav>
+    <p class="sponsor-line">Song A Day Studios is fiscally sponsored by Fridays at The Park.</p>
+  </footer>
+</div>
