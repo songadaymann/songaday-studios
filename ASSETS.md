@@ -32,6 +32,7 @@ permission to redistribute that media.
 | `private-assets/site/images/` | Photos, game screenshots, and logos from the existing site bundle. Sources and redistribution rights have not been established for each file. |
 | `private-assets/site/gifs/` | Game trailers may include third-party or NFT collection artwork, including Punks and Meebits. Collection terms must be established before licensing or publishing those files. |
 | `private-assets/site/icons/` | Existing site artwork; individual provenance has not been verified. |
+| `private-assets/site/plugins/` | Novox The Robot icon art and editor screenshot for `/plugins`. Jonathan Mann's own (CC BY 4.0, per the Novox repository's `ASSETS.md`); excluded from Git with the rest of the site media and served from https://songaday.studio/assets/plugins/. |
 | `private-assets/site/video/` | Large video originals and trailers, some containing third-party imagery. Excluded from Git; existing public versions are served from https://songaday.studio/assets/video/. |
 
 ## Running without the private bundle

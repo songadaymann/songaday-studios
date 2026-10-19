@@ -12,6 +12,8 @@ outside the Fridays at The Park app.
 - `index.html` — generated standalone page
 - `build.mjs` — combines the editable files into `index.html`
 - `song-day.mjs` — shared daily song-number calculation for the browser and Worker
+- `plugins/index.html` — the plugin downloads page (songaday.studio/plugins), a standalone static
+  page; its images are in `assets/plugins/`. Downloads come from each project's GitHub releases.
 
 Requires Node.js 22 or newer. Run date-boundary checks with:
 

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plugins · Song A Day Studios</title>
+<meta name="description" content="Open source plugins by Jonathan Mann. Novox The Robot: make your computer sing.">
+<meta property="og:title" content="Novox The Robot: Make Your Computer Sing">
+<meta property="og:description" content="Free, open source singing robot for Mac. Type lyrics, draw notes or sing into it. App, Audio Unit and VST3.">
+<meta property="og:image" content="https://songaday.studio/assets/plugins/novox-editor.png">
+<meta property="og:url" content="https://songaday.studio/plugins">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/plugins/novox-robot.png">
+<style>
+/* Classic Mac OS X (Aqua, 10.0-10.4): pinstripes, gel buttons, Lucida Grande. */
+:root {
+  --ui: "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Geneva, Verdana, sans-serif;
+  --ink: #1c1c1c;
+  --dim: #5a5a5a;
+  --link: #1f5fae;
+  --gel-blue: linear-gradient(#bfe0ff, #5aa8f4 48%, #2f84e3 52%, #9fd2ff);
+  --gel-white: linear-gradient(#fff, #ececec 48%, #d9d9d9 52%, #f7f7f7);
+  --pinstripe: repeating-linear-gradient(#ececec 0 2px, #f5f5f5 2px 4px);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; color: var(--ink); font: 13px/1.5 var(--ui); -webkit-font-smoothing: antialiased;
+  background: #e6e6e6 var(--pinstripe); min-height: 100vh;
+}
+a { color: var(--link); }
+.desk { max-width: 940px; margin: 0 auto; padding: 36px 16px 48px; }
+
+/* a window */
+.window {
+  border-radius: 7px 7px 4px 4px; overflow: hidden; background: #f4f4f4;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, .35), 0 0 0 1px rgba(0, 0, 0, .28);
+}
+.titlebar {
+  position: relative; height: 24px; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(#ebebeb, #d3d3d3); border-bottom: 1px solid #8f8f8f;
+  box-shadow: inset 0 1px 0 #fff; font-size: 13px; color: #222; text-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+}
+.lights { position: absolute; left: 9px; top: 5px; display: flex; gap: 7px; }
+.lights i {
+  width: 13px; height: 13px; border-radius: 50%; position: relative;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35), 0 1px 1px rgba(255, 255, 255, .6);
+}
+.lights i::after { content: ""; position: absolute; left: 3px; right: 3px; top: 1px; height: 5px; border-radius: 4px; background: linear-gradient(rgba(255, 255, 255, .95), rgba(255, 255, 255, .1)); }
+.lights .close { background: radial-gradient(circle at 50% 70%, #ff9a8c, #e5221a 70%); }
+.lights .min { background: radial-gradient(circle at 50% 70%, #ffe08a, #e0a210 70%); }
+.lights .zoom { background: radial-gradient(circle at 50% 70%, #a9f0a0, #36a832 70%); }
+.body { background: var(--pinstripe); padding: 28px 32px 34px; }
+
+h1 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
+.lede { margin: 4px 0 26px; color: var(--dim); font-size: 14px; }
+
+/* an Aqua group box */
+.box {
+  background: rgba(255, 255, 255, .55); border: 1px solid #b9b9b9; border-radius: 8px; padding: 22px 24px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .08), 0 1px 0 rgba(255, 255, 255, .8);
+}
+.box + .box { margin-top: 22px; }
+.box h3 { margin: 0 0 10px; font-size: 14px; }
+
+.product { display: grid; grid-template-columns: 172px 1fr; gap: 26px; align-items: center; }
+.product img.robot { width: 172px; height: 172px; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .3)); }
+.product h2 { margin: 0; font-size: 28px; letter-spacing: -.015em; }
+.tagline { margin: 2px 0 10px; font-size: 18px; color: #2b5d9b; }
+.product p { margin: 0 0 16px; max-width: 54ch; }
+.meta { margin-top: 10px; font-size: 11.5px; color: var(--dim); }
+
+/* gel buttons, as in the plugin */
+.gel {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 34px; padding: 0 26px; border-radius: 17px; font: 15px var(--ui); color: #001a3a; text-decoration: none;
+  background: var(--gel-blue); box-shadow: 0 2px 3px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(0, 40, 110, .45);
+  white-space: nowrap;
+}
+.gel::before {
+  content: ""; position: absolute; left: 10px; right: 10px; top: 1px; height: 46%; border-radius: 15px 15px 8px 8px;
+  background: linear-gradient(rgba(255, 255, 255, .92), rgba(255, 255, 255, .15)); pointer-events: none;
+}
+.gel.white { color: #111; background: var(--gel-white); box-shadow: 0 1px 2px rgba(0, 0, 0, .3), inset 0 0 0 1px rgba(0, 0, 0, .35); font-size: 13px; height: 26px; padding: 0 16px; }
+.gel.white::before { left: 8px; right: 8px; border-radius: 12px 12px 6px 6px; }
+.gel:active { filter: brightness(.88); }
+.gel:focus-visible { outline: 3px solid rgba(59, 142, 232, .6); outline-offset: 2px; }
+/* the default button throbbed */
+@media (prefers-reduced-motion: no-preference) {
+  .gel.default { animation: throb 1.6s ease-in-out infinite; }
+  @keyframes throb { 50% { filter: brightness(1.1) saturate(1.15); } }
+}
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* the screenshot, in a window of its own */
+.shot { margin: 26px 0 0; }
+.shot .window { box-shadow: 0 8px 22px rgba(0, 0, 0, .3), 0 0 0 1px rgba(0, 0, 0, .25); }
+.shot img { display: block; width: 100%; height: auto; }
+.shot figcaption { margin-top: 10px; text-align: center; font-size: 11.5px; color: var(--dim); }
+
+ul.does { margin: 0; padding-left: 18px; }
+ul.does li { margin: 4px 0; }
+ol.steps { margin: 0; padding-left: 20px; }
+ol.steps li { margin: 6px 0; }
+.note { margin: 12px 0 0; padding: 10px 12px; border-radius: 6px; background: #fff8d6; border: 1px solid #e3cf7e; font-size: 12px; }
+code { font: 12px Monaco, Menlo, monospace; background: rgba(0, 0, 0, .06); padding: 1px 4px; border-radius: 3px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 22px; align-items: start; }
+.two .box + .box { margin-top: 0; }
+footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--dim); }
+
+@media (max-width: 720px) {
+  .desk { padding: 16px 16px 32px; }
+  .body { padding: 20px 16px 24px; }
+  h1 { font-size: 20px; }
+  .product { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 12px; }
+  .product img.robot { width: 140px; height: 140px; }
+  .product p { margin-left: auto; margin-right: auto; }
+  .actions { justify-content: center; }
+  .gel.default { width: 100%; }
+  .two { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="desk">
+  <div class="window">
+    <div class="titlebar"><span class="lights" aria-hidden="true"><i class="close"></i><i class="min"></i><i class="zoom"></i></span>Plugins</div>
+    <main class="body">
+      <h1>Open source plugins by Jonathan Mann</h1>
+      <p class="lede">Free to download, free to use, free to change. Made at <a href="https://songaday.studio">Song A Day Studios</a>.</p>
+
+      <section class="box product" aria-labelledby="novox">
+        <img class="robot" src="/assets/plugins/novox-robot.png" alt="Novox, a grey toy robot with blue ears and an antenna" width="172" height="172">
+        <div>
+          <h2 id="novox">Novox The Robot</h2>
+          <div class="tagline">Make Your Computer Sing</div>
+          <p>Type some lyrics, draw a melody, and a robot sings it back. Or sing into it, or drag in a vocal
+            from your DAW, and it writes the notes and the words for you.</p>
+          <div class="actions">
+            <a class="gel default" href="https://github.com/songadaymann/novox-the-robot/releases/latest/download/Novox-The-Robot-macOS.pkg">Download for Mac</a>
+            <a class="gel white" href="https://github.com/songadaymann/novox-the-robot">Source code</a>
+          </div>
+          <div class="meta">Version 1.0 beta · Apple Silicon Mac, macOS 13.3 or later · App, Audio Unit and VST3 · Free</div>
+        </div>
+      </section>
+
+      <figure class="shot">
+        <div class="window">
+          <div class="titlebar"><span class="lights" aria-hidden="true"><i class="close"></i><i class="min"></i><i class="zoom"></i></span>Novox The Robot</div>
+          <img src="/assets/plugins/novox-editor.png" alt="The Novox The Robot editor: a row of singer portraits, a piano roll with lyric-labelled notes, and the lyrics written out on the right" width="1600" height="1000" loading="lazy">
+        </div>
+        <figcaption>Pick a singer, draw notes, write the words. Sixteen voices, from Robot to Soprano to Crooner.</figcaption>
+      </figure>
+
+      <div class="two">
+        <section class="box">
+          <h3>What it does</h3>
+          <ul class="does">
+            <li>Sings any lyrics on any melody you draw or play.</li>
+            <li>Turns singing (a recording, a take into your mic, or a region dragged from Logic) into notes and lyrics.</li>
+            <li>Works on its own as an app, or as an instrument in Logic Pro, GarageBand, Ableton Live, Reaper and other AU or VST3 hosts.</li>
+            <li>Exports WAV and MIDI.</li>
+          </ul>
+        </section>
+        <section class="box">
+          <h3>Installing</h3>
+          <ol class="steps">
+            <li>Download and open <code>Novox-The-Robot-macOS.pkg</code>.</li>
+            <li>Click through the installer. It puts the app in Applications and the plugins in <code>/Library/Audio/Plug-Ins</code>.</li>
+            <li>In Logic, make a Software Instrument track and choose <b>AU Instruments › Song A Day › Novox The Robot</b>. Elsewhere, look for it among your VST3 instruments.</li>
+          </ol>
+          <p class="note" data-unsigned>If macOS says it can't check the installer, open <b>System Settings › Privacy &amp; Security</b>, scroll down, and click <b>Open Anyway</b>.</p>
+          <p class="meta">The first time you turn singing into notes, Novox asks to download its lyrics model (574 MB).</p>
+        </section>
+      </div>
+
+      <section class="box" style="margin-top:22px">
+        <h3>Open source</h3>
+        <p style="margin:0">Novox The Robot is free software under the <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU AGPLv3</a>.
+          Its singing engine is MIT licensed. Read the code, report a bug, or build it yourself on
+          <a href="https://github.com/songadaymann/novox-the-robot">GitHub</a>.</p>
+      </section>
+    </main>
+  </div>
+  <footer>© 2026 Jonathan Mann · <a href="https://songaday.studio">Song A Day Studios</a></footer>
+</div>
+</body>
+</html>
