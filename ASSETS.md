@@ -26,6 +26,8 @@ permission to redistribute that media.
 
 | Local path | Source / exclusion |
 | --- | --- |
+| `private-assets/site/brand/apple-pay-mark.svg` | Unmodified official acceptance mark from https://developer.apple.com/apple-pay/marketing/Apple-Pay-Mark.zip, retrieved October 19, 2026. Apple trademark; usage governed by https://developer.apple.com/apple-pay/marketing/. Not covered by this repository's MIT or CC BY licenses. |
+| `private-assets/site/brand/google-pay-mark.svg` | Unmodified official acceptance mark from https://developers.google.com/static/pay/api/download-assets/Google-Pay-Acceptance.zip, retrieved October 19, 2026. Google trademark; usage governed by https://developers.google.com/pay/api/web/guides/brand-guidelines. Not covered by this repository's MIT or CC BY licenses. |
 | `private-assets/site/brand/endaoment-wordmark-white.svg` | Monochrome logo paths from https://endaoment.org/, retrieved October 14, 2026; brand kit: https://www.figma.com/design/PU2pJCQLvWYnHjMinrQ3mo/Endaoment-Brand-Kit. Trademark rights remain with Endaoment; no general redistribution license has been verified. |
 | `private-assets/site/images/` | Photos, game screenshots, and logos from the existing site bundle. Sources and redistribution rights have not been established for each file. |
 | `private-assets/site/gifs/` | Game trailers may include third-party or NFT collection artwork, including Punks and Meebits. Collection terms must be established before licensing or publishing those files. |

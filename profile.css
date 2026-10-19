@@ -71,8 +71,10 @@ a:focus-visible, button:focus-visible, input:focus-visible { outline: 4px solid 
 .hero-side-icons-right img:nth-child(5) { bottom: -11%; left: 8%; width: var(--icon-s); transform: rotate(7deg); }
 .hero-side-icons-right img:nth-child(6) { right: -18%; bottom: 0; width: var(--icon-m); transform: rotate(-4deg); }
 h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: var(--type-display); font-weight: 700; letter-spacing: -.052em; line-height: .9; overflow-wrap: anywhere; }
-.hero-headline { grid-column: 1 / -1; width: 100%; margin: 0; color: var(--white); font-size: var(--type-display); font-weight: 700; letter-spacing: -.052em; line-height: 1.03; overflow-wrap: anywhere; }
+.hero-intro { grid-column: 1 / -1; }
+.hero-headline { width: 100%; margin: 0; color: var(--white); font-size: var(--type-display); font-weight: 700; letter-spacing: -.052em; line-height: 1.03; overflow-wrap: anywhere; }
 .hero-headline-line { display: block; }
+.hero-subheader { margin: .85rem 0 0; font-size: var(--type-body); font-weight: 700; line-height: 1.45; }
 .funding-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; width: min(calc(100% - 2rem), 820px); margin: 1.5rem auto .5rem; padding-top: 1rem; border-top: 3px solid var(--red); }
 .funding-summary > div { display: flex; flex-direction: column; gap: .5rem; }
 .funding-summary dt { order: 1; font-size: var(--type-body); }
@@ -81,6 +83,14 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
 
 .hero-donate { grid-column: 2; min-width: 0; align-self: center; background: var(--ink); overflow: visible; }
+.express-payments { margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 2px solid var(--white); }
+.express-payment-options { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; font-weight: 700; }
+.express-payment-link { display: flex; align-items: center; justify-content: center; min-width: 64px; min-height: 48px; padding: .25rem; }
+.express-payment-link img { display: block; width: auto; height: 40px; }
+/* Google's artwork includes clear space inside its SVG canvas. */
+.express-payment-link img.google-pay-mark { height: 74px; }
+.express-payment-link:hover { outline: 2px solid var(--red); outline-offset: 2px; }
+.express-payment-note { margin: .5rem 0 0; font-size: var(--type-meta); }
 .crypto-donate { display: flex; flex-direction: column; align-items: flex-start; gap: 1.5rem; padding: 2rem 0; }
 .crypto-donate[hidden], .zeffy-embed-shell[hidden] { display: none; }
 .crypto-donate h2 { margin: 0; font-size: var(--type-display); font-weight: 700; line-height: 1; letter-spacing: -.04em; }
@@ -232,7 +242,7 @@ footer nav a { font-weight: 700; }
   .site-header nav a { padding: .55rem .65rem; font-size: var(--type-meta); }
   .site-header nav a:not(.nav-donate) { display: none; }
   .hero-stage { grid-template-columns: 1fr; gap: 1.25rem; min-height: 0; }
-  .hero-headline { width: auto; max-width: none; margin: 0 0 .8rem; font-size: var(--type-display); }
+  .hero-headline { width: auto; max-width: none; margin: 0; font-size: var(--type-display); }
   .hero-donate { grid-column: 1; min-height: 0; }
   .funding-summary { grid-template-columns: 1fr; gap: 1.5rem; }
   .hero-video { padding: 0; }

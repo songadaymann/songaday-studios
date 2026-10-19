@@ -27,7 +27,10 @@
         </div>
 
         <div class="hero-stage">
-          <h1 class="hero-headline" id="mission-title"><span class="hero-headline-line">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-headline-line">Help me write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span>.</span></h1>
+          <div class="hero-intro">
+            <h1 class="hero-headline" id="mission-title"><span class="hero-headline-line">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-headline-line">Help me write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span>.</span></h1>
+            <p class="hero-subheader">Daily, relentless creativity. Open-source software and music.</p>
+          </div>
 
           <div class="hero-video">
             <div class="hero-video-player">
@@ -64,6 +67,19 @@
           </div>
 
           <aside class="hero-donate" aria-label="Song A Day Studios donation form">
+            <div class="express-payments">
+              <div class="express-payment-options">
+                <span>Donate with</span>
+                <a class="express-payment-link" href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios" target="_blank" rel="noopener noreferrer" aria-label="Donate with Apple Pay on Zeffy (opens in a new tab)">
+                  <img src="assets/brand/apple-pay-mark.svg" alt="Apple Pay" width="63" height="40">
+                </a>
+                <span>or</span>
+                <a class="express-payment-link" href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios" target="_blank" rel="noopener noreferrer" aria-label="Donate with Google Pay on Zeffy (opens in a new tab)">
+                  <img class="google-pay-mark" src="assets/brand/google-pay-mark.svg" alt="Google Pay" width="109" height="74">
+                </a>
+              </div>
+              <p class="express-payment-note">Opens Zeffy in a new tab.</p>
+            </div>
             <div class="crypto-donate" id="crypto-donate" hidden>
               <h2>Donate with crypto</h2>
               <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
