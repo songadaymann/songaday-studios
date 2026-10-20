@@ -107,11 +107,18 @@
     return null;
   }
 
+  const walletAltMark = document.getElementById("wallet-alt-mark");
+
   function renderWalletLink() {
     if (!walletAlt || !walletAltName) return;
     const wallet = supportedWallet();
     walletAlt.hidden = !wallet;
-    if (wallet) walletAltName.textContent = wallet;
+    if (!wallet) return;
+    // Apple Pay shows its own mark (people know it on sight); Google Pay stays as text.
+    const showMark = wallet === "Apple Pay" && walletAltMark;
+    if (walletAltMark) walletAltMark.hidden = !showMark;
+    walletAltName.hidden = Boolean(showMark);
+    walletAltName.textContent = wallet;
   }
 
   renderWalletLink();

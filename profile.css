@@ -77,12 +77,17 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 
 .hero-donate { grid-area: donate; min-width: 0; }
 .hero-donate:focus { outline: none; }
-.match { margin-bottom: 1.1rem; padding-bottom: 1.1rem; border-bottom: 2px solid var(--hairline); }
-.match-label { margin: 0 0 .45rem; color: var(--white-muted); font-size: var(--type-meta); letter-spacing: .09em; line-height: 1.3; text-transform: uppercase; }
-.match-line { margin: 0; font-size: 1.0625rem; font-weight: 700; line-height: 1.4; }
+.goal { margin-bottom: 1.1rem; padding-bottom: 1.1rem; border-bottom: 2px solid var(--hairline); }
+.goal-label { margin: 0 0 .35rem; color: var(--white-muted); font-size: var(--type-meta); letter-spacing: .09em; line-height: 1.3; text-transform: uppercase; }
+.goal-line { margin: 0; font-size: 1.375rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
 .wallet-alt { margin: 0 0 .9rem; font-size: var(--type-body); line-height: 1.4; }
-.wallet-alt[hidden] { display: none; }
-.wallet-alt a { font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .22em; }
+.wallet-alt[hidden], .wallet-alt [hidden] { display: none; }
+/* The Apple Pay mark stays as Apple supplies it: no outline, filter or recolor on the mark itself. */
+/* Apple asks that the mark not be styled as a button or share a border, so this is a plain link row. */
+.wallet-alt-link { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; min-height: 48px; padding: .4rem 0; color: var(--white); font-weight: 700; text-decoration: none; }
+.wallet-alt-words { white-space: nowrap; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .22em; }
+.wallet-alt-link:hover .wallet-alt-words, .wallet-alt-link:focus-visible .wallet-alt-words { text-decoration-color: var(--red); }
+.wallet-alt-mark { display: block; flex: none; width: auto; height: 32px; }
 .crypto-donate { display: flex; flex-direction: column; align-items: flex-start; gap: 1.25rem; padding: .5rem 0 1rem; }
 .crypto-donate[hidden], .zeffy-embed-shell[hidden] { display: none; }
 .crypto-donate h3 { margin: 0; font-size: 1.375rem; letter-spacing: -.02em; line-height: 1.1; }
@@ -94,6 +99,11 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .crypto-donate-alternative { padding: .5rem 0; border: 0; border-radius: 0; background: var(--ink); color: var(--white); font-size: var(--type-body); text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
 .zeffy-embed-shell { min-height: 0; background: var(--ink); container-type: inline-size; }
 .zeffy-embed-shell [data-zeffy-embed] { min-height: 440px; }
+/* Zeffy's script paints its box white behind a dark, rounded form, which leaves white slivers at the corners. */
+.zeffy-embed-shell [data-zeffy-embed] { background: var(--ink) !important; outline: none !important; }
+/* Zeffy's loading placeholder is white too. These are Zeffy's internal class names and may change. */
+.zeffy-embed-shell .zeffy-embed-loader { background-color: var(--ink) !important; }
+.zeffy-embed-shell .zeffy-embed-skeleton-block { background: linear-gradient(90deg, #1c1c1c 0%, #2a2a2a 45%, #1c1c1c 90%) 0 0 / 200% 100% !important; }
 @container (max-width: 430px) { .zeffy-embed-shell [data-zeffy-embed] { min-height: 480px; } }
 @container (max-width: 315px) { .zeffy-embed-shell [data-zeffy-embed] { min-height: 552px; } }
 .zeffy-embed-shell:focus { outline: none; }
@@ -194,6 +204,7 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .patronage-match > div { display: flex; flex-direction: column; align-items: center; gap: .85rem; }
 .patronage-match dt { order: 1; max-width: 32ch; font-size: var(--type-body); font-weight: 700; line-height: 1.4; }
 .patronage-match dd { margin: 0; font-size: var(--type-display); font-weight: 700; line-height: .95; letter-spacing: -.05em; }
+.patronage-match-unit { font-size: .4em; letter-spacing: -.01em; }
 .video-games-section { grid-column: 1 / -1; }
 .video-games-heading { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: start; gap: 1rem; }
 .video-games-heading-icon { display: block; width: 84px; height: 84px; object-fit: contain; transform: rotate(7deg); }
@@ -264,6 +275,30 @@ body.video-modal-open { overflow: hidden; }
 .thank-you-section > h2, .thank-you-section > .story-image-trio { width: var(--wrap); margin-right: auto; margin-left: auto; }
 .thank-you-section > h2 { margin-bottom: clamp(2rem, 5vw, 4rem); }
 
+/* Films page: the mini-docs playlist as framed thumbnails that turn into players on click. */
+.films-page main { width: var(--wrap); margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) 0 clamp(3rem, 6vw, 5rem); }
+.films-page main:focus { outline: none; }
+.films-intro h1 { font-size: clamp(2.75rem, 1.8rem + 3.8vw, 4.75rem); }
+.films-intro p { max-width: 40ch; margin: .9rem 0 0; color: var(--white-muted); font-size: clamp(1.05rem, .95rem + .35vw, 1.25rem); line-height: 1.4; }
+.films-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(2.25rem, 4.5vw, 3.5rem) clamp(1.25rem, 3vw, 2.25rem); margin-top: clamp(2rem, 4vw, 3rem); }
+.film { min-width: 0; }
+.film-featured { grid-column: 1 / -1; }
+.film-play, .film-frame { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: 4px solid var(--white); background: var(--ink); box-shadow: var(--offset) var(--offset) 0 var(--red); overflow: hidden; }
+.film-play { cursor: pointer; }
+.film-play img { display: block; width: 100%; height: 100%; object-fit: cover; transition: opacity .2s ease; }
+.film-play:hover img, .film-play:focus-visible img { opacity: .85; }
+.film-play-icon { position: absolute; top: 50%; left: 50%; width: 68px; height: 68px; border: 3px solid var(--white); border-radius: 50%; background: rgba(0, 0, 0, .72); transform: translate(-50%, -50%); }
+.film-play-icon::after { content: ""; position: absolute; top: 50%; left: 54%; border-style: solid; border-width: 13px 0 13px 21px; border-color: transparent transparent transparent var(--white); transform: translate(-50%, -50%); }
+.film-play:hover .film-play-icon, .film-play:focus-visible .film-play-icon { border-color: var(--white); background: var(--red-button); }
+.film-featured .film-play-icon { width: 92px; height: 92px; }
+.film-featured .film-play-icon::after { border-width: 18px 0 18px 29px; }
+.film-frame { border-color: var(--white); }
+.film-title { max-width: none; margin-top: 1.1rem; font-size: clamp(1.25rem, 1.05rem + .7vw, 1.6rem); letter-spacing: -.03em; line-height: 1.12; overflow-wrap: break-word; }
+.film-featured .film-title { font-size: clamp(1.6rem, 1.1rem + 1.9vw, 2.75rem); letter-spacing: -.04em; }
+.film-date { margin: .45rem 0 0; color: var(--white-muted); font-size: var(--type-meta); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.films-more, .films-fallback { margin: clamp(2.5rem, 5vw, 3.5rem) 0 0; font-weight: 700; }
+.films-more a, .films-fallback a { text-decoration-thickness: 2px; }
+
 footer { display: grid; grid-template-columns: 1fr auto; gap: 2rem; padding: 2.5rem var(--wrap-edge); border-top: 4px solid var(--red); background: var(--ink); color: var(--white); }
 .footer-word { font-size: var(--type-body); font-weight: 700; letter-spacing: .02em; }
 footer p { margin: .35rem 0 0; }
@@ -318,7 +353,8 @@ footer nav a { font-weight: 700; }
   .story-figure-conference img { aspect-ratio: 16 / 6; }
   .patronage-boxes { grid-template-columns: 1fr; gap: 1rem; }
   .patronage-box-media { aspect-ratio: 4 / 3; }
-  .patronage-match { grid-template-columns: 1fr; margin-top: 1.6rem; padding: 1.6rem 1rem; }
+  .patronage-match { grid-template-columns: minmax(0, 1fr); margin-top: 1.6rem; padding: 1.6rem 1rem; }
+  .patronage-match dd { font-size: clamp(2.25rem, 12vw, var(--type-display)); }
   .video-games-heading { grid-template-columns: 52px minmax(0, 1fr); gap: .75rem; }
   .video-games-heading-icon { width: 52px; height: 52px; }
   .video-games-heading h3 { max-width: none; font-size: var(--type-display); }
@@ -336,6 +372,12 @@ footer nav a { font-weight: 700; }
   footer { grid-template-columns: 1fr; }
   .footer-links { justify-items: start; }
   footer nav { justify-content: flex-start; }
+}
+
+@media (max-width: 700px) {
+  .films-list { grid-template-columns: 1fr; }
+  .film-featured .film-play-icon { width: 68px; height: 68px; }
+  .film-featured .film-play-icon::after { border-width: 13px 0 13px 21px; }
 }
 
 @media (max-width: 520px) {

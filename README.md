@@ -9,27 +9,33 @@ outside the Fridays at The Park app.
 - `profile.css` — editable styles
 - `profile.js` — editable page behavior and catalog stats
 - `assets/` — icons, video, and other page assets
-- `index.html` — generated standalone page
-- `build.mjs` — combines the editable files into `index.html`
+- `index.html`, `films/index.html` — generated pages
+- `build.mjs` — builds both pages from the editable files, and bakes in a snapshot of the Films
+  playlist (needs network; without it the Films page links to YouTube until the Worker fills it in)
 - `song-day.mjs` — shared daily song-number calculation for the browser and Worker
 - `plugins/index.html` — the plugin downloads page (songaday.studio/plugins), a standalone static
   page; its images are in `assets/plugins/`. Downloads come from each project's GitHub releases.
   Its site header is a copy of the one in `profile.html`; `tests/site.test.mjs` checks their section links match.
-- `worker.mjs` — the Cloudflare Worker: redirects, section links, and today's song number
+- `films.html`, `films-page.js`, `films.mjs` — the Films page (songaday.studio/films/): Jonathan's
+  "Mini-documentaries" YouTube playlist as thumbnails that turn into players. `build.mjs` bakes in
+  a snapshot of the playlist; the Worker re-reads YouTube's feed (cached for an hour), so new
+  mini-docs appear without a redeploy. The feed lists up to 15 videos.
+- `worker.mjs` — the Cloudflare Worker: redirects, section links, today's song number, and the
+  live Films list
 - `media.mjs` — serves the site videos from R2 with byte ranges, so they can seek and play on iPhones
 - `upload-media.mjs` — uploads `assets/video/` to the R2 bucket
 
 ## Sections
 
-The header links to section URLs on songaday.studio. Until a section has its own page, the
-Worker sends it on with a temporary (302) redirect, so the URL can become a real page later:
+The header links to section URLs on songaday.studio. Sections without their own page yet are
+sent on by the Worker with a temporary (302) redirect, so the URL can become a real page later:
 
 | URL | Goes to |
 | --- | --- |
 | `/songs` | https://gallery.songaday.world/ |
 | `/games` | https://mann.cool/ |
-| `/films` | the YouTube channel's videos (mini-docs) |
-| `/mini-docs` | `/films` |
+| `/films/` | `films/index.html`, built from `films.html` |
+| `/mini-docs` | `/films/` |
 | `/plugins/` | `plugins/index.html` |
 | `/donate` | `/#donate`, the gift form on the home page |
 
@@ -70,8 +76,8 @@ Under `wrangler dev` the videos come from a local copy of the R2 bucket; fill it
 https redirect loops. An older wrangler that rejects the compatibility date also needs
 `--compatibility-date` set to one it supports.)
 
-After editing `profile.html`, `profile.css`, or `profile.js`, run
-`node build.mjs` again. The static server will serve the refreshed page.
+After editing `profile.html`, `profile.css`, `profile.js`, `films.html`, `films-page.js` or
+`films.mjs`, run `node build.mjs` again. The static server will serve the refreshed page.
 
 The page includes external embeds and links, so use the local HTTP server
 rather than opening `index.html` directly from Finder.
@@ -87,12 +93,12 @@ method. Detection never requests wallet access. Wallet visitors can choose
 
 Zeffy doesn't offer Apple Pay or Google Pay inside embedded forms, and its own page
 only shows them below 900px wide in Safari. So phones that can use a wallet see one
-plain link above the form ("Use Apple Pay on Zeffy's page"), and nobody else does.
+link above the form to Zeffy's own page, and nobody else does: on iPhones it carries the
+official Apple Pay mark ("Donate with [Apple Pay] on Zeffy's page"); on Android Chrome it
+says Google Pay in text.
 
-The funding figures are static in `profile.html`: the match line above the form,
-and the $300,000 annual goal next to C.Y. Lee's $100,000 in the Patronage section. His contribution can
-increase to $100,000 in total: after community contributions reach $62,500,
-additional contributions are matched dollar for dollar, up to another $37,500.
+The funding goals are static in `profile.html`: "First goal: $3,000 a month" above the
+form, and the monthly ladder ($3,000 first goal, $20,000 the dream) in the Patronage section.
 
 ## Production
 
