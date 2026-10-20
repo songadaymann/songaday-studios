@@ -1,17 +1,32 @@
 import { songADayNumber } from './song-day.mjs';
+import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 
 // Section URLs live on songaday.studio so they can become real pages later.
 // Temporary (302, no-store) redirects so browsers don't cache them for good.
 const SECTION_REDIRECTS = {
   '/songs': 'https://gallery.songaday.world/',
   '/games': 'https://mann.cool/',
-  // Until the Films page exists, mini-docs live on the YouTube channel.
-  '/films': 'https://www.youtube.com/channel/UCvj5S3f10rO6CoibatfRGzg/videos',
-  '/mini-docs': '/films',
+  '/mini-docs': '/films/',
   '/donate': '/#donate'
 };
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+// The live mini-docs playlist, cached at Cloudflare's edge for an hour. On any failure the
+// Films page keeps the snapshot it was built with.
+async function liveFilms() {
+  try {
+    const response = await fetch(FILMS_FEED_URL, {
+      cf: { cacheTtl: 3600, cacheEverything: true },
+      signal: AbortSignal.timeout(1500)
+    });
+    if (!response.ok) return null;
+    const films = parseFeed(await response.text());
+    return films.length ? films : null;
+  } catch {
+    return null;
+  }
+}
 
 export default {
   async fetch(request, env) {
@@ -35,11 +50,18 @@ export default {
       });
     }
 
+    // /Films, /FILMS/ etc. land on the Films page (the section redirects above ignore case too).
+    if (path === '/films' && url.pathname !== '/films/') {
+      return new Response(null, { status: 302, headers: { Location: '/films/' + url.search, 'Cache-Control': 'no-store' } });
+    }
+
+    // Fetch the live playlist alongside the page, so the top of the page streams without waiting on YouTube.
+    const filmsPromise = path === '/films' && request.method === 'GET' ? liveFilms() : null;
     const response = await env.ASSETS.fetch(request);
     if (!response.headers.get('Content-Type')?.includes('text/html')) return response;
 
     const number = songADayNumber();
-    const rewritten = new HTMLRewriter()
+    const rewriter = new HTMLRewriter()
       .on('[data-song-day="today"]', {
         element(element) { element.setInnerContent(String(number)); }
       })
@@ -48,8 +70,16 @@ export default {
       })
       .on('[data-song-day="count"]', {
         element(element) { element.setInnerContent(number.toLocaleString('en-US')); }
-      })
-      .transform(response);
+      });
+    if (filmsPromise) {
+      rewriter.on('#films-list', {
+        async element(element) {
+          const films = await filmsPromise;
+          if (films) element.setInnerContent(renderFilms(films), { html: true });
+        }
+      });
+    }
+    const rewritten = rewriter.transform(response);
     // A fresh Response: the transformed one can have immutable headers (HEAD requests returned 500).
     const page = new Response(rewritten.body, rewritten);
     page.headers.set('Cache-Control', 'no-cache');

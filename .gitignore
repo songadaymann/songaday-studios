@@ -41,8 +41,9 @@ venv/
 .DS_Store
 *.log
 
-# Generated standalone page and private media alias
+# Generated standalone pages and private media alias
 /index.html
+/films/index.html
 /assets
 
 # Local preview config for the Claude desktop app
