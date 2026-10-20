@@ -22,6 +22,8 @@ outside the Fridays at The Park app.
   mini-docs appear without a redeploy. The feed lists up to 15 videos.
 - `worker.mjs` — the Cloudflare Worker: redirects, section links, today's song number, and the
   live Films list
+- `media.mjs` — serves the site videos from R2 with byte ranges, so they can seek and play on iPhones
+- `upload-media.mjs` — uploads `assets/video/` to the R2 bucket
 - `fumble.mjs`, `fumble-page.mjs`, `fumble-approve.mjs`, `migrations/` — the Fumble page
   (songaday.studio/fumble); see below
 
@@ -70,6 +72,8 @@ python3 -m http.server 3000
 
 Then open <http://localhost:3000/>. The section links need the Worker; to try them,
 run `node build-production.mjs` and then `wrangler dev --local-upstream localhost`.
+Under `wrangler dev` the videos come from a local copy of the R2 bucket; fill it once with
+`node upload-media.mjs --local`.
 (Without `--local-upstream`, wrangler dev presents requests as http://songaday.studio and the
 https redirect loops. An older wrangler that rejects the compatibility date also needs
 `--compatibility-date` set to one it supports.)
@@ -151,16 +155,28 @@ The public site is https://songaday.studio. Cloudflare Worker
 `songaday-studios` serves the static production build. The `www` hostname
 redirects to the main address.
 
-To rebuild and deploy (requires Node.js, ffmpeg, and authenticated Wrangler):
+To rebuild and deploy (requires Node.js and authenticated Wrangler):
 
 ```bash
 node build-production.mjs
 wrangler deploy
 ```
 
-`build-production.mjs` copies the site into `dist/` and compresses the large
-political-satire trailer for static hosting. Original media stays in `assets/`.
-Only `dist/` is uploaded; source and local configuration files are excluded.
+`build-production.mjs` copies the site into `dist/`, leaving out the videos. Only
+`dist/` is uploaded; source and local configuration files are excluded.
+
+The videos (`assets/video/*.mp4`) live in the R2 bucket `songaday-studio-media`, bound to the
+Worker as `MEDIA`. Their URLs stay `https://songaday.studio/assets/video/…`: the Worker
+answers them from R2 with byte-range (206) responses, which browsers need for seeking
+and iOS Safari needs to play video at all. Static assets can't do that; they always
+send the whole file. After adding or replacing a video (requires ffmpeg too):
+
+```bash
+node upload-media.mjs
+```
+
+It re-encodes videos over 25 MiB (the political-satire trailer) to about 1.3 Mbps
+first, and keeps that copy in `output/media/`. Browsers cache videos for a day.
 
 ## License
 

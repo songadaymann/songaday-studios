@@ -1,4 +1,5 @@
 import { songADayNumber } from './song-day.mjs';
+import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 import { handleFumble } from './fumble.mjs';
 
@@ -49,6 +50,13 @@ export default {
         status: 302,
         headers: { Location: location, 'Cache-Control': 'no-store' }
       });
+    }
+
+    // Videos come from R2 so they can answer Range requests (see media.mjs).
+    const media = env.MEDIA && MEDIA_PATH.exec(url.pathname);
+    if (media) {
+      const video = await serveMedia(request, env.MEDIA, media[1]);
+      if (video) return video;
     }
 
     // songaday.studio/fumble: anonymous bag-fumble stories (fumble.mjs).

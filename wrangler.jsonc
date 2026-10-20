@@ -7,13 +7,18 @@
     "binding": "ASSETS",
     "run_worker_first": true
   },
-  // songaday.studio/fumble (fumble.mjs): stories in D1, their paintings in R2.
+  // Site videos (assets/video/*.mp4), uploaded with `node upload-media.mjs`, and Fumble paintings.
   "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "songaday-studio-media"
+    },
     {
       "binding": "FUMBLE_IMAGES",
       "bucket_name": "songaday-fumble"
     }
   ],
+  // songaday.studio/fumble (fumble.mjs): stories in D1, their paintings in R2 (above).
   "d1_databases": [
     {
       "binding": "FUMBLE_DB",

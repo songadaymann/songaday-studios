@@ -380,8 +380,8 @@
     && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
     && !navigator.connection?.saveData;
 
-  // Chrome can't seek this file until it's served with byte ranges, so the slider
-  // only shows when the browser reports the film as seekable.
+  // Browsers can only seek when the film is served with byte ranges (the Worker does
+  // that from R2, see media.mjs), so the slider only shows when it's seekable.
   function renderSeekAvailability() {
     if (!heroVideo || !videoSeek) return;
     const { seekable } = heroVideo;
