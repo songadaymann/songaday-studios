@@ -188,7 +188,7 @@ const HEADER = `<header class="site-header">
   <nav class="site-sections" aria-label="Sections">
     <a href="/songs">Songs<span class="nav-out" aria-hidden="true">↗</span></a>
     <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
-    <a href="/films">Films<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/films/">Films</a>
     <a href="/plugins/">Plugins</a>
   </nav>
   <a class="nav-donate" href="/#donate">Donate</a>

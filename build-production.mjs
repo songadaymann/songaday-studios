@@ -7,6 +7,8 @@ execFileSync(process.execPath, ['build.mjs'], { stdio: 'inherit' });
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await cp('index.html', 'dist/index.html');
+// Films page (songaday.studio/films/), built by build.mjs from films.html.
+await cp('films/index.html', 'dist/films/index.html');
 // Plugin downloads page: a static page of its own (songaday.studio/plugins).
 await cp('plugins', 'dist/plugins', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
 if (existsSync('assets')) {

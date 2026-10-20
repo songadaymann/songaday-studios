@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <title>Mini-documentaries</title>
+ <entry>
+  <id>yt:video:dZkMLlZ_2oc</id>
+  <yt:videoId>dZkMLlZ_2oc</yt:videoId>
+  <title>Why Artists Are So Bad at Getting Paid (Me Included)</title>
+  <published>2026-10-14T16:00:00+00:00</published>
+  <media:group><media:title>Why Artists Are So Bad at Getting Paid (Me Included)</media:title></media:group>
+ </entry>
+ <entry>
+  <id>yt:video:MLCDgQNnTB0</id>
+  <yt:videoId>MLCDgQNnTB0</yt:videoId>
+  <title>Marriage &amp; Feminism</title>
+  <published>2015-08-11T14:00:00+00:00</published>
+ </entry>
+ <entry>
+  <id>yt:video:AAAAAAAAAAA</id>
+  <yt:videoId>AAAAAAAAAAA</yt:videoId>
+  <title>It&#39;s $&amp; &#x1F3B5; &#x110000;</title>
+  <published>2026-01-01T00:00:00+00:00</published>
+ </entry>
+ <entry>
+  <id>yt:video:broken</id>
+  <yt:videoId>not a real id</yt:videoId>
+  <title>Skipped: bad video id</title>
+ </entry>
+</feed>
