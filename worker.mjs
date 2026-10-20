@@ -1,4 +1,5 @@
 import { songADayNumber } from './song-day.mjs';
+import { MEDIA_PATH, serveMedia } from './media.mjs';
 
 // Section URLs live on songaday.studio so they can become real pages later.
 // Temporary (302, no-store) redirects so browsers don't cache them for good.
@@ -33,6 +34,13 @@ export default {
         status: 302,
         headers: { Location: location, 'Cache-Control': 'no-store' }
       });
+    }
+
+    // Videos come from R2 so they can answer Range requests (see media.mjs).
+    const media = env.MEDIA && MEDIA_PATH.exec(url.pathname);
+    if (media) {
+      const video = await serveMedia(request, env.MEDIA, media[1]);
+      if (video) return video;
     }
 
     const response = await env.ASSETS.fetch(request);

@@ -7,6 +7,13 @@
     "binding": "ASSETS",
     "run_worker_first": true
   },
+  // Site videos (assets/video/*.mp4), uploaded with `node upload-media.mjs`.
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "songaday-studio-media"
+    }
+  ],
   "routes": [
     {
       "pattern": "songaday.studio",
