@@ -78,11 +78,44 @@
   const tickerTrack = document.getElementById("catalog-ticker-track");
   const tickerSummary = document.getElementById("catalog-ticker-summary");
   const heroVideo = document.getElementById("hero-video");
+  const heroPlayer = heroVideo?.closest(".hero-video-player");
   const soundToggle = document.getElementById("hero-sound-toggle");
-  const soundIcon = document.getElementById("hero-sound-icon");
   const soundLabel = document.getElementById("hero-sound-label");
+  const pauseToggle = document.getElementById("hero-video-pause");
   const videoSeek = document.getElementById("hero-video-seek");
   const videoTime = document.getElementById("hero-video-time");
+  const walletAlt = document.getElementById("wallet-alt");
+  const walletAltName = document.getElementById("wallet-alt-name");
+
+  // Zeffy hides Apple Pay and Google Pay inside embeds (and its own page only shows
+  // them below 900px in Safari), so only phones that can use a wallet see this link.
+  const walletScreen = window.matchMedia("(max-width: 899px)");
+
+  function supportedWallet() {
+    if (!walletScreen.matches) return null;
+    try {
+      if (window.ApplePaySession?.canMakePayments()) return "Apple Pay";
+    } catch {
+      // Apple Pay checks throw outside secure contexts.
+    }
+    const agent = navigator.userAgent;
+    // Chrome on Android only: in-app web views ("; wv)") and other Android browsers can't use
+    // Google Pay on Zeffy's page.
+    const androidChrome = /Android/i.test(agent) && /Chrome\/\d/.test(agent)
+      && !/; wv\)|SamsungBrowser|EdgA|OPR|YaBrowser|Firefox/.test(agent);
+    if (androidChrome && "PaymentRequest" in window) return "Google Pay";
+    return null;
+  }
+
+  function renderWalletLink() {
+    if (!walletAlt || !walletAltName) return;
+    const wallet = supportedWallet();
+    walletAlt.hidden = !wallet;
+    if (wallet) walletAltName.textContent = wallet;
+  }
+
+  renderWalletLink();
+  walletScreen.addEventListener?.("change", renderWalletLink);
 
   /* SONG_DAY_NUMBER_HELPER */
 
@@ -93,6 +126,9 @@
     });
     document.querySelectorAll('[data-song-day="tomorrow"]').forEach((el) => {
       el.textContent = String(number + 1);
+    });
+    document.querySelectorAll('[data-song-day="count"]').forEach((el) => {
+      el.textContent = number.toLocaleString("en-US");
     });
   }
 
@@ -179,6 +215,16 @@
     return `${minutes}:${String(wholeSeconds % 60).padStart(2, "0")}`;
   }
 
+  // The film's last seconds are a Patreon end card, so the hero treats 2:52 as the end
+  // and loops back before it.
+  const HERO_VIDEO_END = 172.4;
+  let heroHasSound = false;
+
+  function heroDuration() {
+    if (!heroVideo || !Number.isFinite(heroVideo.duration) || heroVideo.duration <= 0) return 0;
+    return Math.min(heroVideo.duration, HERO_VIDEO_END);
+  }
+
   let videoIsScrubbing = false;
   let videoWasPlaying = false;
 
@@ -196,25 +242,38 @@
 
   function renderVideoProgress() {
     if (!heroVideo || !videoSeek || !videoTime || videoIsScrubbing) return;
-    const duration = Number.isFinite(heroVideo.duration) ? heroVideo.duration : 0;
-    const ratio = duration > 0 ? heroVideo.currentTime / duration : 0;
+    if (heroVideo.currentTime >= HERO_VIDEO_END) {
+      // The muted preview loops. Someone watching with sound gets the starting state back.
+      if (heroHasSound) {
+        heroVideo.pause();
+        heroVideo.muted = true;
+        heroHasSound = false;
+      }
+      heroVideo.currentTime = 0;
+      return;
+    }
+    const duration = heroDuration();
+    if (!duration) return;
+    const ratio = heroVideo.currentTime / duration;
     const position = Math.max(0, Math.min(1000, Math.round(ratio * 1000)));
     renderVideoPosition(position, heroVideo.currentTime, duration);
   }
 
   function previewVideoAtControl() {
-    if (!heroVideo || !Number.isFinite(heroVideo.duration)) return;
+    const duration = heroDuration();
+    if (!duration) return;
     const position = Number(videoSeek?.getAttribute("aria-valuenow") ?? 0);
-    const targetTime = (position / 1000) * heroVideo.duration;
-    renderVideoPosition(position, targetTime, heroVideo.duration);
+    renderVideoPosition(position, (position / 1000) * duration, duration);
   }
 
   function commitVideoSeek() {
-    if (!heroVideo || !Number.isFinite(heroVideo.duration)) return;
+    const duration = heroDuration();
+    if (!duration) return;
     const position = Number(videoSeek?.getAttribute("aria-valuenow") ?? 0);
-    const targetTime = (position / 1000) * heroVideo.duration;
+    // Stop just short of the end so seeking to the end doesn't trip the loop back to 0:00.
+    const targetTime = Math.min((position / 1000) * duration, duration - .25);
     heroVideo.currentTime = targetTime;
-    renderVideoPosition(position, targetTime, heroVideo.duration);
+    renderVideoPosition(position, targetTime, duration);
   }
 
   function updateVideoSeekFromPointer(event) {
@@ -279,10 +338,11 @@
   videoSeek?.addEventListener("pointerup", finishVideoScrub);
   videoSeek?.addEventListener("pointercancel", cancelVideoScrub);
   videoSeek?.addEventListener("keydown", (event) => {
-    if (!heroVideo || !Number.isFinite(heroVideo.duration)) return;
+    const duration = heroDuration();
+    if (!duration) return;
     const currentPosition = Number(videoSeek.getAttribute("aria-valuenow") ?? 0);
-    const fiveSeconds = (5 / heroVideo.duration) * 1000;
-    const thirtySeconds = (30 / heroVideo.duration) * 1000;
+    const fiveSeconds = (5 / duration) * 1000;
+    const thirtySeconds = (30 / duration) * 1000;
     const changes = {
       ArrowLeft: -fiveSeconds,
       ArrowDown: -fiveSeconds,
@@ -307,22 +367,94 @@
   heroVideo?.addEventListener("seeking", renderVideoProgress);
   renderVideoProgress();
 
-  function renderSoundState() {
-    if (!heroVideo || !soundToggle || !soundIcon || !soundLabel) return;
-    const soundIsOn = !heroVideo.muted;
-    soundToggle.setAttribute("aria-pressed", String(soundIsOn));
-    soundIcon.textContent = soundIsOn ? "🔊" : "🔇";
-    soundLabel.textContent = soundIsOn ? "MUTE VIDEO" : "TURN SOUND ON";
+  // Wide screens get a muted preview loop. Phones, reduced motion and Save-Data get the
+  // poster until someone asks to watch, which also spares them the 18 MB download.
+  const canPreviewHero = window.matchMedia("(min-width: 900px)").matches
+    && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    && !navigator.connection?.saveData;
+
+  // Chrome can't seek this file until it's served with byte ranges, so the slider
+  // only shows when the browser reports the film as seekable.
+  function renderSeekAvailability() {
+    if (!heroVideo || !videoSeek) return;
+    const { seekable } = heroVideo;
+    videoSeek.hidden = !(seekable.length && seekable.end(seekable.length - 1) > 1);
+  }
+
+  function renderHeroControls() {
+    if (!heroVideo) return;
+    const started = !heroVideo.paused || heroVideo.currentTime > 0;
+    heroPlayer?.classList.toggle("is-started", started);
+    heroPlayer?.classList.toggle("is-watching", heroHasSound);
+    if (soundToggle && soundLabel) {
+      soundToggle.classList.toggle("is-sound-on", !heroVideo.muted);
+      soundLabel.textContent = heroVideo.muted ? (heroHasSound ? "Unmute" : "Watch with sound") : "Mute";
+    }
+    if (pauseToggle) {
+      pauseToggle.hidden = !started;
+      pauseToggle.classList.toggle("is-paused", heroVideo.paused);
+      pauseToggle.setAttribute("aria-label", heroVideo.paused ? "Play video" : "Pause video");
+    }
+  }
+
+  function watchHeroWithSound() {
+    if (!heroVideo) return;
+    // The first time someone asks for sound, start the film from the top.
+    if (!heroHasSound) heroVideo.currentTime = 0;
+    heroHasSound = true;
+    heroVideo.preload = "auto";
+    heroVideo.muted = false;
+    void heroVideo.play().catch(() => {});
+    renderHeroControls();
   }
 
   soundToggle?.addEventListener("click", () => {
     if (!heroVideo) return;
-    heroVideo.muted = !heroVideo.muted;
-    void heroVideo.play().catch(() => {});
-    renderSoundState();
+    if (!heroHasSound) {
+      watchHeroWithSound();
+    } else {
+      // After the first watch, the pill only toggles sound and leaves play/pause alone.
+      heroVideo.muted = !heroVideo.muted;
+      renderHeroControls();
+    }
   });
-  heroVideo?.addEventListener("volumechange", renderSoundState);
-  renderSoundState();
+  pauseToggle?.addEventListener("click", () => {
+    if (!heroVideo) return;
+    if (heroVideo.paused) void heroVideo.play().catch(() => {});
+    else heroVideo.pause();
+  });
+  heroVideo?.addEventListener("click", () => {
+    if (!heroHasSound) watchHeroWithSound();
+    else if (heroVideo.paused) void heroVideo.play().catch(() => {});
+    else heroVideo.pause();
+  });
+  ["play", "pause", "volumechange", "loadeddata"].forEach((type) => {
+    heroVideo?.addEventListener(type, renderHeroControls);
+  });
+  ["loadedmetadata", "progress", "durationchange"].forEach((type) => {
+    heroVideo?.addEventListener(type, renderSeekAvailability);
+  });
+  if (heroVideo && canPreviewHero) {
+    heroVideo.preload = "auto";
+    void heroVideo.play().catch(() => {});
+  }
+  renderSeekAvailability();
+  renderHeroControls();
+
+  // Name Zeffy's iframe for screen readers once its script inserts it.
+  const zeffyHost = document.querySelector("[data-zeffy-embed]");
+  if (zeffyHost) {
+    new MutationObserver(() => {
+      const frame = zeffyHost.querySelector("iframe:not([title])");
+      if (frame) frame.title = "Donate to Song A Day Studio";
+    }).observe(zeffyHost, { childList: true, subtree: true });
+  }
+
+  // The Game A Day montage plays only for people who haven't asked for reduced motion.
+  const gameMontage = document.querySelector(".video-game-card-media video");
+  if (gameMontage && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    void gameMontage.play().catch(() => {});
+  }
 
   // The profile is rendered from srcdoc. Prevent fragment links from resolving
   // against the parent profile URL and recursively loading the public page.
@@ -335,6 +467,9 @@
         behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
         block: "start"
       });
+      // Move keyboard focus with the scroll (Donate lands on the gift form, the skip link on main).
+      if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+      target.focus({ preventScroll: true });
     });
   });
 
@@ -344,9 +479,12 @@
   const videoModalTitle = document.getElementById("video-modal-title");
   const videoTriggers = [...document.querySelectorAll("[data-video-id], [data-video-src]")];
   let lastVideoTrigger = null;
+  let resumeHeroPreview = false;
 
   function closeVideoModal() {
     if (!videoModal || !videoModalFrame) return;
+    if (resumeHeroPreview) void heroVideo?.play().catch(() => {});
+    resumeHeroPreview = false;
     videoModal.hidden = true;
     videoModalFrame.src = "about:blank";
     videoModalFrame.hidden = false;
@@ -391,6 +529,11 @@
       return;
     }
 
+    // One soundtrack at a time: pause the hero film, and bring back its muted preview on close.
+    if (heroVideo && !heroVideo.paused) {
+      resumeHeroPreview = heroVideo.muted;
+      heroVideo.pause();
+    }
     if (videoModalTitle) videoModalTitle.textContent = title;
     lastVideoTrigger = trigger;
     videoModal.hidden = false;

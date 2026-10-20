@@ -1,127 +1,120 @@
 <div class="labs-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <header class="site-header" aria-label="Song A Day Studios">
-    <a class="brand" href="#top" aria-label="Song A Day Studios home">
-      <img class="brand-mark" src="assets/icons/tunes.png" alt="" aria-hidden="true">
-      <span>SONG A DAY <b>STUDIOS</b></span>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Song A Day Studio home">
+      <img class="brand-mark" src="assets/icons/tunes.png" alt="" width="50" height="50">
+      <span class="brand-word">SONG A DAY<span class="brand-dot">.</span> STUDIO</span>
     </a>
-    <nav aria-label="Profile navigation">
-      <a href="#mission">Mission</a>
-      <a href="#studios">Studios</a>
-      <a href="#goal">Goal</a>
-      <a class="nav-donate" href="#goal">Donate monthly</a>
+    <nav class="site-sections" aria-label="Sections">
+      <a href="/songs">Songs<span class="nav-out" aria-hidden="true">↗</span></a>
+      <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
+      <a href="/films">Films<span class="nav-out" aria-hidden="true">↗</span></a>
+      <a href="/plugins/">Plugins</a>
     </nav>
+    <a class="nav-donate" href="#donate">Donate</a>
   </header>
 
   <main id="main">
     <section class="hero" id="mission" aria-labelledby="mission-title">
-      <div class="hero-stage-wrap">
-        <div class="hero-side-icons hero-side-icons-left" aria-hidden="true">
-          <img src="assets/icons/musician.png" alt="">
-          <img src="assets/icons/night.png" alt="">
-          <img src="assets/icons/nature.png" alt="">
-          <img src="assets/icons/tunes.png" alt="">
-          <img src="assets/icons/raccoon.png" alt="">
-          <img src="assets/icons/mythology.png" alt="">
+      <div class="hero-stage">
+        <div class="hero-intro">
+          <h1 class="hero-headline" id="mission-title"><span class="hero-eyebrow">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-ask">Help me write <span class="hero-ask-number">#<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span></span>.</span></h1>
+          <p class="hero-subheader">I’m Jonathan Mann. I’ve written a song every day since January&nbsp;1,&nbsp;2009. Now I make games and free music software too.</p>
         </div>
 
-        <div class="hero-stage">
-          <div class="hero-intro">
-            <h1 class="hero-headline" id="mission-title"><span class="hero-headline-line">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-headline-line">Help me write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span>.</span></h1>
-            <p class="hero-subheader">Daily, relentless creativity. Open-source software and music.</p>
-          </div>
-
-          <div class="hero-video">
-            <div class="hero-video-player">
-              <video
-                id="hero-video"
-                autoplay
-                muted
-                loop
-                playsinline
-                preload="metadata"
-                poster="assets/video/welcome-to-song-a-day-poster.webp"
-                aria-label="Welcome to Song A Day">
-                <source src="assets/video/welcome-to-song-a-day.mp4" type="video/mp4">
-              </video>
-              <div class="hero-video-controls">
-                <div
-                  class="hero-video-seek"
-                  id="hero-video-seek"
-                  role="slider"
-                  tabindex="0"
-                  aria-valuemin="0"
-                  aria-valuemax="1000"
-                  aria-valuenow="0"
-                  aria-label="Seek through the Welcome to Song A Day video">
-                  <span class="hero-video-seek-thumb" aria-hidden="true"></span>
-                </div>
-                <output class="hero-video-time" id="hero-video-time">0:00 / 2:58</output>
-              </div>
-            </div>
-            <button class="hero-sound-toggle" id="hero-sound-toggle" type="button" aria-pressed="false">
-              <span class="hero-sound-icon" id="hero-sound-icon" aria-hidden="true">🔇</span>
-              <span id="hero-sound-label">TURN SOUND ON</span>
+        <div class="hero-video">
+          <div class="hero-video-player">
+            <video
+              id="hero-video"
+              muted
+              loop
+              playsinline
+              preload="none"
+              poster="assets/video/welcome-to-song-a-day-poster.webp"
+              aria-label="Welcome to Song A Day, a three-minute film">
+              <source src="assets/video/welcome-to-song-a-day.mp4" type="video/mp4">
+            </video>
+            <button class="hero-video-sound" id="hero-sound-toggle" type="button">
+              <svg class="hero-video-icon" id="hero-sound-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path class="icon-sound-off" d="M16.5 9.5l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path class="icon-sound-on" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+              <span id="hero-sound-label">Watch with sound</span><span class="hero-video-length" id="hero-video-length"> · 2:52</span>
             </button>
+            <button class="hero-video-pause" id="hero-video-pause" type="button" aria-label="Pause video" hidden>
+              <svg class="hero-video-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="icon-pause" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/><path class="icon-play" d="M8 5l11 7-11 7z" fill="currentColor"/></svg>
+            </button>
+            <div class="hero-video-controls">
+              <div
+                class="hero-video-seek"
+                id="hero-video-seek"
+                role="slider"
+                tabindex="0"
+                aria-valuemin="0"
+                aria-valuemax="1000"
+                aria-valuenow="0"
+                aria-label="Seek through the Welcome to Song A Day video">
+                <span class="hero-video-seek-thumb" aria-hidden="true"></span>
+              </div>
+              <span class="hero-video-time" id="hero-video-time" aria-hidden="true">0:00 / 2:52</span>
+            </div>
           </div>
-
-          <aside class="hero-donate" aria-label="Song A Day Studios donation form">
-            <div class="express-payments">
-              <div class="express-payment-options">
-                <span>Donate with</span>
-                <a class="express-payment-link" href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios" target="_blank" rel="noopener noreferrer" aria-label="Donate with Apple Pay on Zeffy (opens in a new tab)">
-                  <img src="assets/brand/apple-pay-mark.svg" alt="Apple Pay" width="63" height="40">
-                </a>
-                <span>or</span>
-                <a class="express-payment-link" href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios" target="_blank" rel="noopener noreferrer" aria-label="Donate with Google Pay on Zeffy (opens in a new tab)">
-                  <img class="google-pay-mark" src="assets/brand/google-pay-mark.svg" alt="Google Pay" width="109" height="74">
-                </a>
-              </div>
-              <p class="express-payment-note">Opens Zeffy in a new tab.</p>
-            </div>
-            <div class="crypto-donate" id="crypto-donate" hidden>
-              <h2>Donate with crypto</h2>
-              <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
-              <button class="crypto-donate-alternative" id="donate-by-card" type="button">Donate by card or bank</button>
-            </div>
-            <div class="zeffy-embed-shell" id="zeffy-donate" tabindex="-1">
-              <noscript><a class="donation-link" href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios" target="_blank" rel="noreferrer">Donate through Zeffy</a></noscript>
-              <div data-zeffy-embed data-form-url="/embed/donation-form/song-a-day-studios"></div>
-              <div class="zeffy-embed-fallback" data-zeffy-embed-fallback style="display:none;">
-                <div class="zeffy-fallback-frame">
-                  <iframe class="zeffy-fallback-iframe" title="Donate to Song A Day Studios" data-zeffy-embed-src="https://www.zeffy.com/embed/donation-form/song-a-day-studios" allowpaymentrequest allowTransparency="true"></iframe>
-                </div>
-              </div>
-            </div>
-            <script
-              src="https://www.zeffy.com/embed/v2/zeffy-embed.js"
-              onerror="document.querySelectorAll('[data-zeffy-embed-fallback]').forEach(function(el){el.style.display='block';el.querySelectorAll('iframe[data-zeffy-embed-src]').forEach(function(f){f.src=f.getAttribute('data-zeffy-embed-src');});});">
-            </script>
-            <p class="donation-match">Once community contributions reach <strong>$62,500</strong>, C.Y. Lee will match additional contributions dollar for dollar, up to another <strong>$37,500</strong>.</p>
-          </aside>
         </div>
 
-        <div class="hero-side-icons hero-side-icons-right" aria-hidden="true">
-          <img src="assets/icons/explorer.png" alt="">
-          <img src="assets/icons/gamer.png" alt="">
-          <img src="assets/icons/science.png" alt="">
-          <img src="assets/icons/politics.png" alt="">
-          <img src="assets/icons/wanderer.png" alt="">
-          <img src="assets/icons/death.png" alt="">
+        <section class="hero-donate" id="donate" aria-label="Donate to Song A Day Studio" tabindex="-1">
+          <div class="match">
+            <h2 class="match-label" id="donate-title">Unlock C.Y. Lee’s match</h2>
+            <p class="match-line">C.Y. Lee went first with $62,500. When the community gives $62,500, he’ll match every dollar after that, up to $37,500 more.</p>
+          </div>
+          <div class="crypto-donate" id="crypto-donate" hidden>
+            <h3>Donate with crypto</h3>
+            <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
+            <button class="crypto-donate-alternative" id="donate-by-card" type="button">Donate by card or bank</button>
+          </div>
+          <div class="zeffy-embed-shell" id="zeffy-donate" tabindex="-1">
+            <!-- Zeffy turns off Apple Pay and Google Pay inside embeds, so phones that can use a wallet get one plain link to Zeffy's own page. -->
+            <p class="wallet-alt" id="wallet-alt" hidden><a href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios?utm_source=songaday.studio&amp;utm_medium=wallet-link">Use <span id="wallet-alt-name">Apple Pay</span> on Zeffy’s page</a></p>
+            <noscript><a class="donation-link" href="https://www.zeffy.com/en-US/donation-form/song-a-day-studios" target="_blank" rel="noreferrer">Donate through Zeffy</a></noscript>
+            <div data-zeffy-embed data-form-url="/embed/donation-form/song-a-day-studios"></div>
+            <div class="zeffy-embed-fallback" data-zeffy-embed-fallback style="display:none;">
+              <div class="zeffy-fallback-frame">
+                <iframe class="zeffy-fallback-iframe" title="Donate to Song A Day Studio" data-zeffy-embed-src="https://www.zeffy.com/embed/donation-form/song-a-day-studios" allowpaymentrequest allowTransparency="true"></iframe>
+              </div>
+            </div>
+          </div>
+          <script
+            defer
+            src="https://www.zeffy.com/embed/v2/zeffy-embed.js"
+            onerror="document.querySelectorAll('[data-zeffy-embed]').forEach(function(el){el.style.display='none';});document.querySelectorAll('[data-zeffy-embed-fallback]').forEach(function(el){el.style.display='block';el.querySelectorAll('iframe[data-zeffy-embed-src]').forEach(function(f){f.src=f.getAttribute('data-zeffy-embed-src');});});">
+          </script>
+        </section>
+      </div>
+    </section>
+
+    <section class="gift-section" id="studios" aria-labelledby="gift-title">
+      <div class="gift-inner">
+        <h2 id="gift-title">What your gift makes</h2>
+        <div class="gift-grid">
+          <a class="gift-card" href="/songs">
+            <img class="gift-card-icon" src="assets/icons/musician.png" alt="" width="56" height="56" loading="lazy" decoding="async">
+            <h3>Songs<span class="nav-out" aria-hidden="true">↗</span></h3>
+            <p><span data-song-day="count">{{SONG_COUNT}}</span> songs and counting, every one under a Creative Commons license.</p>
+          </a>
+          <a class="gift-card" href="/games">
+            <img class="gift-card-icon" src="assets/icons/gamer.png" alt="" width="56" height="56" loading="lazy" decoding="async">
+            <h3>Games<span class="nav-out" aria-hidden="true">↗</span></h3>
+            <p>Game A Day, WAMP, and games about the news.</p>
+          </a>
+          <a class="gift-card" href="/films">
+            <img class="gift-card-icon" src="assets/icons/explorer.png" alt="" width="56" height="56" loading="lazy" decoding="async">
+            <h3>Films<span class="nav-out" aria-hidden="true">↗</span></h3>
+            <p>Mini-docs about making something every day.</p>
+          </a>
+          <a class="gift-card" href="/plugins/">
+            <img class="gift-card-icon" src="assets/icons/science.png" alt="" width="56" height="56" loading="lazy" decoding="async">
+            <h3>Plugins</h3>
+            <p>Novox The Robot makes your computer sing. Free and open source.</p>
+          </a>
         </div>
       </div>
-
-      <dl class="funding-summary" id="goal" aria-label="Annual funding">
-        <div>
-          <dt>C.Y. Lee’s support for this year</dt>
-          <dd>$62,500</dd>
-        </div>
-        <div>
-          <dt>Annual funding goal</dt>
-          <dd>$300,000</dd>
-        </div>
-      </dl>
     </section>
 
     <section class="catalog-ticker" aria-labelledby="catalog-ticker-summary">
@@ -131,7 +124,8 @@
       </div>
     </section>
 
-    <section class="editorial-story" aria-labelledby="business-title">
+    <section class="editorial-story" aria-labelledby="story-title">
+      <h2 class="visually-hidden" id="story-title">The story</h2>
       <div class="editorial-story-grid">
         <div class="business-layout">
           <section class="story-block story-business" aria-labelledby="business-title">
@@ -139,15 +133,15 @@
             <div class="story-copy story-copy-cards">
             <button class="story-text-blob story-video-card" type="button" data-video-id="50R5qPDSXF0" data-video-title="Video contests">
               <span class="story-text-copy">In the early days of Song A Day, I made a living entering video contests.</span>
-              <span class="story-video-note">Watch video <span aria-hidden="true">↗</span></span>
+              <span class="story-video-note">Watch video <span aria-hidden="true">▶</span></span>
             </button>
             <button class="story-text-blob story-video-card" type="button" data-video-id="HCdwY4B3Ln8" data-video-start="1" data-video-title="The Conference Troubadour">
               <span class="story-text-copy">For about 10 years, I went on the conference circuit and became the Conference Troubadour.</span>
-              <span class="story-video-note">Watch video <span aria-hidden="true">↗</span></span>
+              <span class="story-video-note">Watch video <span aria-hidden="true">▶</span></span>
             </button>
             <button class="story-text-blob story-video-card" type="button" data-video-id="WjEB7W1NSTg" data-video-title="The long story">
               <span class="story-text-copy">Then I sold my songs as NFTs, made $3 million, and lost it again (long story).</span>
-              <span class="story-video-note">Watch video <span aria-hidden="true">↗</span></span>
+              <span class="story-video-note">Watch video <span aria-hidden="true">▶</span></span>
             </button>
               <p class="story-text-blob">Commissions used to be a big part of my income, but with the advent of AI-generated music, they've mostly dried up.</p>
             </div>
@@ -196,10 +190,16 @@
               <img class="patronage-box-icon" src="assets/icons/tunes.png" alt="" aria-hidden="true">
             </article>
           </div>
-          <div class="patronage-match">
-            <strong>$100,000</strong>
-            <p>C.Y. Lee’s maximum contribution for the year, including his initial $62,500.</p>
-          </div>
+          <dl class="patronage-match" id="goal" aria-label="Annual funding">
+            <div>
+              <dt>The goal for this year</dt>
+              <dd>$300,000</dd>
+            </div>
+            <div>
+              <dt>C.Y. Lee’s maximum contribution for the year, including his initial $62,500</dt>
+              <dd>$100,000</dd>
+            </div>
+          </dl>
         </section>
 
         <section class="story-block video-games-section" aria-labelledby="video-games-title">
@@ -213,7 +213,7 @@
           <div class="video-games-grid">
             <article class="video-game-card">
               <div class="video-game-card-media">
-                <video src="assets/video/game-a-day-quick-cut.mp4" poster="assets/images/game-a-day-quick-cut-poster.webp" autoplay loop muted playsinline preload="metadata" aria-label="Quick-cut montage of Game A Day projects"></video>
+                <video src="assets/video/game-a-day-quick-cut.mp4" poster="assets/images/game-a-day-quick-cut-poster.webp" loop muted playsinline preload="metadata" aria-label="Quick-cut montage of Game A Day projects"></video>
               </div>
               <div class="video-game-card-copy">
                 <div class="video-game-card-heading">
@@ -235,7 +235,7 @@
                 </div>
                 <p>Since March, I've been working on the game of my dreams: We All Make A Platformer (or WAMP).</p>
                 <p>WAMP already has one employee: an incredible pixel artist named Alex Florez.</p>
-                <span class="video-game-card-action">Watch trailer <span aria-hidden="true">↗</span></span>
+                <span class="video-game-card-action">Watch trailer <span aria-hidden="true">▶</span></span>
               </div>
             </button>
 
@@ -249,7 +249,7 @@
                   <img class="video-game-card-icon" src="assets/icons/politics.png" alt="" aria-hidden="true">
                 </div>
                 <p>Like with Song A Day, I've been making topical games that comment on the news of the day.</p>
-                <span class="video-game-card-action">Watch video <span aria-hidden="true">↗</span></span>
+                <span class="video-game-card-action">Watch video <span aria-hidden="true">▶</span></span>
               </div>
             </button>
           </div>
@@ -270,9 +270,9 @@
       </div>
     </div>
 
-    <section class="work-section studios-section" id="studios" aria-labelledby="studios-title">
+    <section class="work-section studios-section" aria-labelledby="studios-title">
       <div class="section-heading">
-        <h2 id="studios-title">SONG A DAY STUDIOS</h2>
+        <h2 id="studios-title">ALSO FROM THE STUDIO</h2>
       </div>
       <div class="studios-grid">
         <article class="studios-card">
@@ -294,22 +294,33 @@
             <p>This January, I am bringing back #Jamuary: An invitation to make and share one song every day that month.</p>
           </div>
         </article>
+      </div>
+    </section>
 
-        <article class="studios-card">
-          <div class="studios-card-media">
-            <img src="assets/images/songaday-studios.webp" alt="Song A Day Studios graphic with bold black lettering and icons on a red background" loading="lazy" decoding="async">
-          </div>
-          <div class="studios-card-copy">
-            <h3>YOUR DONATION</h3>
-            <p>Your generosity keeps the songs, the games, the experiments chugging along. Who knows what the future holds?!</p>
-          </div>
-        </article>
+    <section class="brand-band" aria-labelledby="brand-band-title">
+      <div class="brand-band-icons" aria-hidden="true">
+        <img src="assets/icons/explorer.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/nature.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/raccoon.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/wanderer.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/death.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/science.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/gamer.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/politics.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/night.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/mythology.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/tunes.png" alt="" loading="lazy" decoding="async">
+        <img src="assets/icons/musician.png" alt="" loading="lazy" decoding="async">
+      </div>
+      <div class="brand-band-copy">
+        <h2 id="brand-band-title">Help me write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span>.</h2>
+        <a class="brand-band-donate" href="#donate">Donate</a>
       </div>
     </section>
 
     <section class="thank-you-section" aria-labelledby="thank-you-title">
       <h2 id="thank-you-title">THANK YOU!</h2>
-      <div class="story-image-trio" aria-label="Song A Day and Game A Day milestones">
+      <div class="story-image-trio" role="group" aria-label="Song A Day and Game A Day milestones">
         <figure class="story-figure story-trio-every-day">
           <img src="assets/images/game-a-day-every-day.webp" alt="Jonathan Mann playing ukulele beneath an Every Day sign" loading="lazy" decoding="async">
           <figcaption>Every day means every day.</figcaption>
@@ -328,16 +339,25 @@
 
   <footer>
     <div>
-      <strong>SONG A DAY STUDIOS</strong>
+      <strong class="footer-word">SONG A DAY<span class="brand-dot">.</span> STUDIO</strong>
       <p>Daily, relentless creativity. Open-source software and music.</p>
     </div>
-    <nav aria-label="Social links">
-      <a href="https://www.youtube.com/channel/UCvj5S3f10rO6CoibatfRGzg" target="_blank" rel="noreferrer">YouTube</a>
-      <a href="https://www.instagram.com/songadaymann/" target="_blank" rel="noreferrer">Instagram</a>
-      <a href="https://x.com/songadaymann" target="_blank" rel="noreferrer">X / Twitter</a>
-      <a href="https://mann.cool" target="_blank" rel="noreferrer">mann.cool</a>
-      <a href="https://wamp.land" target="_blank" rel="noreferrer">WAMP</a>
-    </nav>
-    <p class="sponsor-line">Song A Day Studios is fiscally sponsored by Fridays at The Park.</p>
+    <div class="footer-links">
+      <nav aria-label="Footer sections">
+        <a href="/songs">Songs<span class="nav-out" aria-hidden="true">↗</span></a>
+        <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
+        <a href="/films">Films<span class="nav-out" aria-hidden="true">↗</span></a>
+        <a href="/plugins/">Plugins</a>
+        <a href="#donate">Donate</a>
+      </nav>
+      <nav aria-label="Social links">
+        <a href="https://www.youtube.com/channel/UCvj5S3f10rO6CoibatfRGzg" target="_blank" rel="noreferrer">YouTube</a>
+        <a href="https://www.instagram.com/songadaymann/" target="_blank" rel="noreferrer">Instagram</a>
+        <a href="https://x.com/songadaymann" target="_blank" rel="noreferrer">X / Twitter</a>
+        <a href="https://mann.cool" target="_blank" rel="noreferrer">mann.cool</a>
+        <a href="https://wamp.land" target="_blank" rel="noreferrer">WAMP</a>
+      </nav>
+    </div>
+    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park.</p>
   </footer>
 </div>

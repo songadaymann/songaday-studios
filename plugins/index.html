@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Plugins · Song A Day Studios</title>
+<title>Plugins · Song A Day Studio</title>
 <meta name="description" content="Open source plugins by Jonathan Mann. Novox The Robot: make your computer sing.">
 <meta property="og:title" content="Novox The Robot: Make Your Computer Sing">
 <meta property="og:description" content="Free, open source singing robot for Mac. Type lyrics, draw notes or sing into it. App, Audio Unit and VST3.">
@@ -121,9 +121,51 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
   .gel.default { width: 100%; }
   .two { grid-template-columns: 1fr; }
 }
+
+/* The songaday.studio site header, kept in step with profile.html and profile.css. Its own font
+   stack, so the Aqua page's Lucida Grande doesn't leak in. */
+.site-header {
+  --red: #ff2445;
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem);
+  min-height: 68px; padding: .5rem max(clamp(1rem, 4vw, 3rem), calc((100% - 1200px) / 2)); border-bottom: 4px solid var(--red); background: #000; color: #fff;
+  font: 400 16px/1.5 "Aperçu", "Apercu", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+}
+.site-header a { color: inherit; text-underline-offset: .2em; }
+.site-header a:focus-visible { outline: 4px solid var(--red); outline-offset: 4px; }
+.site-header .brand { display: flex; flex: none; align-items: center; gap: .7rem; margin-right: auto; font-size: 16px; font-weight: 700; letter-spacing: .02em; text-decoration: none; white-space: nowrap; }
+.site-header .brand-mark { width: 44px; height: 44px; object-fit: contain; transform: rotate(-5deg); }
+.site-header .brand-dot { color: var(--red); }
+.site-sections { display: flex; align-items: center; gap: clamp(1rem, 2.2vw, 1.75rem); }
+.site-sections a { display: inline-flex; align-items: center; min-height: 44px; border-bottom: 2px solid transparent; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; white-space: nowrap; }
+.site-sections a:hover, .site-sections a[aria-current="page"] { border-bottom-color: var(--red); }
+.site-header .nav-out { margin-left: .25em; font-weight: 400; opacity: .6; }
+.site-header .nav-donate { flex: none; padding: .8rem 1.15rem; background: #e6203f; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .06em; line-height: 1; text-decoration: none; text-transform: uppercase; }
+.site-header .nav-donate:hover { background: #fff; color: #000; }
+@media (max-width: 760px) {
+  .site-header { top: -41px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "sections sections" "brand donate"; gap: 0 .75rem; min-height: 0; padding: 0 16px .55rem; }
+  .site-header:focus-within { top: 0; }
+  .site-sections { grid-area: sections; justify-content: space-between; gap: .5rem; height: 41px; margin: 0 -16px .55rem; padding: 0 16px; border-bottom: 1px solid #2a2a2a; }
+  .site-sections a { min-height: 40px; font-size: 12px; letter-spacing: .05em; }
+  .site-header .brand { grid-area: brand; min-width: 0; gap: .55rem; font-size: 14px; }
+  .site-header .brand-mark { width: 34px; height: 34px; }
+  .site-header .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: 12px; }
+}
 </style>
 </head>
 <body>
+<header class="site-header">
+  <a class="brand" href="/" aria-label="Song A Day Studio home">
+    <img class="brand-mark" src="/assets/icons/tunes.png" alt="" width="50" height="50">
+    <span class="brand-word">SONG A DAY<span class="brand-dot">.</span> STUDIO</span>
+  </a>
+  <nav class="site-sections" aria-label="Sections">
+    <a href="/songs">Songs<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/films">Films<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/plugins/" aria-current="page">Plugins</a>
+  </nav>
+  <a class="nav-donate" href="/#donate">Donate</a>
+</header>
 <div class="desk">
   <div class="window">
     <div class="titlebar"><span class="lights" aria-hidden="true"><i class="close"></i><i class="min"></i><i class="zoom"></i></span>Plugins</div>
@@ -185,7 +227,7 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
       </section>
     </main>
   </div>
-  <footer>© 2026 Jonathan Mann · <a href="https://songaday.studio">Song A Day Studios</a></footer>
+  <footer>© 2026 Jonathan Mann · <a href="https://songaday.studio">Song A Day Studio</a></footer>
 </div>
 </body>
 </html>

@@ -1,6 +1,6 @@
-# Song A Day Studios
+# Song A Day Studio
 
-Standalone site source for Song A Day Studios. This project intentionally lives
+Standalone site source for Song A Day Studio (songaday.studio). This project intentionally lives
 outside the Fridays at The Park app.
 
 ## Files
@@ -14,11 +14,30 @@ outside the Fridays at The Park app.
 - `song-day.mjs` — shared daily song-number calculation for the browser and Worker
 - `plugins/index.html` — the plugin downloads page (songaday.studio/plugins), a standalone static
   page; its images are in `assets/plugins/`. Downloads come from each project's GitHub releases.
+  Its site header is a copy of the one in `profile.html`; `tests/site.test.mjs` checks their section links match.
+- `worker.mjs` — the Cloudflare Worker: redirects, section links, and today's song number
 
-Requires Node.js 22 or newer. Run date-boundary checks with:
+## Sections
+
+The header links to section URLs on songaday.studio. Until a section has its own page, the
+Worker sends it on with a temporary (302) redirect, so the URL can become a real page later:
+
+| URL | Goes to |
+| --- | --- |
+| `/songs` | https://gallery.songaday.world/ |
+| `/games` | https://mann.cool/ |
+| `/films` | the YouTube channel's videos (mini-docs) |
+| `/mini-docs` | `/films` |
+| `/plugins/` | `plugins/index.html` |
+| `/donate` | `/#donate`, the gift form on the home page |
+
+Change a destination in `SECTION_REDIRECTS` in `worker.mjs`. When a section gets its own page,
+delete its line there and add the page under `dist/` in `build-production.mjs`.
+
+Requires Node.js 22 or newer. Run the tests with:
 
 ```bash
-node --test tests/song-day.test.mjs
+node --test tests/*.test.mjs
 ```
 
 The headline counts calendar days from January 1, 2009 (Song A Day #1), matching
@@ -41,7 +60,11 @@ node build.mjs
 python3 -m http.server 3000
 ```
 
-Then open <http://localhost:3000/>.
+Then open <http://localhost:3000/>. The section links need the Worker; to try them,
+run `node build-production.mjs` and then `wrangler dev --local-upstream localhost`.
+(Without `--local-upstream`, wrangler dev presents requests as http://songaday.studio and the
+https redirect loops. An older wrangler that rejects the compatibility date also needs
+`--compatibility-date` set to one it supports.)
 
 After editing `profile.html`, `profile.css`, or `profile.js`, run
 `node build.mjs` again. The static server will serve the refreshed page.
@@ -58,8 +81,12 @@ must already expose an authorized account through the passive `eth_accounts`
 method. Detection never requests wallet access. Wallet visitors can choose
 "Donate by card or bank" to return to Zeffy for the rest of the page visit.
 
-The annual funding figures are static in `profile.html`: C.Y. Lee's $62,500
-contribution for the year and the $300,000 annual goal. His contribution can
+Zeffy doesn't offer Apple Pay or Google Pay inside embedded forms, and its own page
+only shows them below 900px wide in Safari. So phones that can use a wallet see one
+plain link above the form ("Use Apple Pay on Zeffy's page"), and nobody else does.
+
+The funding figures are static in `profile.html`: the match line above the form,
+and the $300,000 annual goal next to C.Y. Lee's $100,000 in the Patronage section. His contribution can
 increase to $100,000 in total: after community contributions reach $62,500,
 additional contributions are matched dollar for dollar, up to another $37,500.
 

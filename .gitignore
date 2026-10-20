@@ -44,3 +44,6 @@ venv/
 # Generated standalone page and private media alias
 /index.html
 /assets
+
+# Local preview config for the Claude desktop app
+.claude/launch.json
