@@ -47,7 +47,8 @@ async function ask(question, choices) {
     process.stdout.write(question);
     const { value, done } = await lines.next();
     if (done) process.exit(0);
-    const answer = value.trim().toLowerCase();
+    // Arrow keys and other escape sequences come through as text here, so only letters count.
+    const answer = value.replace(/\x1b(?:\[[0-9;]*[A-Za-z~]|O.)?/g, '').replace(/[^a-z]/gi, '').toLowerCase();
     if (!process.stdin.isTTY) console.log(answer);
     if (choices.includes(answer[0])) return answer[0];
   }
