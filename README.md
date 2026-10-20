@@ -16,6 +16,8 @@ outside the Fridays at The Park app.
   page; its images are in `assets/plugins/`. Downloads come from each project's GitHub releases.
   Its site header is a copy of the one in `profile.html`; `tests/site.test.mjs` checks their section links match.
 - `worker.mjs` — the Cloudflare Worker: redirects, section links, and today's song number
+- `fumble.mjs`, `fumble-page.mjs`, `fumble-approve.mjs`, `migrations/` — the Fumble page
+  (songaday.studio/fumble); see below
 
 ## Sections
 
@@ -71,6 +73,53 @@ After editing `profile.html`, `profile.css`, or `profile.js`, run
 
 The page includes external embeds and links, so use the local HTTP server
 rather than opening `index.html` directly from Finder.
+
+## Fumble
+
+https://songaday.studio/fumble is The Museum of Fumbled Bags: visitors post anonymous stories
+about the one that got away. Nothing goes up until Jonathan reads it, and each story he
+publishes gets a painting made by Codex.
+
+- `fumble.mjs` answers everything under `/fumble`: the page, posting, single stories at
+  `/fumble/<number>`, and paintings at `/fumble/images/<key>`. `fumble-page.mjs` is its HTML.
+- A post needs a Turnstile check, has a length limit, and can't contain links or wallet
+  addresses. It's limited to 3 a minute per visitor, and posting pauses while 300 stories are
+  waiting. Stories are stored with only the date they were sent: no IP address, account, or time.
+- Stories are in the D1 database `songaday-fumble` (schema in `migrations/`); paintings are in
+  the R2 bucket `songaday-fumble`.
+
+To review waiting stories:
+
+```bash
+node fumble-approve.mjs
+```
+
+For each story: publish, edit (opens `$EDITOR`, for taking out a name), delete, or skip.
+Publishing has Codex paint the story with your ChatGPT sign-in (no API key; it uses Codex's
+plan limits), opens the painting, and asks to use it, paint again, or publish without one. The
+painting style is `STYLE` at the top of `fumble-approve.mjs`. A copy of each painting is kept in
+the ignored `output/fumble/`. `node fumble-approve.mjs --paint` paints published stories that
+don't have one yet, and `--paint 12` paints Fumble No. 12 again. Add `--local` to work against
+`wrangler dev`'s local database and bucket.
+
+The script needs Codex signed in with ChatGPT (`codex login`). Codex CLI builds older than the
+ChatGPT app's can't use the current models with a ChatGPT sign-in, so the script uses the copy
+inside `/Applications/ChatGPT.app` when it's there; set `CODEX_BIN` to use another.
+
+To try it locally, put Cloudflare's always-pass Turnstile test keys
+(https://developers.cloudflare.com/turnstile/troubleshooting/testing/) in `.dev.vars` as
+`TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (see `.env.example`), then:
+
+```bash
+wrangler d1 migrations apply songaday-fumble --local
+node build-production.mjs
+wrangler dev --local-upstream localhost
+```
+
+Setting it up on a new Cloudflare account: `wrangler d1 create songaday-fumble` (put its id in
+`wrangler.jsonc`), `wrangler r2 bucket create songaday-fumble`, `wrangler d1 migrations apply
+songaday-fumble --remote`, create a Turnstile widget for the domain (`wrangler turnstile widget
+create`) and put its site key in `wrangler.jsonc`, then `wrangler secret put TURNSTILE_SECRET_KEY`.
 
 ## Donations
 

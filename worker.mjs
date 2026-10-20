@@ -1,4 +1,5 @@
 import { songADayNumber } from './song-day.mjs';
+import { handleFumble } from './fumble.mjs';
 
 // Section URLs live on songaday.studio so they can become real pages later.
 // Temporary (302, no-store) redirects so browsers don't cache them for good.
@@ -34,6 +35,10 @@ export default {
         headers: { Location: location, 'Cache-Control': 'no-store' }
       });
     }
+
+    // songaday.studio/fumble: anonymous bag-fumble stories (fumble.mjs).
+    const fumble = await handleFumble(request, env, url);
+    if (fumble) return fumble;
 
     const response = await env.ASSETS.fetch(request);
     if (!response.headers.get('Content-Type')?.includes('text/html')) return response;

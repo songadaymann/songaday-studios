@@ -7,6 +7,32 @@
     "binding": "ASSETS",
     "run_worker_first": true
   },
+  // songaday.studio/fumble (fumble.mjs): stories in D1, their paintings in R2.
+  "r2_buckets": [
+    {
+      "binding": "FUMBLE_IMAGES",
+      "bucket_name": "songaday-fumble"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "FUMBLE_DB",
+      "database_name": "songaday-fumble",
+      "database_id": "016edff4-1274-406c-bcc4-32a14aa04a91"
+    }
+  ],
+  // Per visitor IP, counted but never stored: 3 posts a minute.
+  "ratelimits": [
+    {
+      "name": "FUMBLE_LIMIT",
+      "namespace_id": "20261020",
+      "simple": { "limit": 3, "period": 60 }
+    }
+  ],
+  // Public Turnstile site key. The secret is a Worker secret: `wrangler secret put TURNSTILE_SECRET_KEY`.
+  "vars": {
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFdspSacH0xXspAj"
+  },
   "routes": [
     {
       "pattern": "songaday.studio",
