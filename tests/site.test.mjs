@@ -316,4 +316,8 @@ test('every link on the links page goes somewhere', async () => {
   }
   assert.match(html, /id="today"/);
   assert.match(html, /data-song-day="today"/);
+  // Song A Day's streaming pages (Spotify lists it as "Song a Day", Apple Music as Jonathan Mann).
+  assert.match(html, /open\.spotify\.com\/artist\/4O4Rkb6K3ppeXyVvD6zBJA/);
+  assert.match(html, /music\.apple\.com\/us\/artist\/jonathan-mann\/188742143/);
+  assert.doesNotMatch(html, /patreon/i);
 });
