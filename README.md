@@ -58,6 +58,7 @@ real page, later:
 | `/albums` | https://jonathanmann.bandcamp.com/music |
 | `/discord` | https://discord.gg/rGTQH7mFNS |
 | `/me` | https://www.jonathanmann.net/ |
+| `/motba` | https://motba.art/ |
 | `/films/` | `films/index.html`, built from `films.html` |
 | `/mini-docs` | `/films/` |
 | `/plugins/` | `plugins/index.html` |

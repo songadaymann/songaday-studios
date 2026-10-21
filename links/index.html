@@ -62,11 +62,21 @@ h1 { margin: 4px 0 0; font-size: 1.75rem; font-weight: 700; letter-spacing: -.04
 .link-give > span, .link-give::after { color: var(--white); }
 .link-give:hover, .link-give:active { border-color: var(--white); }
 
+/* Games, WAMP, Plugins and Films: what most people tap from a bio, so they're big squares. */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 6px 6px 6px 0; }
+.tile { display: flex; flex-direction: column; gap: 4px; aspect-ratio: 1 / 1; min-width: 0; padding: 14px; border: 3px solid var(--white); box-shadow: 6px 6px 0 var(--red); text-decoration: none; }
+.tile img { width: 48px; height: 48px; margin-bottom: auto; }
+.tile strong { font-size: 1.35rem; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+.tile span { color: var(--muted); font-size: .8125rem; line-height: 1.3; }
+.tile:hover, .tile:active { border-color: var(--red-button); background: var(--red-button); }
+.tile:hover span, .tile:active span { color: var(--white); }
+.tile:hover img, .tile:active img { filter: brightness(0) invert(1); }
+
 .group { margin: 14px 0 0; color: var(--muted); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 
 footer { display: grid; justify-items: center; gap: 10px; margin-top: 20px; text-align: center; }
-footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; }
-footer nav a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; }
+footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; }
+footer nav a { display: inline-flex; align-items: center; min-height: 44px; font-size: .9375rem; font-weight: 700; }
 footer p { margin: 0; color: var(--muted); font-size: .8125rem; }
 footer p a { display: inline-flex; align-items: center; min-height: 44px; }
 </style>
@@ -84,7 +94,14 @@ footer p a { display: inline-flex; align-items: center; min-height: 44px; }
     <a class="link" href="https://www.youtube.com/channel/UCvj5S3f10rO6CoibatfRGzg"><strong>Today’s song</strong><span>On YouTube, like every one since 2009.</span></a>
   </div>
 
-  <a class="link link-give" href="/donate"><strong>Help me write #<span data-song-day="tomorrow">6504</span></strong><span>Tax-deductible, monthly or once.</span></a>
+  <a class="link link-give" href="/donate"><strong>Help me write #<span data-song-day="tomorrow">6504</span></strong><span>Become a monthly supporter. First goal: $3,000 a month.</span></a>
+
+  <div class="tiles">
+    <a class="tile" href="/games"><img src="/assets/icons/96/gamer.png" alt="" width="48" height="48"><strong>Games</strong><span>Free browser games.</span></a>
+    <a class="tile" href="/wamp"><img src="/assets/icons/96/mythology.png" alt="" width="48" height="48"><strong>WAMP</strong><span>A platformer we all build together.</span></a>
+    <a class="tile" href="/plugins/"><img src="/assets/icons/96/science.png" alt="" width="48" height="48"><strong>Plugins</strong><span>Free music software, like Novox The Robot.</span></a>
+    <a class="tile" href="/films/"><img src="/assets/icons/96/explorer.png" alt="" width="48" height="48"><strong>Films</strong><span>Mini-docs about making something every day.</span></a>
+  </div>
 
   <p class="group">The songs</p>
   <a class="link" href="/all"><strong>Every song</strong><span>All <span data-song-day="count">6,503</span> of them, searchable.</span></a>
@@ -92,14 +109,10 @@ footer p a { display: inline-flex; align-items: center; min-height: 44px; }
   <a class="link" href="/suggest"><strong>Suggest tomorrow’s song</strong><span>Tell me what to write about.</span></a>
   <a class="link" href="/commission"><strong>Get a song written for you</strong><span>A birthday, a wedding, a thank you.</span></a>
   <a class="link" href="/albums"><strong>Albums</strong><span>Every year of Song A Day on Bandcamp.</span></a>
-  <a class="link" href="/jamuary"><strong>Jamuary</strong><span>Make a song every day in January with me.</span></a>
+  <a class="link" href="/jamuary"><strong>Jamuary</strong><span>Make and share a song every day in January.</span></a>
 
-  <p class="group">Everything else I make</p>
-  <a class="link" href="/games"><strong>Games</strong><span>Browser games, free to play.</span></a>
-  <a class="link" href="/wamp"><strong>WAMP</strong><span>We All Make A Platformer: a game we build together.</span></a>
-  <a class="link" href="/plugins/"><strong>Free music plugins</strong><span>Novox The Robot makes your computer sing.</span></a>
-  <a class="link" href="/films/"><strong>Films</strong><span>Mini-docs about making something every day.</span></a>
-  <a class="link" href="/discord"><strong>Discord</strong><span>Hang out with other Song A Day people.</span></a>
+  <p class="group">Everything else</p>
+  <a class="link" href="/motba"><strong>MOTBA</strong><span>The Museum of Time Based Art, for art made over time.</span></a>
 
   <footer>
     <nav aria-label="Social links">
@@ -107,6 +120,7 @@ footer p a { display: inline-flex; align-items: center; min-height: 44px; }
       <a href="https://www.instagram.com/jonathanmann/">Instagram</a>
       <a href="https://x.com/songadaymann">X</a>
       <a href="https://bsky.app/profile/songaday.world">Bluesky</a>
+      <a href="/discord">Discord</a>
     </nav>
     <p><a href="/">songaday.studio</a></p>
   </footer>

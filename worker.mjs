@@ -24,6 +24,7 @@ const SECTION_REDIRECTS = {
   '/albums': 'https://jonathanmann.bandcamp.com/music',
   '/discord': 'https://discord.gg/rGTQH7mFNS',
   '/me': 'https://www.jonathanmann.net/',
+  '/motba': 'https://motba.art/',
   '/mini-docs': '/films/',
   '/donate': '/#donate'
 };
