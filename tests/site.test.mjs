@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import worker from '../worker.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from '../films.mjs';
-import { SONGS_FEED_URL, latestSong, renderTodaySong } from '../today-song.mjs';
+import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from '../today-song.mjs';
 import { renderCalendar, songNumberFor, yearImageSize } from '../calendar.mjs';
 import { songADayNumber } from '../song-day.mjs';
 
@@ -82,8 +82,8 @@ test('HTML pages answer GET and HEAD with fresh, uncached headers', async () => 
   }
 });
 
-test('the plugins and films pages and assets still come from static assets', async () => {
-  for (const path of ['/plugins/', '/films/', '/assets/icons/tunes.png', '/songs-about-cats']) {
+test('the plugins, films and links pages and assets still come from static assets', async () => {
+  for (const path of ['/plugins/', '/films/', '/links/', '/assets/icons/tunes.png', '/songs-about-cats']) {
     const response = await fetchPath(path);
     assert.equal(response.status, 200, path);
     assert.equal(await response.text(), 'asset', path);
@@ -136,11 +136,11 @@ test('the films feed is read in playlist order and rendered safely', async () =>
   assert.match(html, /&lt;script&gt;&quot;x&quot;&lt;\/script&gt;/);
 });
 
-test('any spelling of /films lands on /films/', async () => {
-  for (const path of ['/films', '/Films', '/FILMS/']) {
+test('any spelling of /films or /links lands on the page', async () => {
+  for (const path of ['/films', '/Films', '/FILMS/', '/links', '/Links', '/LINKS/']) {
     const response = await fetchPath(path + '?from=x');
     assert.equal(response.status, 302, path);
-    assert.equal(response.headers.get('Location'), '/films/?from=x', path);
+    assert.equal(response.headers.get('Location'), path.replace(/\/$/, '').toLowerCase() + '/?from=x', path);
   }
 });
 
@@ -276,4 +276,43 @@ test('calendar.json has every year from 2009 and no songs from the future', asyn
   assert.deepEqual(calendar.years.map((entry) => entry.year), calendar.years.map((_, index) => 2009 + index));
   assert.ok(calendar.years.reduce((sum, entry) => sum + entry.songs, 0) <= calendar.through);
   assert.ok(calendar.through <= songADayNumber());
+});
+
+test('the links page gets today’s song as a YouTube link', async () => {
+  const feed = await readFile(new URL('tests/fixtures/songs-feed.xml', root), 'utf8');
+  const realFetch = globalThis.fetch;
+  const handlers = [];
+  globalThis.fetch = async () => new Response(feed);
+  globalThis.HTMLRewriter = class {
+    on(selector, handler) { handlers.push({ selector, handler }); return this; }
+    transform(response) { return response; }
+  };
+  const env = { ASSETS: { fetch: async () => new Response('<div id="today"></div>', { headers: { 'Content-Type': 'text/html' } }) } };
+  try {
+    await worker.fetch(new Request('https://songaday.studio/links/'), env);
+    let html = null;
+    await handlers.find((entry) => entry.selector === '#today').handler.element({ setInnerContent(content) { html = content; } });
+    assert.match(html, /<a class="song" href="https:\/\/www\.youtube\.com\/watch\?v=VNWfqsdMXl8">/);
+    assert.doesNotMatch(html, /<button/);
+  } finally {
+    globalThis.fetch = realFetch;
+    delete globalThis.HTMLRewriter;
+  }
+
+  const song = { id: 'VNWfqsdMXl8', title: 'A & B', number: 6503 };
+  assert.match(renderTodaySongLink(song, 6503), /Today’s song[\s\S]*A &amp; B[\s\S]*#6,503 · Oct 21, 2026/);
+  assert.match(renderTodaySongLink(song, 6504), /Latest song/);
+});
+
+test('every link on the links page goes somewhere', async () => {
+  const html = await readFile(new URL('links/index.html', root), 'utf8');
+  const local = [...html.matchAll(/href="(\/[^"]*)"/g)].map((match) => match[1]).filter((href) => !href.startsWith('/assets/'));
+  assert.ok(local.length >= 10);
+  for (const href of local) {
+    const response = await fetchPath(href);
+    assert.ok([200, 302].includes(response.status), href);
+    if (response.status === 302) assert.ok(response.headers.get('Location'), href);
+  }
+  assert.match(html, /id="today"/);
+  assert.match(html, /data-song-day="today"/);
 });

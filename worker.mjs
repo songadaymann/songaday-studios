@@ -2,7 +2,7 @@ import { songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 import { handleFumble } from './fumble.mjs';
-import { SONGS_FEED_URL, latestSong, renderTodaySong } from './today-song.mjs';
+import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from './today-song.mjs';
 import { songDate } from './calendar.mjs';
 
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
@@ -105,14 +105,14 @@ export default {
     const fumble = await handleFumble(request, env, url);
     if (fumble) return fumble;
 
-    // /Films, /FILMS/ etc. land on the Films page (the section redirects above ignore case too).
-    if (path === '/films' && url.pathname !== '/films/') {
-      return new Response(null, { status: 302, headers: { Location: '/films/' + url.search, 'Cache-Control': 'no-store' } });
+    // /Films, /LINKS/ etc. land on the page itself (the section redirects above ignore case too).
+    if ((path === '/films' || path === '/links') && url.pathname !== path + '/') {
+      return new Response(null, { status: 302, headers: { Location: path + '/' + url.search, 'Cache-Control': 'no-store' } });
     }
 
     // Fetch the live feeds alongside the page, so the top of the page streams without waiting on YouTube.
     const filmsPromise = path === '/films' && request.method === 'GET' ? liveFilms() : null;
-    const songPromise = path === '/' && request.method === 'GET' ? liveLatestSong() : null;
+    const songPromise = (path === '/' || path === '/links') && request.method === 'GET' ? liveLatestSong() : null;
     const response = await env.ASSETS.fetch(request);
     if (!response.headers.get('Content-Type')?.includes('text/html')) return response;
 
@@ -139,7 +139,8 @@ export default {
       rewriter.on('#today', {
         async element(element) {
           const song = await songPromise;
-          if (song) element.setInnerContent(renderTodaySong(song, number), { html: true });
+          const render = path === '/links' ? renderTodaySongLink : renderTodaySong;
+          if (song) element.setInnerContent(render(song, number), { html: true });
         }
       });
     }
