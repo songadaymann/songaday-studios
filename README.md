@@ -17,6 +17,10 @@ outside the Fridays at The Park app.
 - `today-song.mjs` — the "Today's song" card under the headline: the newest "Title | Song A Day
   #N" upload on the YouTube channel. It plays in the page's video modal. The Worker re-reads the
   channel feed (cached for ten minutes), so the card changes soon after the day's song goes up.
+- `links/index.html` — the bio link page (songaday.studio/links) for Instagram, TikTok and X: one
+  phone-sized column of links with a line each, today's song at the top. A standalone static
+  page with no script or web fonts. The Worker fills in today's song (as a YouTube link) and its
+  number. Its links use the short addresses below, so changing one there changes it here too.
 - `calendar.mjs`, `build-calendar.mjs`, `calendar.json` — "This is all of it": every song as
   one picture, an image per year; see "Calendar" below
 - `plugins/index.html` — the plugin downloads page (songaday.studio/plugins), a standalone static
@@ -54,9 +58,11 @@ real page, later:
 | `/albums` | https://jonathanmann.bandcamp.com/music |
 | `/discord` | https://discord.gg/rGTQH7mFNS |
 | `/me` | https://www.jonathanmann.net/ |
+| `/motba` | https://motba.art/ |
 | `/films/` | `films/index.html`, built from `films.html` |
 | `/mini-docs` | `/films/` |
 | `/plugins/` | `plugins/index.html` |
+| `/links/` | `links/index.html`, the bio link page |
 | `/donate` | `/#donate`, the gift form on the home page |
 
 Change a destination in `SECTION_REDIRECTS` in `worker.mjs`. When a section gets its own page,

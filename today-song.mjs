@@ -24,15 +24,37 @@ export function latestSong(xml) {
 export function renderTodaySong(song, today) {
   const title = escapeHtml(song.title);
   const id = escapeHtml(song.id);
-  const label = song.number === today ? 'Today’s song' : 'Latest song';
   return `<button class="today-song-play" type="button" data-video-id="${id}" data-video-title="Song A Day #${song.number}: ${title}">
   <span class="today-song-thumb"><img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" width="320" height="180" decoding="async"><span class="today-song-icon" aria-hidden="true"></span></span>
   <span class="today-song-copy">
-    <span class="today-song-label">${label}</span>
+    <span class="today-song-label">${songLabel(song, today)}</span>
     <span class="today-song-title">${title}</span>
-    <span class="today-song-meta">#${song.number.toLocaleString('en-US')} · ${formatSongDate(song.number)}</span>
+    <span class="today-song-meta">${songMeta(song)}</span>
   </span>
 </button>`;
+}
+
+// The same song for links/index.html, the bio link page. It has no video modal, so the card is
+// a plain link that opens YouTube (or its app).
+export function renderTodaySongLink(song, today) {
+  const title = escapeHtml(song.title);
+  const id = escapeHtml(song.id);
+  return `<a class="song" href="https://www.youtube.com/watch?v=${id}">
+  <span class="song-thumb"><img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" width="320" height="180"><span class="song-play" aria-hidden="true"></span></span>
+  <span class="song-copy">
+    <span class="song-label">${songLabel(song, today)}</span>
+    <span class="song-title">${title}</span>
+    <span class="song-meta">${songMeta(song)}</span>
+  </span>
+</a>`;
+}
+
+function songLabel(song, today) {
+  return song.number === today ? 'Today’s song' : 'Latest song';
+}
+
+function songMeta(song) {
+  return `#${song.number.toLocaleString('en-US')} · ${formatSongDate(song.number)}`;
 }
 
 export const TODAY_SONG_FALLBACK = `<a class="today-song-fallback" href="${SONGS_CHANNEL_URL}">Watch today’s song on YouTube<span class="nav-out" aria-hidden="true">↗</span></a>`;

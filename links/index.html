@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' https: data:; style-src 'unsafe-inline';">
+<title>Jonathan Mann · Song A Day</title>
+<meta name="description" content="Jonathan Mann has written a song every day since January 1, 2009. Today's song, every song, games, plugins, and how to help.">
+<meta property="og:title" content="Jonathan Mann · Song A Day">
+<meta property="og:description" content="A song every day since January 1, 2009.">
+<meta property="og:url" content="https://songaday.studio/links/">
+<link rel="icon" href="/assets/icons/tunes.png">
+<style>
+/* The bio link for Instagram, TikTok and X: one narrow column of big tap targets. No script;
+   the Worker fills in today's song and its number. */
+:root {
+  --ink: #000;
+  --white: #fff;
+  --muted: rgba(255, 255, 255, .7);
+  --hairline: rgba(255, 255, 255, .22);
+  --red: #ff2445;
+  --red-button: #e6203f;
+  --font: "Song A Day Apercu", "Aperçu", "Apercu", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+}
+@font-face { font-family: "Song A Day Apercu"; src: local("Aperçu Regular"), local("Apercu Regular"), local("Aperçu"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Song A Day Apercu"; src: local("Aperçu Bold"), local("Apercu Bold"); font-weight: 700; font-display: swap; }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; background: var(--ink); }
+body {
+  margin: 0; background: var(--ink); color: var(--white); font: 400 1rem/1.4 var(--font);
+  padding: max(28px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+a { color: inherit; }
+a:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+main { display: grid; gap: 12px; max-width: 480px; margin: 0 auto; }
+
+.intro { display: grid; justify-items: center; gap: 6px; margin-bottom: 8px; text-align: center; }
+.intro img { width: 64px; height: 64px; transform: rotate(-5deg); }
+h1 { margin: 4px 0 0; font-size: 1.75rem; font-weight: 700; letter-spacing: -.04em; line-height: 1; }
+.intro p { margin: 0; color: var(--muted); }
+.intro .number { color: var(--white); font-weight: 700; }
+.intro .number span { color: var(--red); }
+
+.song { display: grid; overflow: hidden; border: 3px solid var(--white); text-decoration: none; }
+.song-thumb { position: relative; display: block; aspect-ratio: 16 / 9; background: #1a1a1a; }
+.song-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.song-play { position: absolute; top: 50%; left: 50%; width: 56px; height: 56px; border: 3px solid var(--white); border-radius: 50%; background: rgba(0, 0, 0, .72); transform: translate(-50%, -50%); }
+.song-play::after { content: ""; position: absolute; top: 50%; left: 54%; border-style: solid; border-width: 10px 0 10px 16px; border-color: transparent transparent transparent var(--white); transform: translate(-50%, -50%); }
+.song-copy { display: grid; gap: 2px; padding: 12px 14px 14px; }
+.song-label { color: var(--red); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.song-title { font-size: 1.15rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.song-meta { color: var(--muted); font-size: .875rem; font-variant-numeric: tabular-nums; }
+.song:active .song-play { background: var(--red-button); }
+
+.link { display: grid; gap: 2px; min-height: 64px; align-content: center; padding: 12px 44px 12px 16px; position: relative; border: 2px solid var(--hairline); text-decoration: none; }
+.link::after { content: "→"; position: absolute; top: 50%; right: 16px; transform: translateY(-50%); color: var(--muted); font-size: 1.2rem; }
+.link strong { font-size: 1.0625rem; font-weight: 700; line-height: 1.2; }
+.link > span { color: var(--muted); font-size: .875rem; line-height: 1.3; }
+.link:hover, .link:active { border-color: var(--white); }
+.link-red { border-color: var(--red-button); background: var(--red-button); }
+.link-red > span, .link-red::after { color: var(--white); }
+.link-red:hover, .link-red:active { border-color: var(--white); }
+
+/* Games, WAMP, Plugins and Films: what most people tap from a bio, so they're big squares. */
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 6px 6px 6px 0; }
+.tile { display: flex; flex-direction: column; gap: 4px; aspect-ratio: 1 / 1; min-width: 0; padding: 14px; border: 3px solid var(--white); box-shadow: 6px 6px 0 var(--red); text-decoration: none; }
+.tile img { width: 48px; height: 48px; margin-bottom: auto; }
+.tile strong { font-size: 1.35rem; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+.tile span { color: var(--muted); font-size: .8125rem; line-height: 1.3; }
+.tile:hover, .tile:active { border-color: var(--red-button); background: var(--red-button); }
+.tile:hover span, .tile:active span { color: var(--white); }
+.tile:hover img, .tile:active img { filter: brightness(0) invert(1); }
+
+.group { margin: 14px 0 0; color: var(--muted); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+/* Streaming services and socials use white Simple Icons logos (assets/brand/icons/, see ASSETS.md). */
+.stream { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; }
+.stream a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 88px; padding: 12px 8px; border: 2px solid var(--hairline); font-size: .9375rem; font-weight: 700; text-align: center; text-decoration: none; }
+.stream img { width: 28px; height: 28px; }
+.stream a:hover, .stream a:active { border-color: var(--white); }
+
+footer { display: grid; justify-items: center; gap: 10px; margin-top: 20px; text-align: center; }
+footer nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; }
+footer nav a { display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; opacity: .85; }
+footer nav a:hover, footer nav a:active { opacity: 1; }
+footer nav img { width: 24px; height: 24px; }
+footer p { margin: 0; color: var(--muted); font-size: .8125rem; }
+footer p a { display: inline-flex; align-items: center; min-height: 44px; }
+</style>
+</head>
+<body>
+<main>
+  <header class="intro">
+    <img src="/assets/icons/tunes.png" alt="" width="64" height="64">
+    <h1>Jonathan Mann</h1>
+    <p>I’ve written a song every day since January&nbsp;1,&nbsp;2009.</p>
+    <p class="number">Today is Song A Day <span>#<span data-song-day="today">6503</span></span></p>
+  </header>
+
+  <div id="today">
+    <a class="link" href="https://www.youtube.com/channel/UCvj5S3f10rO6CoibatfRGzg"><strong>Today’s song</strong><span>On YouTube, like every one since 2009.</span></a>
+  </div>
+
+  <a class="link link-red" href="/donate"><strong>Help me write #<span data-song-day="tomorrow">6504</span></strong><span>Become a monthly supporter. First goal: $3,000 a month.</span></a>
+
+  <div class="tiles">
+    <a class="tile" href="/games"><img src="/assets/icons/96/gamer.png" alt="" width="48" height="48"><strong>Games</strong><span>Free browser games.</span></a>
+    <a class="tile" href="/wamp"><img src="/assets/icons/96/mythology.png" alt="" width="48" height="48"><strong>WAMP</strong><span>A platformer we all build together.</span></a>
+    <a class="tile" href="/plugins/"><img src="/assets/icons/96/science.png" alt="" width="48" height="48"><strong>Plugins</strong><span>Free music software, like Novox The Robot.</span></a>
+    <a class="tile" href="/films/"><img src="/assets/icons/96/explorer.png" alt="" width="48" height="48"><strong>Films</strong><span>Mini-docs about making something every day.</span></a>
+  </div>
+
+  <p class="group">The songs</p>
+  <a class="link link-red" href="/commission"><strong>Get a song written for you</strong><span>A birthday, a wedding, a thank you.</span></a>
+  <a class="link" href="/all"><strong>Every song</strong><span>All <span data-song-day="count">6,503</span> of them, searchable.</span></a>
+  <a class="link" href="/listen"><strong>Listen to every one</strong><span>Front to back, rating each one as you go.</span></a>
+  <a class="link" href="/suggest"><strong>Suggest tomorrow’s song</strong><span>Tell me what to write about.</span></a>
+  <a class="link" href="/albums"><strong>Albums</strong><span>Every year of Song A Day on Bandcamp.</span></a>
+  <a class="link" href="/jamuary"><strong>Jamuary</strong><span>Make and share a song every day in January.</span></a>
+
+  <p class="group">Everything else</p>
+  <a class="link" href="/motba"><strong>MOTBA</strong><span>The Museum of Time Based Art, for art made over time.</span></a>
+
+  <p class="group">Listen on</p>
+  <div class="stream">
+    <a href="https://open.spotify.com/artist/4O4Rkb6K3ppeXyVvD6zBJA"><img src="/assets/brand/icons/spotify.svg" alt="" width="28" height="28">Spotify</a>
+    <a href="https://music.apple.com/us/artist/jonathan-mann/188742143"><img src="/assets/brand/icons/applemusic.svg" alt="" width="28" height="28">Apple Music</a>
+  </div>
+
+  <footer>
+    <nav aria-label="Social links">
+      <a href="https://www.youtube.com/@jonathanmann"><img src="/assets/brand/icons/youtube.svg" alt="YouTube" width="24" height="24"></a>
+      <a href="https://www.instagram.com/jonathanmann/"><img src="/assets/brand/icons/instagram.svg" alt="Instagram" width="24" height="24"></a>
+      <a href="https://x.com/songadaymann"><img src="/assets/brand/icons/x.svg" alt="X" width="24" height="24"></a>
+      <a href="https://bsky.app/profile/songaday.world"><img src="/assets/brand/icons/bluesky.svg" alt="Bluesky" width="24" height="24"></a>
+      <a href="/discord"><img src="/assets/brand/icons/discord.svg" alt="Discord" width="24" height="24"></a>
+    </nav>
+    <p><a href="/">songaday.studio</a></p>
+  </footer>
+</main>
+</body>
+</html>

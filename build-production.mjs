@@ -13,6 +13,8 @@ await cp('index.html', 'dist/index.html');
 await cp('films/index.html', 'dist/films/index.html');
 // Plugin downloads page: a static page of its own (songaday.studio/plugins).
 await cp('plugins', 'dist/plugins', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
+// Bio link page (songaday.studio/links), also static; the Worker fills in today's song.
+await cp('links', 'dist/links', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
 if (existsSync('assets')) {
   // Videos are served from R2 (node upload-media.mjs), so they stay out of dist/.
   const isVideo = (source) => MEDIA_PATH.test('/' + source.split(path.sep).join('/'));
