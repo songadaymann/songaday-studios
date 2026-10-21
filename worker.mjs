@@ -2,17 +2,51 @@ import { songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 import { handleFumble } from './fumble.mjs';
+import { SONGS_FEED_URL, latestSong, renderTodaySong } from './today-song.mjs';
+import { songDate } from './calendar.mjs';
 
-// Section URLs live on songaday.studio so they can become real pages later.
-// Temporary (302, no-store) redirects so browsers don't cache them for good.
+// Short addresses on songaday.studio for every part of Song A Day, so they can be said out
+// loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
+// cache them for good. /songs and /all go to songaday.fan's Explore until the new gallery
+// replaces the old one, which stops at #5852. /commission goes to the Bandcamp commission
+// listings until jonathanmann.net has a commissions page.
 const SECTION_REDIRECTS = {
-  '/songs': 'https://gallery.songaday.world/',
+  '/all': 'https://songaday.fan/explore',
+  '/songs': 'https://songaday.fan/explore',
+  '/listen': 'https://songaday.fan/challenge',
+  '/suggest': 'https://songaday.fan/suggestions',
+  '/jamuary': 'https://songaday.fan/jamuary',
+  '/today': '/#today',
   '/games': 'https://mann.cool/',
+  '/wamp': 'https://wamp.land/',
+  '/commission': 'https://jonathanmann.bandcamp.com/merch',
+  '/commissions': 'https://jonathanmann.bandcamp.com/merch',
+  '/albums': 'https://jonathanmann.bandcamp.com/music',
+  '/discord': 'https://discord.gg/rGTQH7mFNS',
+  '/me': 'https://www.jonathanmann.net/',
   '/mini-docs': '/films/',
   '/donate': '/#donate'
 };
 
+// /year/2014 goes to that year on the home page's calendar, for 2009 through this year.
+const YEAR_PATH = /^\/year\/(\d{4})$/;
+
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+// The newest song on the YouTube channel, cached at Cloudflare's edge for ten minutes. On any
+// failure the home page keeps the snapshot it was built with.
+async function liveLatestSong() {
+  try {
+    const response = await fetch(SONGS_FEED_URL, {
+      cf: { cacheTtl: 600, cacheEverything: true },
+      signal: AbortSignal.timeout(1500)
+    });
+    if (!response.ok) return null;
+    return latestSong(await response.text());
+  } catch {
+    return null;
+  }
+}
 
 // The live mini-docs playlist, cached at Cloudflare's edge for an hour. On any failure the
 // Films page keeps the snapshot it was built with.
@@ -52,6 +86,14 @@ export default {
       });
     }
 
+    const year = Number(YEAR_PATH.exec(path)?.[1]);
+    if (year >= 2009 && year <= songDate(songADayNumber()).getUTCFullYear()) {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: `/${url.search}#year-${year}`, 'Cache-Control': 'no-store' }
+      });
+    }
+
     // Videos come from R2 so they can answer Range requests (see media.mjs).
     const media = env.MEDIA && MEDIA_PATH.exec(url.pathname);
     if (media) {
@@ -68,8 +110,9 @@ export default {
       return new Response(null, { status: 302, headers: { Location: '/films/' + url.search, 'Cache-Control': 'no-store' } });
     }
 
-    // Fetch the live playlist alongside the page, so the top of the page streams without waiting on YouTube.
+    // Fetch the live feeds alongside the page, so the top of the page streams without waiting on YouTube.
     const filmsPromise = path === '/films' && request.method === 'GET' ? liveFilms() : null;
+    const songPromise = path === '/' && request.method === 'GET' ? liveLatestSong() : null;
     const response = await env.ASSETS.fetch(request);
     if (!response.headers.get('Content-Type')?.includes('text/html')) return response;
 
@@ -89,6 +132,14 @@ export default {
         async element(element) {
           const films = await filmsPromise;
           if (films) element.setInnerContent(renderFilms(films), { html: true });
+        }
+      });
+    }
+    if (songPromise) {
+      rewriter.on('#today', {
+        async element(element) {
+          const song = await songPromise;
+          if (song) element.setInnerContent(renderTodaySong(song, number), { html: true });
         }
       });
     }
