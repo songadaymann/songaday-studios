@@ -55,6 +55,10 @@
     {
       "pattern": "enter.songaday.world",
       "custom_domain": true
+    },
+    {
+      "pattern": "jamuary.songaday.world",
+      "custom_domain": true
     }
   ],
   "main": "worker.mjs"

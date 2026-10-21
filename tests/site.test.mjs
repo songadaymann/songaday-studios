@@ -49,7 +49,8 @@ test('dead songaday.world hostnames go somewhere useful, on any path and over ht
     ['https://market.songaday.world', '/', 'https://songaday.studio/links/'],
     ['http://market.songaday.world', '/song/42?x=1', 'https://songaday.studio/links/'],
     ['https://enter.songaday.world', '/', 'https://discord.gg/rGTQH7mFNS'],
-    ['https://enter.songaday.world', '/anything', 'https://discord.gg/rGTQH7mFNS']
+    ['https://enter.songaday.world', '/anything', 'https://discord.gg/rGTQH7mFNS'],
+    ['https://jamuary.songaday.world', '/', 'https://songaday.studio/jamuary']
   ];
   for (const [origin, path, location] of cases) {
     const response = await fetchPath(path, origin);

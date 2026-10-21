@@ -35,11 +35,13 @@ const YEAR_PATH = /^\/year\/(\d{4})$/;
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 // Old songaday.world hostnames that are still out in the world but went dead: market. is the
-// link in the X bio, and enter. is the Discord link in years of YouTube descriptions. They're
-// custom domains of this Worker (wrangler.jsonc), so any path on them lands somewhere useful.
+// link in the X bio, enter. is the Discord link in years of YouTube descriptions, and jamuary.
+// showed an expired certificate. They're custom domains of this Worker (wrangler.jsonc), so
+// any path on them lands somewhere useful.
 const HOST_REDIRECTS = {
   'market.songaday.world': 'https://songaday.studio/links/',
-  'enter.songaday.world': 'https://discord.gg/rGTQH7mFNS'
+  'enter.songaday.world': 'https://discord.gg/rGTQH7mFNS',
+  'jamuary.songaday.world': 'https://songaday.studio/jamuary'
 };
 
 // The newest song on the YouTube channel, cached at Cloudflare's edge for ten minutes. On any
