@@ -48,12 +48,10 @@
       "custom_domain": true
     },
     // Dead songaday.world links still in the X bio and old YouTube descriptions (HOST_REDIRECTS in worker.mjs).
+    // enter.songaday.world goes here too once its old DNS-only CNAME (to a dead zeet host) is
+    // deleted in the Cloudflare dashboard; until then attaching it fails the whole domain update.
     {
       "pattern": "market.songaday.world",
-      "custom_domain": true
-    },
-    {
-      "pattern": "enter.songaday.world",
       "custom_domain": true
     },
     {

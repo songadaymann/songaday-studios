@@ -69,7 +69,10 @@ Three dead songaday.world hostnames that are still linked out in the world are c
 of this Worker too, and redirect on any path (`HOST_REDIRECTS` in `worker.mjs`):
 `market.songaday.world` (the X bio link) goes to `https://songaday.studio/links/`,
 `enter.songaday.world` (the Discord link in years of YouTube descriptions) goes to the Discord
-invite, and `jamuary.songaday.world` goes to `https://songaday.studio/jamuary`.
+invite, and `jamuary.songaday.world` goes to `https://songaday.studio/jamuary`. `enter.` isn't
+attached yet: it still has an old DNS-only CNAME to a dead zeet host, which makes Cloudflare
+reject the whole domain update. Delete that record in the dashboard (songaday.world > DNS), then
+add `enter.songaday.world` back to `routes` in `wrangler.jsonc` and deploy.
 
 Change a destination in `SECTION_REDIRECTS` in `worker.mjs`. When a section gets its own page,
 delete its line there and add the page under `dist/` in `build-production.mjs`. The header is
