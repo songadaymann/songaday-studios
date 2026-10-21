@@ -187,6 +187,8 @@ function define() {
       toggle.setAttribute('aria-expanded', 'false');
       const support = element('a', 'support', 'Support');
       support.href = supportHref(location.hostname);
+      // songaday.studio's own header already has Donate, so the pill would be a second red button.
+      support.hidden = location.hostname === 'songaday.studio' || location.hostname === 'www.songaday.studio';
       if (this.#here === 'support') support.setAttribute('aria-current', 'page');
       const menu = element('ul', 'menu');
       menu.id = 'menu';
