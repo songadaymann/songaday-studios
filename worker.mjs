@@ -34,6 +34,14 @@ const YEAR_PATH = /^\/year\/(\d{4})$/;
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 
+// Old songaday.world hostnames that are still out in the world but went dead: market. is the
+// link in the X bio, and enter. is the Discord link in years of YouTube descriptions. They're
+// custom domains of this Worker (wrangler.jsonc), so any path on them lands somewhere useful.
+const HOST_REDIRECTS = {
+  'market.songaday.world': 'https://songaday.studio/links/',
+  'enter.songaday.world': 'https://discord.gg/rGTQH7mFNS'
+};
+
 // The newest song on the YouTube channel, cached at Cloudflare's edge for ten minutes. On any
 // failure the home page keeps the snapshot it was built with.
 async function liveLatestSong() {
@@ -68,6 +76,10 @@ async function liveFilms() {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const hostDestination = HOST_REDIRECTS[url.hostname];
+    if (hostDestination) {
+      return new Response(null, { status: 302, headers: { Location: hostDestination, 'Cache-Control': 'no-store' } });
+    }
     const isLocal = LOCAL_HOSTS.has(url.hostname);
     if (url.hostname === 'www.songaday.studio' || (url.protocol === 'http:' && !isLocal)) {
       if (url.hostname === 'www.songaday.studio') url.hostname = 'songaday.studio';

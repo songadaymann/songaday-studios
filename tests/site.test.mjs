@@ -44,6 +44,21 @@ test('section URLs redirect temporarily and are never cached', async () => {
   }
 });
 
+test('dead songaday.world hostnames go somewhere useful, on any path and over http', async () => {
+  const cases = [
+    ['https://market.songaday.world', '/', 'https://songaday.studio/links/'],
+    ['http://market.songaday.world', '/song/42?x=1', 'https://songaday.studio/links/'],
+    ['https://enter.songaday.world', '/', 'https://discord.gg/rGTQH7mFNS'],
+    ['https://enter.songaday.world', '/anything', 'https://discord.gg/rGTQH7mFNS']
+  ];
+  for (const [origin, path, location] of cases) {
+    const response = await fetchPath(path, origin);
+    assert.equal(response.status, 302, origin + path);
+    assert.equal(response.headers.get('Location'), location, origin + path);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store', origin + path);
+  }
+});
+
 test('same-site redirects keep the query string', async () => {
   const response = await fetchPath('/donate?utm_source=newsletter');
   assert.equal(response.headers.get('Location'), '/?utm_source=newsletter#donate');
