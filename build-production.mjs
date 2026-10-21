@@ -9,8 +9,14 @@ execFileSync(process.execPath, ['build.mjs'], { stdio: 'inherit' });
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await cp('index.html', 'dist/index.html');
-// Films page (songaday.studio/films/), built by build.mjs from films.html.
+// Films page (songaday.studio/films/), built by build.mjs from films.html, and /everything and
+// /now, built from projects.json and now.html.
 await cp('films/index.html', 'dist/films/index.html');
+await cp('everything/index.html', 'dist/everything/index.html');
+await cp('now/index.html', 'dist/now/index.html');
+// The universe bar and the list it reads, for every Song A Day site (the Worker adds CORS).
+await cp('bar', 'dist/bar', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
+await cp('projects.json', 'dist/projects.json');
 // Plugin downloads page: a static page of its own (songaday.studio/plugins).
 await cp('plugins', 'dist/plugins', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
 // Bio link page (songaday.studio/links), also static; the Worker fills in today's song.

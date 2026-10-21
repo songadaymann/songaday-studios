@@ -51,6 +51,13 @@ main:focus { outline: none; }
 .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; transform: translateY(-160%); padding: .75rem 1rem; border: 3px solid var(--ink); background: var(--white); font-weight: 700; }
 .skip-link:focus { transform: translateY(0); }
 
+/* The Song A Day universe bar (bar/v1/bar.js) holds its 36px before its script arrives. */
+songaday-bar { display: block; height: 36px; background: var(--ink); }
+
+/* Crypto parts show only when this browser has a wallet (wallet/wallet-gate.js). */
+[data-crypto] { display: none !important; }
+html[data-wallet="yes"] [data-crypto] { display: revert !important; }
+
 .site-header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem); min-height: 68px; padding: .5rem var(--wrap-edge); border-bottom: 4px solid var(--red); background: var(--ink); color: var(--white); }
 .brand { display: flex; flex: none; align-items: center; gap: .7rem; margin-right: auto; font-size: var(--type-body); font-weight: 700; letter-spacing: .02em; text-decoration: none; white-space: nowrap; }
 .brand-mark { width: 44px; height: 44px; object-fit: contain; transform: rotate(-5deg); }
@@ -334,6 +341,46 @@ body.video-modal-open { overflow: hidden; }
 .film-date { margin: .45rem 0 0; color: var(--white-muted); font-size: var(--type-meta); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .films-more, .films-fallback { margin: clamp(2.5rem, 5vw, 3.5rem) 0 0; font-weight: 700; }
 .films-more a, .films-fallback a { text-decoration-thickness: 2px; }
+
+/* "Where to go next" on the home page: a quiet site map, built from projects.json. */
+.directory { padding: clamp(2.5rem, 5vw, 4rem) 0; border-top: 2px solid var(--hairline); background: var(--ink); }
+.directory-inner { width: var(--wrap); margin: 0 auto; }
+.directory h2 { font-size: clamp(1.75rem, 1.4rem + 1.4vw, 2.5rem); letter-spacing: -.04em; line-height: 1; }
+.directory-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 2rem clamp(1.25rem, 3vw, 2.5rem); margin-top: clamp(1.5rem, 3vw, 2.25rem); }
+.directory-group h3 { color: var(--red); font-size: var(--type-meta); letter-spacing: .08em; line-height: 1.5; text-transform: uppercase; }
+.directory-group ul { display: grid; gap: .75rem; margin: .6rem 0 0; padding: 0; list-style: none; }
+.directory-group a { font-weight: 700; }
+.directory-group li > span { display: block; color: var(--white-muted); font-size: .875rem; line-height: 1.4; }
+.directory-more { margin: clamp(1.75rem, 3.5vw, 2.5rem) 0 0; color: var(--white-muted); font-size: .875rem; }
+.directory-more a { color: var(--white); font-weight: 700; }
+
+/* /everything and /now: plain text pages with the Films page's header and footer. */
+.text-page main { width: var(--wrap); margin: 0 auto; padding: clamp(2rem, 5vw, 3.5rem) 0 clamp(3rem, 6vw, 5rem); }
+.text-page-intro h1 { font-size: clamp(2.75rem, 1.8rem + 3.8vw, 4.75rem); }
+.text-page-intro h1 span { color: var(--white-muted); font-size: .45em; letter-spacing: -.03em; white-space: nowrap; }
+.text-page-intro p { max-width: 40ch; margin: .9rem 0 0; color: var(--white-muted); font-size: clamp(1.05rem, .95rem + .35vw, 1.25rem); line-height: 1.4; }
+.everything-group { margin-top: clamp(2.25rem, 4.5vw, 3.25rem); }
+.everything-group h2 { padding-bottom: .6rem; border-bottom: 4px solid var(--red); font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem); letter-spacing: -.04em; line-height: 1; }
+.everything-group ul { margin: 0; padding: 0; list-style: none; }
+.everything-row { display: grid; grid-template-columns: minmax(11rem, 17rem) minmax(0, 1fr) 18rem; gap: .3rem 1.5rem; align-items: baseline; padding: .9rem 0; border-bottom: 1px solid var(--hairline); }
+.everything-place { display: grid; text-decoration: none; }
+.everything-place strong { text-decoration: underline 2px; text-underline-offset: .2em; }
+.everything-place:hover strong { text-decoration-color: var(--red); }
+.everything-place span { color: var(--white-muted); font-size: .8125rem; overflow-wrap: anywhere; }
+.everything-tagline, .everything-meta { margin: 0; }
+.everything-meta { color: var(--white-muted); font-size: .8125rem; }
+.status-chip { display: inline-block; margin-right: .45rem; padding: .05rem .45rem; border: 2px solid var(--white); color: var(--white); font-size: var(--type-meta); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.status-active { border-color: var(--red-button); background: var(--red-button); }
+.status-archived { border-color: var(--hairline); color: var(--white-muted); }
+.everything-note { margin: clamp(2rem, 4vw, 3rem) 0 0; color: var(--white-muted); font-size: .875rem; }
+.now-list { display: grid; gap: 1rem; max-width: 46rem; margin: clamp(1.75rem, 3.5vw, 2.5rem) 0 0; padding: 0; list-style: none; font-size: clamp(1.05rem, .95rem + .4vw, 1.3rem); line-height: 1.45; }
+.now-list li { position: relative; padding-left: 1.4rem; }
+.now-list li::before { content: ""; position: absolute; top: .5em; left: 0; width: .55rem; height: .55rem; border-radius: 50%; background: var(--red); }
+.now-list a { font-weight: 700; text-decoration-thickness: 2px; }
+.now-updated { margin: clamp(2rem, 4vw, 3rem) 0 0; color: var(--white-muted); font-size: .875rem; }
+@media (max-width: 760px) {
+  .everything-row { grid-template-columns: minmax(0, 1fr); }
+}
 
 footer { display: grid; grid-template-columns: 1fr auto; gap: 2rem; padding: 2.5rem var(--wrap-edge); border-top: 4px solid var(--red); background: var(--ink); color: var(--white); }
 .footer-word { font-size: var(--type-body); font-weight: 700; letter-spacing: .02em; }

@@ -44,7 +44,8 @@
     window.addEventListener("eip6963:announceProvider", (event) => {
       if (!(event instanceof CustomEvent)) return;
       void hasStrongWalletSignal(event.detail).then((hasWallet) => {
-        if (!hasWallet || prefersZeffy) return;
+        // ?crypto=0 (the wallet gate's "no") keeps the card and bank form too.
+        if (!hasWallet || prefersZeffy || document.documentElement.dataset.wallet === "no") return;
         zeffyDonate.hidden = true;
         cryptoDonate.hidden = false;
       });
@@ -55,8 +56,18 @@
       zeffyDonate.hidden = false;
       zeffyDonate.focus({ preventScroll: true });
     });
-    window.dispatchEvent(new Event("eip6963:requestProvider"));
   }
+
+  // wallet-detect.js and wallet-gate.js from the crypto-wallet-gate skill (wallet/), inlined
+  // by build.mjs. The gate shows [data-crypto] parts ("Where to go next") only when this
+  // browser has a wallet. Its check asks installed wallets to announce themselves, and the
+  // donation check above hears the same announcements, so the page asks once. A forced
+  // ?crypto=1 skips that check, so then the donation check asks for itself.
+  /* WALLET_GATE_HELPER */
+
+  void applyWalletGate().then((result) => {
+    if (result.forced && result.hasWallet) window.dispatchEvent(new Event("eip6963:requestProvider"));
+  });
 
   // SONG A DAY CATALOG SNAPSHOT START
   const catalogSnapshot = {

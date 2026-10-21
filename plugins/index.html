@@ -110,6 +110,17 @@ code { font: 12px Monaco, Menlo, monospace; background: rgba(0, 0, 0, .06); padd
 .two .box + .box { margin-top: 0; }
 footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--dim); }
 
+/* coming soon: a plain group box with a gel badge and no download */
+.box.soon { margin-top: 22px; }
+.soon-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.soon h2 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+.badge {
+  display: inline-block; padding: 0 11px; border-radius: 10px; font-size: 11px; line-height: 20px; color: #333;
+  background: var(--gel-white); box-shadow: 0 1px 1px rgba(0, 0, 0, .25), inset 0 0 0 1px rgba(0, 0, 0, .3);
+}
+.soon .tagline { font-size: 15px; }
+.soon p { margin: 0 0 14px; max-width: 60ch; }
+
 @media (max-width: 720px) {
   .desk { padding: 16px 16px 32px; }
   .body { padding: 20px 16px 24px; }
@@ -151,9 +162,14 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
   .site-header .brand-mark { width: 34px; height: 34px; }
   .site-header .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: 12px; }
 }
+
+/* The Song A Day universe bar (bar/v1/bar.js) holds its 36px before its script arrives. */
+songaday-bar { display: block; height: 36px; background: #000; }
 </style>
 </head>
 <body>
+<songaday-bar></songaday-bar>
+<script type="module" src="/bar/v1/bar.js" data-here="make"></script>
 <header class="site-header">
   <a class="brand" href="/" aria-label="Song A Day Studio home">
     <img class="brand-mark" src="/assets/icons/tunes.png" alt="" width="50" height="50">
@@ -240,6 +256,18 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
         <p style="margin:0">Novox The Robot is free software under the <a href="https://www.gnu.org/licenses/agpl-3.0.html">GNU AGPLv3</a>.
           Its singing engine is MIT licensed. Read the code, report a bug, or build it yourself on
           <a href="https://github.com/songadaymann/novox-the-robot">GitHub</a>.</p>
+      </section>
+
+      <section class="box soon" id="drum-expander" aria-labelledby="drum-expander-title">
+        <div class="soon-head">
+          <h2 id="drum-expander-title">Drum Expander</h2>
+          <span class="badge">Coming soon</span>
+        </div>
+        <div class="tagline">Drop in a drum loop, get MIDI for kick, snare, hats, crash, ride and toms</div>
+        <p>One MIDI track for each drum, with velocities that follow how hard each hit was played. It will be an Audio Unit and VST3 plugin. Right now it's an early prototype. Free and open source under the MIT license.</p>
+        <div class="actions">
+          <a class="gel white" href="https://github.com/songadaymann/drum-expander">Source code</a>
+        </div>
       </section>
     </main>
   </div>

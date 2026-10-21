@@ -9,7 +9,8 @@ import { songDate } from './calendar.mjs';
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
 // cache them for good. /songs and /all go to songaday.fan's Explore until the new gallery
 // replaces the old one, which stops at #5852. /commission goes to the Bandcamp commission
-// listings until jonathanmann.net has a commissions page.
+// listings until jonathanmann.net has a commissions page. /data goes to the data lab's code until
+// the lab has its page here.
 const SECTION_REDIRECTS = {
   '/all': 'https://songaday.fan/explore',
   '/songs': 'https://songaday.fan/explore',
@@ -26,8 +27,35 @@ const SECTION_REDIRECTS = {
   '/me': 'https://www.jonathanmann.net/',
   '/motba': 'https://motba.art/',
   '/mini-docs': '/films/',
-  '/donate': '/#donate'
+  '/donate': '/#donate',
+  '/data': 'https://github.com/songadaymann/songaday-data'
 };
+
+// Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now']);
+
+// The universe bar and projects.json load on other Song A Day sites too, and module scripts and
+// cross-origin fetches need CORS. The bar is pinned by version folder (bar/v1/), so it can be
+// cached for a few hours; projects.json changes more often.
+const SHARED_FILES = [
+  { pattern: /^\/bar\/v\d+\//, cache: 'public, max-age=14400' },
+  { pattern: /^\/projects\.json$/, cache: 'public, max-age=300' }
+];
+
+async function serveShared(request, env, cache) {
+  const cors = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Cross-Origin-Resource-Policy': 'cross-origin'
+  };
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Max-Age': '86400' } });
+  const asset = await env.ASSETS.fetch(request);
+  const response = new Response(asset.body, asset);
+  for (const [name, value] of Object.entries(cors)) response.headers.set(name, value);
+  // A 304 needs the header too: browsers copy a revalidation's headers onto the cached copy.
+  if (asset.ok || asset.status === 304) response.headers.set('Cache-Control', cache);
+  return response;
+}
 
 // /year/2014 goes to that year on the home page's calendar, for 2009 through this year.
 const YEAR_PATH = /^\/year\/(\d{4})$/;
@@ -89,6 +117,9 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    const shared = SHARED_FILES.find((file) => file.pattern.test(url.pathname));
+    if (shared) return serveShared(request, env, shared.cache);
+
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '').toLowerCase() : url.pathname;
     const destination = SECTION_REDIRECTS[path];
     if (destination) {
@@ -121,7 +152,7 @@ export default {
     if (fumble) return fumble;
 
     // /Films, /LINKS/ etc. land on the page itself (the section redirects above ignore case too).
-    if ((path === '/films' || path === '/links') && url.pathname !== path + '/') {
+    if (FOLDER_PAGES.has(path) && url.pathname !== path + '/') {
       return new Response(null, { status: 302, headers: { Location: path + '/' + url.search, 'Cache-Control': 'no-store' } });
     }
 
