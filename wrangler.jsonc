@@ -46,6 +46,19 @@
     {
       "pattern": "www.songaday.studio",
       "custom_domain": true
+    },
+    // Dead songaday.world links still in the X bio and old YouTube descriptions (HOST_REDIRECTS in worker.mjs).
+    {
+      "pattern": "market.songaday.world",
+      "custom_domain": true
+    },
+    {
+      "pattern": "enter.songaday.world",
+      "custom_domain": true
+    },
+    {
+      "pattern": "jamuary.songaday.world",
+      "custom_domain": true
     }
   ],
   "main": "worker.mjs"
