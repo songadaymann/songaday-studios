@@ -144,8 +144,9 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
 @media (max-width: 760px) {
   .site-header { top: -41px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "sections sections" "brand donate"; gap: 0 .75rem; min-height: 0; padding: 0 16px .55rem; }
   .site-header:focus-within { top: 0; }
-  .site-sections { grid-area: sections; justify-content: space-between; gap: .5rem; height: 41px; margin: 0 -16px .55rem; padding: 0 16px; border-bottom: 1px solid #2a2a2a; }
-  .site-sections a { min-height: 40px; font-size: 12px; letter-spacing: .05em; }
+  .site-sections { grid-area: sections; gap: 1.1rem; height: 41px; margin: 0 -16px .55rem; padding: 0 16px; border-bottom: 1px solid #2a2a2a; overflow-x: auto; scrollbar-width: none; }
+  .site-sections::-webkit-scrollbar { display: none; }
+  .site-sections a { flex: none; min-height: 40px; font-size: 12px; letter-spacing: .05em; }
   .site-header .brand { grid-area: brand; min-width: 0; gap: .55rem; font-size: 14px; }
   .site-header .brand-mark { width: 34px; height: 34px; }
   .site-header .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: 12px; }
@@ -159,10 +160,12 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
     <span class="brand-word">SONG A DAY<span class="brand-dot">.</span> STUDIO</span>
   </a>
   <nav class="site-sections" aria-label="Sections">
-    <a href="/songs">Songs<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/all">All songs<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/listen">Listen<span class="nav-out" aria-hidden="true">↗</span></a>
     <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
     <a href="/films/">Films</a>
     <a href="/plugins/" aria-current="page">Plugins</a>
+    <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
   </nav>
   <a class="nav-donate" href="/#donate">Donate</a>
 </header>

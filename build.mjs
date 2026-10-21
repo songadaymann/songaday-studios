@@ -3,24 +3,47 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { songADayNumber } from "./song-day.mjs";
 import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFilms } from "./films.mjs";
+import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
+import { renderCalendar } from "./calendar.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
-const [htmlSource, filmsSource, css, jsSource, filmsJs] = await Promise.all([
+const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson] = await Promise.all([
   readFile(path.join(projectRoot, "profile.html"), "utf8"),
   readFile(path.join(projectRoot, "films.html"), "utf8"),
   readFile(path.join(projectRoot, "profile.css"), "utf8"),
   readFile(path.join(projectRoot, "profile.js"), "utf8"),
   readFile(path.join(projectRoot, "films-page.js"), "utf8"),
+  readFile(path.join(projectRoot, "calendar.json"), "utf8"),
 ]);
 
+// A snapshot of the newest song on YouTube; the Worker refreshes it from the live feed.
+async function todaySongSnapshot() {
+  try {
+    const response = await fetch(SONGS_FEED_URL, { signal: AbortSignal.timeout(8000) });
+    if (!response.ok) throw new Error(`feed answered ${response.status}`);
+    const song = latestSong(await response.text());
+    if (!song) throw new Error("feed had no songs");
+    return renderTodaySong(song);
+  } catch (error) {
+    console.warn(`Today's song snapshot skipped (${error.message}); the page links to YouTube until the Worker fills it in.`);
+    return TODAY_SONG_FALLBACK;
+  }
+}
+
 const number = songADayNumber();
+const todaySong = await todaySongSnapshot();
+// Function replacements, so a "$" in a song title isn't read as a replacement pattern.
 let html = htmlSource.replaceAll("{{SONG_NUMBER}}", String(number))
   .replaceAll("{{NEXT_SONG_NUMBER}}", String(number + 1))
-  .replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"));
+  .replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))
+  .replace("{{TODAY_SONG}}", () => todaySong)
+  .replace("{{CALENDAR}}", () => renderCalendar(JSON.parse(calendarJson)));
 // Public checkouts use hosted media when the private local asset bundle is absent.
 if (!existsSync(path.join(projectRoot, "assets"))) {
   html = html.replaceAll(/\b(src|poster|data-video-src)="assets\//g,
-    '$1="https://songaday.studio/assets/');
+    '$1="https://songaday.studio/assets/')
+    .replaceAll(/\bsrcset="([^"]*)"/g, (match, list) =>
+      `srcset="${list.replaceAll(/(^|,\s*)assets\//g, "$1https://songaday.studio/assets/")}"`);
 }
 const js = jsSource.replace("/* SONG_DAY_NUMBER_HELPER */",
   `const songADayNumber = ${songADayNumber.toString()};`);

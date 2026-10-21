@@ -11,8 +11,14 @@ outside the Fridays at The Park app.
 - `assets/` — icons, video, and other page assets
 - `index.html`, `films/index.html` — generated pages
 - `build.mjs` — builds both pages from the editable files, and bakes in a snapshot of the Films
-  playlist (needs network; without it the Films page links to YouTube until the Worker fills it in)
+  playlist and of today's song (needs network; without it those link to YouTube until the
+  Worker fills them in)
 - `song-day.mjs` — shared daily song-number calculation for the browser and Worker
+- `today-song.mjs` — the "Today's song" card under the headline: the newest "Title | Song A Day
+  #N" upload on the YouTube channel. It plays in the page's video modal. The Worker re-reads the
+  channel feed (cached for ten minutes), so the card changes soon after the day's song goes up.
+- `calendar.mjs`, `build-calendar.mjs`, `calendar.json` — "This is all of it": every song as
+  one picture, an image per year; see "Calendar" below
 - `plugins/index.html` — the plugin downloads page (songaday.studio/plugins), a standalone static
   page; its images are in `assets/plugins/`. Downloads come from each project's GitHub releases.
   Its site header is a copy of the one in `profile.html`; `tests/site.test.mjs` checks their section links match.
@@ -20,8 +26,8 @@ outside the Fridays at The Park app.
   "Mini-documentaries" YouTube playlist as thumbnails that turn into players. `build.mjs` bakes in
   a snapshot of the playlist; the Worker re-reads YouTube's feed (cached for an hour), so new
   mini-docs appear without a redeploy. The feed lists up to 15 videos.
-- `worker.mjs` — the Cloudflare Worker: redirects, section links, today's song number, and the
-  live Films list
+- `worker.mjs` — the Cloudflare Worker: redirects, section links, today's song number and card,
+  and the live Films list
 - `media.mjs` — serves the site videos from R2 with byte ranges, so they can seek and play on iPhones
 - `upload-media.mjs` — uploads `assets/video/` to the R2 bucket
 - `fumble.mjs`, `fumble-page.mjs`, `fumble-approve.mjs`, `migrations/` — the Fumble page
@@ -29,20 +35,34 @@ outside the Fridays at The Park app.
 
 ## Sections
 
-The header links to section URLs on songaday.studio. Sections without their own page yet are
-sent on by the Worker with a temporary (302) redirect, so the URL can become a real page later:
+songaday.studio is the front door for all of Song A Day, so it has a short address for each
+part of it. The header links to these. Parts without their own page here yet are sent on by the
+Worker with a temporary (302) redirect, so the address can point somewhere else, or become a
+real page, later:
 
 | URL | Goes to |
 | --- | --- |
-| `/songs` | https://gallery.songaday.world/ |
+| `/all`, `/songs` | https://songaday.fan/explore, until the new gallery replaces gallery.songaday.world (stuck at #5852) |
+| `/listen` | https://songaday.fan/challenge |
+| `/suggest` | https://songaday.fan/suggestions |
+| `/jamuary` | https://songaday.fan/jamuary |
+| `/today` | `/#today`, today's song on the home page |
+| `/year/2014` | `/#year-2014`, that year on the home page calendar (2009 to this year) |
 | `/games` | https://mann.cool/ |
+| `/wamp` | https://wamp.land/ |
+| `/commission`, `/commissions` | https://jonathanmann.bandcamp.com/merch (the commission listings), until jonathanmann.net has a commissions page |
+| `/albums` | https://jonathanmann.bandcamp.com/music |
+| `/discord` | https://discord.gg/rGTQH7mFNS |
+| `/me` | https://www.jonathanmann.net/ |
 | `/films/` | `films/index.html`, built from `films.html` |
 | `/mini-docs` | `/films/` |
 | `/plugins/` | `plugins/index.html` |
 | `/donate` | `/#donate`, the gift form on the home page |
 
 Change a destination in `SECTION_REDIRECTS` in `worker.mjs`. When a section gets its own page,
-delete its line there and add the page under `dist/` in `build-production.mjs`.
+delete its line there and add the page under `dist/` in `build-production.mjs`. The header is
+copied in `profile.html`, `films.html`, `plugins/index.html` and `fumble-page.mjs`; the tests
+check they match.
 
 Requires Node.js 22 or newer. Run the tests with:
 
@@ -83,6 +103,27 @@ After editing `profile.html`, `profile.css`, `profile.js`, `films.html`, `films-
 
 The page includes external embeds and links, so use the local HTTP server
 rather than opening `index.html` directly from Finder.
+
+## Calendar
+
+"This is all of it", under the hero, shows every song so far as one picture: an image per year,
+with each day's video still in a 31 × 12 grid (days across, months down). The rest of the
+current year shows as empty slots. The page itself has no script for it, just one `<img>` per
+year with a 2x version for sharp screens.
+
+`build-calendar.mjs` makes the images from the 480×270 stills that
+[songaday-display](https://github.com/songadaymann/songaday-display) builds, one `<number>.webp`
+per song. It needs ffmpeg:
+
+```bash
+node build-calendar.mjs ~/Library/Caches/songaday-display/publish/stills
+```
+
+(or set `STILLS_DIR`). It writes `assets/calendar/<year>.webp` and `<year>@2x.webp` (about
+550 KB and 1.2 MB for all years) and `calendar.json`, which is tracked: each year's song count
+and where most of its songs were recorded. The page says "Through #N", so it's honest when it
+falls behind. To bring it up to date, run it again, then `node build-production.mjs` and
+`wrangler deploy`. Image URLs carry `?v=<last song>`, so browsers fetch the new ones.
 
 ## Fumble
 

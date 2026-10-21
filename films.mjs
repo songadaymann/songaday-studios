@@ -18,7 +18,7 @@ function decodeXml(text) {
   });
 }
 
-function escapeHtml(text) {
+export function escapeHtml(text) {
   return text.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
 
