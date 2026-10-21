@@ -1,5 +1,5 @@
 // Makes the home page's year calendar from the Song A Day stills: assets/calendar/<year>.webp
-// and <year>@2x.webp, plus calendar.json (tracked) with each year's song count and home.
+// and <year>-2x.webp (retina), plus calendar.json (tracked) with each year's song count and home.
 // Needs ffmpeg and the 480×270 stills songaday-display builds, one <number>.webp per song:
 //
 //   node build-calendar.mjs ~/Library/Caches/songaday-display/publish/stills
@@ -118,8 +118,8 @@ const lastYear = songDate(through).getUTCFullYear();
 const years = [];
 for (let year = 2009; year <= lastYear; year++) {
   let songs = 0;
-  // The @2x cells are tiny on screen, so they take more compression.
-  for (const [scale, suffix, quality] of [[1, '', 80], [2, '@2x', 60]]) {
+  // The 2x cells are tiny on screen, so they take more compression.
+  for (const [scale, suffix, quality] of [[1, '', 80], [2, '-2x', 60]]) {
     const drawn = drawYear(year, scale);
     songs = drawn.songs;
     const webp = await run(['-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${drawn.width}x${drawn.height}`, '-i', '-',

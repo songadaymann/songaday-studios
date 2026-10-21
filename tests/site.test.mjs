@@ -34,7 +34,8 @@ test('section URLs redirect temporarily and are never cached', async () => {
     '/me': 'https://www.jonathanmann.net/',
     '/motba': 'https://motba.art/',
     '/mini-docs': '/films/',
-    '/donate': '/#donate'
+    '/donate': '/#donate',
+    '/data': 'https://github.com/songadaymann/songaday-data'
   };
   for (const [path, location] of Object.entries(cases)) {
     const response = await fetchPath(path);
@@ -282,7 +283,9 @@ test('the calendar numbers days like Song A Day and renders every year', () => {
     { year: 2026, songs: 293, home: 'Hartford' }
   ] });
   assert.match(html, /id="year-2009">\s*<img src="assets\/calendar\/2009\.webp\?v=6502"/);
-  assert.match(html, /srcset="assets\/calendar\/2026\.webp\?v=6502 526w, assets\/calendar\/2026@2x\.webp\?v=6502 1052w"/);
+  assert.match(html, /srcset="assets\/calendar\/2026\.webp\?v=6502 526w, assets\/calendar\/2026-2x\.webp\?v=6502 1052w"/);
+  // No "@" in image paths: Cloudflare redirects it to "%40", an extra round trip per image.
+  assert.doesNotMatch(html, /@/);
   assert.match(html, /<strong>2009<\/strong> <span>Berkeley · 365 songs<\/span>/);
   assert.match(html, /<strong>2026<\/strong> <span>Hartford · 293 so far<\/span>/);
   assert.match(html, /Through #6,502, October 20, 2026\./);

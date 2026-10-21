@@ -1,5 +1,7 @@
 <div class="labs-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
+  <songaday-bar></songaday-bar>
+  <script type="module" src="/bar/v1/bar.js" data-here="support"></script>
 
   <header class="site-header">
     <a class="brand" href="#top" aria-label="Song A Day Studio home">
@@ -356,6 +358,16 @@
         </figure>
       </div>
     </section>
+
+    <section class="directory" id="where-next" aria-labelledby="directory-title">
+      <div class="directory-inner">
+        <h2 id="directory-title">Where to go next</h2>
+        <div class="directory-groups">
+{{DIRECTORY}}
+        </div>
+        <p class="directory-more"><a href="/everything/">Everything, with what’s coming and what’s done</a> · <a href="/now/">What I’m doing now</a></p>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -371,6 +383,8 @@
         <a href="/films/">Films</a>
         <a href="/plugins/">Plugins</a>
         <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
+        <a href="/everything/">Everything</a>
+        <a href="/now/">Now</a>
         <a href="#donate">Donate</a>
       </nav>
       <nav aria-label="Social links">
@@ -381,6 +395,6 @@
         <a href="https://wamp.land" target="_blank" rel="noreferrer">WAMP</a>
       </nav>
     </div>
-    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park.</p>
+    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park, so gifts are tax-deductible. Commissions and albums are purchases from Jonathan, not gifts.</p>
   </footer>
 </div>

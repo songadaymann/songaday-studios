@@ -3,7 +3,7 @@
 // same 31 × 12 grid and February 30 is a gap. build-calendar.mjs makes the images and
 // calendar.json; build.mjs renders this markup from calendar.json.
 
-// One cell at 1x. The @2x image doubles all three.
+// One cell at 1x. The 2x image (<year>-2x.webp) doubles all three.
 export const CELL = { width: 16, height: 9, gap: 1 };
 const SONG_ONE = Date.UTC(2009, 0, 1);
 const DAY = 86400000;
@@ -37,7 +37,8 @@ export function renderCalendar(calendar) {
   const lastYear = calendar.years.at(-1)?.year;
   const years = calendar.years.map(({ year, songs, home }) => {
     const src = `assets/calendar/${year}.webp${version}`;
-    const src2x = `assets/calendar/${year}@2x.webp${version}`;
+    // "-2x", not "@2x": Cloudflare redirects "@" in asset paths to "%40", an extra round trip.
+    const src2x = `assets/calendar/${year}-2x.webp${version}`;
     const count = year === lastYear && songs < 365 ? `${songs} so far` : `${songs} songs`;
     return `<li class="calendar-year" id="year-${year}">
   <img src="${src}" srcset="${src} ${one.width}w, ${src2x} ${two.width}w" sizes="(max-width: 520px) 46vw, (max-width: 960px) 30vw, 380px" width="${one.width}" height="${one.height}" alt="${songs} video stills from ${year}, one for each day's song" loading="lazy" decoding="async">

@@ -9,10 +9,22 @@ outside the Fridays at The Park app.
 - `profile.css` — editable styles
 - `profile.js` — editable page behavior and catalog stats
 - `assets/` — icons, video, and other page assets
-- `index.html`, `films/index.html` — generated pages
-- `build.mjs` — builds both pages from the editable files, and bakes in a snapshot of the Films
+- `index.html`, `films/index.html`, `everything/index.html`, `now/index.html` — generated pages
+- `build.mjs` — builds those pages from the editable files, and bakes in a snapshot of the Films
   playlist and of today's song (needs network; without it those link to YouTube until the
-  Worker fills them in)
+  Worker fills them in). `SONGADAY_OFFLINE=1` skips the snapshots, and `--out <folder>` writes
+  the pages somewhere else; the tests use both.
+- `projects.json`, `projects.mjs`, `validate-projects.mjs` — every place Song A Day lives, one
+  row each, served at https://songaday.studio/projects.json; see "Projects" below
+- `bar/v1/bar.js` — the universe bar, the strip across the top of every Song A Day site; see
+  "The universe bar" below
+- `everything.html` — songaday.studio/everything: every row of `projects.json`, by status
+- `now.html` — songaday.studio/now: what Jonathan is doing now, dated, in his words
+- `wallet/wallet-detect.js`, `wallet/wallet-gate.js` — the crypto-wallet-gate skill's files,
+  unchanged. `build.mjs` inlines them into the home page and /everything, where they show the
+  `data-crypto` rows only to browsers with a wallet (`?crypto=1`, `?crypto=0` and
+  `?crypto=auto` test both states). On the home page the same check also feeds the crypto
+  donation switch (see "Donations").
 - `song-day.mjs` — shared daily song-number calculation for the browser and Worker
 - `today-song.mjs` — the "Today's song" card under the headline: the newest "Title | Song A Day
   #N" upload on the YouTube channel. It plays in the page's video modal. The Worker re-reads the
@@ -31,7 +43,7 @@ outside the Fridays at The Park app.
   a snapshot of the playlist; the Worker re-reads YouTube's feed (cached for an hour), so new
   mini-docs appear without a redeploy. The feed lists up to 15 videos.
 - `worker.mjs` — the Cloudflare Worker: redirects, section links, today's song number and card,
-  and the live Films list
+  the live Films list, and CORS for the bar and `projects.json`
 - `media.mjs` — serves the site videos from R2 with byte ranges, so they can seek and play on iPhones
 - `upload-media.mjs` — uploads `assets/video/` to the R2 bucket
 - `fumble.mjs`, `fumble-page.mjs`, `fumble-approve.mjs`, `migrations/` — the Fumble page
@@ -63,6 +75,10 @@ real page, later:
 | `/mini-docs` | `/films/` |
 | `/plugins/` | `plugins/index.html` |
 | `/links/` | `links/index.html`, the bio link page |
+| `/fumble` | The Museum of Fumbled Bags (`fumble.mjs`) |
+| `/everything/` | `everything/index.html`, built from `projects.json` |
+| `/now/` | `now/index.html`, built from `now.html` |
+| `/data` | https://github.com/songadaymann/songaday-data, until the data lab has its page here |
 | `/donate` | `/#donate`, the gift form on the home page |
 
 Three dead songaday.world hostnames that are still linked out in the world are custom domains
@@ -76,8 +92,83 @@ add `enter.songaday.world` back to `routes` in `wrangler.jsonc` and deploy.
 
 Change a destination in `SECTION_REDIRECTS` in `worker.mjs`. When a section gets its own page,
 delete its line there and add the page under `dist/` in `build-production.mjs`. The header is
-copied in `profile.html`, `films.html`, `plugins/index.html` and `fumble-page.mjs`; the tests
-check they match.
+copied in `profile.html`, `films.html`, `plugins/index.html` and `fumble-page.mjs` (/everything
+and /now reuse the one in `films.html`); the tests check they match.
+
+## Projects
+
+`projects.json` lists the places Song A Day lives: sites and sections, not songs (those are in
+the song catalog) or games (mann.cool's `games.json`). The universe bar reads it, the home
+page's "Where to go next" and /everything are built from it, and any site can fetch it from
+https://songaday.studio/projects.json (CORS is open, cached for five minutes).
+
+```json
+{ "version": 1, "verbs": ["listen", "see", "play", "build", "make", "get-a-song", "join", "watch", "support", "collect", "other"], "projects": [...] }
+```
+
+Each project has:
+
+| Field | |
+| --- | --- |
+| `id` | lowercase-with-hyphens, unique |
+| `title` | its name |
+| `verb` | what you do there, one of `verbs` |
+| `path` | its songaday.studio short address (`/listen`), or `null`. Links go through it when it's there. |
+| `url` | the place itself |
+| `tagline` | up to 80 characters of plain words. Archived places say when they were. |
+| `status` | `active`, `soon`, `seasonal`, `lab` or `archived` |
+| `since` | `YYYY` or `YYYY-MM` |
+| `sourceUrl` | its public GitHub repository, or `null` |
+| `crypto` | `true` when its main thing is crypto: then it shows only to visitors with a wallet |
+| `inBar` | `true` to put it in the universe bar |
+| `barLabel` | its words in the bar, up to 16 characters (only with `inBar`) |
+| `season` | for `seasonal` places, the months it runs: `"Dec-Jan"` |
+
+To add a project, add a row (keep rows of the same verb together), then:
+
+```bash
+node validate-projects.mjs          # checks every field
+node validate-projects.mjs --links  # also loads every url and sourceUrl
+node --test tests/*.test.mjs
+```
+
+If it has a short address, add that to `SECTION_REDIRECTS` in `worker.mjs` first (the tests
+check every `path` answers). Then `node build-production.mjs` and `wrangler deploy`. The bar
+picks up the change within five minutes; the home page and /everything with the deploy.
+
+## The universe bar
+
+`bar/v1/bar.js` is a 36px strip that links the Song A Day sites to each other: "Song A Day
+#6,503 · by Jonathan Mann" (to songaday.studio), the `inBar` projects (Listen · See all · Play
+· Get a song), and a Support pill to `https://songaday.studio/?from=<this site's hostname>#donate`.
+On phones it folds into "#6,503 ☰ Support" with a small menu. Any site adds it with one tag;
+`data-here` is the site's verb from `projects.json`, and marks its link as the current one:
+
+```html
+<script type="module" src="https://songaday.studio/bar/v1/bar.js" data-here="listen" defer></script>
+```
+
+It goes at the top of `<body>`. For no layout shift, also put `<songaday-bar></songaday-bar>`
+where it should go with `songaday-bar { display: block; height: 36px; background: #000; }` in
+the page's CSS, as the studio's own pages do; the bar fills that element in.
+
+- It's a custom element with its own shadow DOM, so it can't restyle the host page or be
+  restyled by it. It uses the system font and makes no requests other than `projects.json`.
+- The song number is worked out in the browser (New York date, #1 is January 1, 2009, the same
+  as `song-day.mjs`) and changes at midnight.
+- `projects.json` loads after the bar is drawn. If it fails, the bar keeps the list built into
+  `bar.js` (`FALLBACK`), so a studio outage leaves a slightly stale bar, not a broken page.
+  `tests/bar.test.mjs` checks that list against `projects.json`; update it when the bar's
+  projects change.
+- "Collect" (and any other `crypto` project) shows only when the browser has a wallet. The bar
+  carries its own copy of `wallet-detect.js` (the tests keep it identical), honours `?crypto=1`,
+  `?crypto=0` and `?crypto=auto`, and goes with the page's own wallet gate when the page has one.
+- The Worker serves `/bar/v1/*` with `Access-Control-Allow-Origin: *` (module scripts from
+  another site need it), cached for four hours. `v1` is a promise: a change that could break a
+  host page goes in `bar/v2/`, and sites move to it when they're ready.
+
+The studio uses it on the home page, Films, Plugins, Fumble, /everything and /now, above the
+studio header. The bio link page (/links) has no bar.
 
 Requires Node.js 22 or newer. Run the tests with:
 
@@ -134,8 +225,9 @@ per song. It needs ffmpeg:
 node build-calendar.mjs ~/Library/Caches/songaday-display/publish/stills
 ```
 
-(or set `STILLS_DIR`). It writes `assets/calendar/<year>.webp` and `<year>@2x.webp` (about
-550 KB and 1.2 MB for all years) and `calendar.json`, which is tracked: each year's song count
+(or set `STILLS_DIR`). It writes `assets/calendar/<year>.webp` and `<year>-2x.webp` (about
+550 KB and 1.2 MB for all years; "-2x", not "@2x", because Cloudflare redirects an "@" in an
+asset path to "%40", an extra round trip) and `calendar.json`, which is tracked: each year's song count
 and where most of its songs were recorded. The page says "Through #N", so it's honest when it
 falls behind. To bring it up to date, run it again, then `node build-production.mjs` and
 `wrangler deploy`. Image URLs carry `?v=<last song>`, so browsers fetch the new ones.
@@ -194,7 +286,12 @@ is unavailable. EIP-6963 announcements from recognized installed wallets switch
 the donation area to the Endaoment donation deeplink. Unknown providers
 must already expose an authorized account through the passive `eth_accounts`
 method. Detection never requests wallet access. Wallet visitors can choose
-"Donate by card or bank" to return to Zeffy for the rest of the page visit.
+"Donate by card or bank" to return to Zeffy for the rest of the page visit. The wallet gate
+(`wallet/`) asks installed wallets to announce themselves once, and this check hears the same
+announcements; `?crypto=0` keeps Zeffy too.
+
+The footer says it plainly: gifts are tax-deductible through Fridays at The Park, and
+commissions and albums are purchases from Jonathan, not gifts.
 
 Zeffy doesn't offer Apple Pay or Google Pay inside embedded forms, and its own page
 only shows them below 900px wide in Safari. So phones that can use a wallet see one

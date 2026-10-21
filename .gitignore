@@ -44,6 +44,8 @@ venv/
 # Generated standalone pages and private media alias
 /index.html
 /films/index.html
+/everything/index.html
+/now/index.html
 /assets
 
 # Local preview config for the Claude desktop app
