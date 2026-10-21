@@ -6,7 +6,7 @@
 <title>Plugins · Song A Day Studio</title>
 <meta name="description" content="Open source plugins by Jonathan Mann. Novox The Robot: make your computer sing.">
 <meta property="og:title" content="Novox The Robot: Make Your Computer Sing">
-<meta property="og:description" content="Free, open source singing robot for Mac. Type lyrics, draw notes or sing into it. App, Audio Unit and VST3.">
+<meta property="og:description" content="Free, open source singing robot for Mac and Windows. Type lyrics, draw notes or sing into it. App, Audio Unit and VST3.">
 <meta property="og:image" content="https://songaday.studio/assets/plugins/novox-editor.png">
 <meta property="og:url" content="https://songaday.studio/plugins">
 <meta name="twitter:card" content="summary_large_image">
@@ -118,7 +118,7 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
   .product img.robot { width: 140px; height: 140px; }
   .product p { margin-left: auto; margin-right: auto; }
   .actions { justify-content: center; }
-  .gel.default { width: 100%; }
+  .actions .gel:not(.white) { width: 100%; }
   .two { grid-template-columns: 1fr; }
 }
 
@@ -185,10 +185,11 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
           <p>Type some lyrics, draw a melody, and a robot sings it back. Or sing into it, or drag in a vocal
             from your DAW, and it writes the notes and the words for you.</p>
           <div class="actions">
-            <a class="gel default" href="https://github.com/songadaymann/novox-the-robot/releases/latest/download/Novox-The-Robot-macOS.pkg">Download for Mac</a>
+            <a class="gel default" id="get-mac" href="https://github.com/songadaymann/novox-the-robot/releases/latest/download/Novox-The-Robot-macOS.pkg">Download for Mac</a>
+            <a class="gel" id="get-windows" href="https://github.com/songadaymann/novox-the-robot/releases/latest/download/Novox-The-Robot-Windows-Setup.exe">Download for Windows</a>
             <a class="gel white" href="https://github.com/songadaymann/novox-the-robot">Source code</a>
           </div>
-          <div class="meta">Version 1.0 beta · Apple Silicon Mac, macOS 13.3 or later · App, Audio Unit and VST3 · Free</div>
+          <div class="meta">Version 1.0 beta 2 · Mac (Apple Silicon, macOS 13.3 or later) and Windows 10 or 11 (64-bit) · App and VST3, plus Audio Unit on Mac · Free</div>
         </div>
       </section>
 
@@ -200,27 +201,39 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
         <figcaption>Pick a singer, draw notes, write the words. Sixteen voices, from Robot to Soprano to Crooner.</figcaption>
       </figure>
 
+      <section class="box" style="margin-top:22px">
+        <h3>What it does</h3>
+        <ul class="does">
+          <li>Sings any lyrics on any melody you draw or play.</li>
+          <li>Turns singing (a recording, a take into your mic, or a region dragged from Logic) into notes and lyrics.</li>
+          <li>Works on its own as an app, or as an instrument in Logic Pro, GarageBand, Ableton Live, Reaper, Cubase, FL Studio and other AU or VST3 hosts.</li>
+          <li>Reads MusicXML from MuseScore, Dorico and other notation apps, lyrics and all, and sings along with MuseScore's playback as a VST3 instrument.</li>
+          <li>Exports WAV and MIDI.</li>
+        </ul>
+      </section>
+
       <div class="two">
-        <section class="box">
-          <h3>What it does</h3>
-          <ul class="does">
-            <li>Sings any lyrics on any melody you draw or play.</li>
-            <li>Turns singing (a recording, a take into your mic, or a region dragged from Logic) into notes and lyrics.</li>
-            <li>Works on its own as an app, or as an instrument in Logic Pro, GarageBand, Ableton Live, Reaper and other AU or VST3 hosts.</li>
-            <li>Exports WAV and MIDI.</li>
-          </ul>
-        </section>
-        <section class="box">
-          <h3>Installing</h3>
+        <section class="box" id="install-mac">
+          <h3>Installing on a Mac</h3>
           <ol class="steps">
             <li>Download and open <code>Novox-The-Robot-macOS.pkg</code>.</li>
             <li>Click through the installer. It puts the app in Applications and the plugins in <code>/Library/Audio/Plug-Ins</code>.</li>
             <li>In Logic, make a Software Instrument track and choose <b>AU Instruments › Song A Day › Novox The Robot</b>. Elsewhere, look for it among your VST3 instruments.</li>
           </ol>
           <p class="note" data-unsigned>If macOS says it can't check the installer, open <b>System Settings › Privacy &amp; Security</b>, scroll down, and click <b>Open Anyway</b>.</p>
-          <p class="meta">The first time you turn singing into notes, Novox asks to download its lyrics model (574 MB).</p>
+        </section>
+        <section class="box" id="install-windows">
+          <h3>Installing on Windows</h3>
+          <ol class="steps">
+            <li>Download and open <code>Novox-The-Robot-Windows-Setup.exe</code>.</li>
+            <li>Click through the installer. It puts the app in the Start menu and the plugin in <code>C:\Program Files\Common Files\VST3</code>.</li>
+            <li>In your DAW, rescan your plugins and look for Novox The Robot among your VST3 instruments.</li>
+          </ol>
+          <p class="note" data-unsigned>If Windows says <b>Windows protected your PC</b>, click <b>More info</b>, then <b>Run anyway</b>.</p>
+          <p class="meta">Turning singing into notes needs a processor with AVX2 (most PCs from 2015 on).</p>
         </section>
       </div>
+      <p class="meta">The first time you turn singing into notes, Novox asks to download its lyrics model (574 MB).</p>
 
       <section class="box" style="margin-top:22px">
         <h3>Open source</h3>
@@ -232,5 +245,12 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
   </div>
   <footer>© 2026 Jonathan Mann · <a href="https://songaday.studio">Song A Day Studio</a></footer>
 </div>
+<script>
+  // Windows visitors get the Windows button as the default (the throbbing one).
+  if (/Win/.test(navigator.userAgentData?.platform || navigator.platform || "")) {
+    document.getElementById("get-mac").classList.remove("default");
+    document.getElementById("get-windows").classList.add("default");
+  }
+</script>
 </body>
 </html>
