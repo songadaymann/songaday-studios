@@ -1,6 +1,18 @@
 {
   "version": 1,
-  "verbs": ["listen", "see", "play", "build", "make", "get-a-song", "join", "watch", "support", "collect", "other"],
+  "verbs": [
+    "listen",
+    "see",
+    "play",
+    "build",
+    "make",
+    "get-a-song",
+    "join",
+    "watch",
+    "support",
+    "collect",
+    "other"
+  ],
   "projects": [
     {
       "id": "songaday-fan",
@@ -24,7 +36,6 @@
       "url": "https://jonathanmann.bandcamp.com/music",
       "tagline": "Albums to stream, download or buy.",
       "status": "active",
-      "since": "2009",
       "sourceUrl": null,
       "crypto": false,
       "inBar": false
@@ -143,7 +154,6 @@
       "url": "https://jonathanmann.bandcamp.com/merch",
       "tagline": "A song written for you, about anything.",
       "status": "active",
-      "since": "2009",
       "sourceUrl": null,
       "crypto": false,
       "inBar": true,
@@ -171,7 +181,6 @@
       "tagline": "Make a song a day in January, with 31 ideas to start from.",
       "status": "seasonal",
       "season": "Dec-Jan",
-      "since": "2026",
       "sourceUrl": null,
       "crypto": false,
       "inBar": false
@@ -210,7 +219,6 @@
       "url": "https://songaday.studio/films/",
       "tagline": "Mini-docs about making something every day.",
       "status": "active",
-      "since": "2014",
       "sourceUrl": "https://github.com/songadaymann/songaday-studios",
       "crypto": false,
       "inBar": false
@@ -264,7 +272,7 @@
       "tagline": "An onchain song that reveals one note every two million blocks.",
       "status": "active",
       "since": "2025-11",
-      "sourceUrl": "https://github.com/SongADAO/E2MB",
+      "sourceUrl": null,
       "crypto": true,
       "inBar": false
     },
@@ -302,7 +310,6 @@
       "url": "https://www.jonathanmann.net/",
       "tagline": "About Jonathan Mann, who has written a song every day since 2009.",
       "status": "active",
-      "since": "2003",
       "sourceUrl": null,
       "crypto": false,
       "inBar": false

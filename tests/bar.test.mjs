@@ -35,6 +35,11 @@ test('the bar and projects.json can be loaded from any site, with their own cach
   assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), '*');
   assert.match(preflight.headers.get('Access-Control-Allow-Methods'), /GET/);
 
+  // A revalidation (304) keeps the long cache, or every page view would revalidate after the first.
+  const revalidated = (await fetchWith('/bar/v1/bar.js', { headers: { 'If-None-Match': '"x"' } }, new Response(null, { status: 304 }))).response;
+  assert.equal(revalidated.status, 304);
+  assert.equal(revalidated.headers.get('Cache-Control'), 'public, max-age=14400');
+
   // A missing file keeps CORS (so the host page's fetch sees the 404) but isn't cached for hours.
   const missing = (await fetchWith('/bar/v1/nope.js', {}, new Response('Not found', { status: 404 }))).response;
   assert.equal(missing.status, 404);

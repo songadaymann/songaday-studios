@@ -115,7 +115,8 @@ test('/everything lists every project by status, with crypto rows behind the wal
   const crypto = projects.projects.filter((project) => project.crypto).length;
   assert.equal((html.match(/<li data-crypto>/g) ?? []).length, crypto);
   assert.match(html, /<strong>Drum Expander<\/strong> <span>songaday\.studio\/plugins<\/span>/);
-  assert.match(html, /status-seasonal">Seasonal · Dec-Jan<\/span> Since 2026/);
+  // Jamuary has no since date (it predates the records), so its row shows none.
+  assert.match(html, /status-seasonal">Seasonal · Dec-Jan<\/span><\/p>/);
   assert.match(html, /<strong>WAMP<\/strong> <span>songaday\.studio\/wamp<span class="nav-out"/);
   assert.match(html, /Since Mar 2026 · <a href="https:\/\/github\.com\/songadaymann\/wamp">Source<\/a>/);
   assert.match(html, /The celebration of song #6,000, June 2025\./);

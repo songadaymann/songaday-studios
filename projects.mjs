@@ -61,9 +61,10 @@ export function validateProjects(data, { now = new Date() } = {}) {
     if (!isText(project.tagline, TAGLINE_MAX)) problem(`tagline must be 1 to ${TAGLINE_MAX} characters.`);
     if (/[<>—–]/.test(project.tagline ?? '')) problem('tagline must be plain words (no HTML or dashes).');
     if (!STATUSES.includes(project.status)) problem(`status must be one of: ${STATUSES.join(', ')}.`);
-    const since = /^(\d{4})(?:-(0[1-9]|1[0-2]))?$/.exec(project.since ?? '');
-    if (!since) problem('since must be YYYY or YYYY-MM.');
-    else if (Number(since[1]) * 12 + (since[2] ? Number(since[2]) - 1 : 0) > thisMonth) problem('since is in the future.');
+    // since is optional: leave it out rather than guess.
+    const since = project.since === undefined ? null : /^(\d{4})(?:-(0[1-9]|1[0-2]))?$/.exec(project.since);
+    if (project.since !== undefined && !since) problem('since must be YYYY or YYYY-MM.');
+    else if (since && Number(since[1]) * 12 + (since[2] ? Number(since[2]) - 1 : 0) > thisMonth) problem('since is in the future.');
     if (project.sourceUrl !== null && !/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+$/.test(project.sourceUrl ?? '')) {
       problem('sourceUrl must be null or a public GitHub repository address.');
     }
@@ -137,7 +138,7 @@ function everythingRow(project) {
   return `    <li${cryptoAttribute(project)}><div class="everything-row">
       <a class="everything-place" href="${escapeHtml(projectHref(project))}"><strong>${escapeHtml(project.title)}</strong> <span>${escapeHtml(projectAddress(project))}${leavesStudio(project) ? OUT : ''}</span></a>
       <p class="everything-tagline">${escapeHtml(project.tagline)}</p>
-      <p class="everything-meta"><span class="status-chip status-${project.status}">${chip}</span> Since ${formatSince(project.since)}${source}</p>
+      <p class="everything-meta"><span class="status-chip status-${project.status}">${chip}</span>${project.since ? ` Since ${formatSince(project.since)}` : ''}${source}</p>
     </div></li>`;
 }
 

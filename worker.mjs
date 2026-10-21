@@ -52,7 +52,8 @@ async function serveShared(request, env, cache) {
   const asset = await env.ASSETS.fetch(request);
   const response = new Response(asset.body, asset);
   for (const [name, value] of Object.entries(cors)) response.headers.set(name, value);
-  if (asset.ok) response.headers.set('Cache-Control', cache);
+  // A 304 needs the header too: browsers copy a revalidation's headers onto the cached copy.
+  if (asset.ok || asset.status === 304) response.headers.set('Cache-Control', cache);
   return response;
 }
 

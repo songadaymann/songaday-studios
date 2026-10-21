@@ -117,7 +117,7 @@ Each project has:
 | `url` | the place itself |
 | `tagline` | up to 80 characters of plain words. Archived places say when they were. |
 | `status` | `active`, `soon`, `seasonal`, `lab` or `archived` |
-| `since` | `YYYY` or `YYYY-MM` |
+| `since` | optional, `YYYY` or `YYYY-MM`; leave it out rather than guess |
 | `sourceUrl` | its public GitHub repository, or `null` |
 | `crypto` | `true` when its main thing is crypto: then it shows only to visitors with a wallet |
 | `inBar` | `true` to put it in the universe bar |
