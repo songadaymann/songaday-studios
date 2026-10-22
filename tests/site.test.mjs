@@ -34,8 +34,7 @@ test('section URLs redirect temporarily and are never cached', async () => {
     '/me': 'https://www.jonathanmann.net/',
     '/motba': 'https://motba.art/',
     '/mini-docs': '/films/',
-    '/donate': '/#donate',
-    '/data': 'https://github.com/songadaymann/songaday-data'
+    '/donate': '/#donate'
   };
   for (const [path, location] of Object.entries(cases)) {
     const response = await fetchPath(path);
@@ -155,7 +154,7 @@ test('the films feed is read in playlist order and rendered safely', async () =>
 });
 
 test('any spelling of /films or /links lands on the page', async () => {
-  for (const path of ['/films', '/Films', '/FILMS/', '/links', '/Links', '/LINKS/']) {
+  for (const path of ['/films', '/Films', '/FILMS/', '/links', '/Links', '/LINKS/', '/data', '/Data']) {
     const response = await fetchPath(path + '?from=x');
     assert.equal(response.status, 302, path);
     assert.equal(response.headers.get('Location'), path.replace(/\/$/, '').toLowerCase() + '/?from=x', path);

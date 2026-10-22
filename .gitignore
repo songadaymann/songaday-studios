@@ -46,6 +46,7 @@ venv/
 /films/index.html
 /everything/index.html
 /now/index.html
+/data/index.html
 /assets
 
 # Local preview config for the Claude desktop app

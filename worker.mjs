@@ -27,12 +27,11 @@ const SECTION_REDIRECTS = {
   '/me': 'https://www.jonathanmann.net/',
   '/motba': 'https://motba.art/',
   '/mini-docs': '/films/',
-  '/donate': '/#donate',
-  '/data': 'https://github.com/songadaymann/songaday-data'
+  '/donate': '/#donate'
 };
 
 // Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
-const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now']);
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data']);
 
 // The universe bar and projects.json load on other Song A Day sites too, and module scripts and
 // cross-origin fetches need CORS. The bar is pinned by version folder (bar/v1/), so it can be
