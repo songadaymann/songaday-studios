@@ -46,10 +46,10 @@
       "verb": "see",
       "path": "/all",
       "url": "https://gallery.songaday.world/",
-      "tagline": "Every song, to browse and watch. A new gallery is on the way.",
+      "tagline": "Every song since 2009 on one zoomable wall.",
       "status": "active",
       "since": "2025",
-      "sourceUrl": "https://github.com/songadaymann/song-a-day-gallery",
+      "sourceUrl": "https://github.com/songadaymann/songaday-display",
       "crypto": false,
       "inBar": true,
       "barLabel": "See all"

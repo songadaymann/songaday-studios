@@ -18,9 +18,9 @@ function fetchPath(path, origin = 'https://songaday.studio') {
 
 test('section URLs redirect temporarily and are never cached', async () => {
   const cases = {
-    '/all': 'https://songaday.fan/explore',
-    '/songs': 'https://songaday.fan/explore',
-    '/songs/': 'https://songaday.fan/explore',
+    '/all': 'https://gallery.songaday.world/',
+    '/songs': 'https://gallery.songaday.world/',
+    '/songs/': 'https://gallery.songaday.world/',
     '/listen': 'https://songaday.fan/challenge',
     '/suggest': 'https://songaday.fan/suggestions',
     '/Jamuary': 'https://songaday.fan/jamuary',

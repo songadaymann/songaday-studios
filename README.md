@@ -64,7 +64,7 @@ real page, later:
 
 | URL | Goes to |
 | --- | --- |
-| `/all`, `/songs` | https://songaday.fan/explore, until the new gallery replaces gallery.songaday.world (stuck at #5852) |
+| `/all`, `/songs` | https://gallery.songaday.world/, every song on one zoomable wall |
 | `/listen` | https://songaday.fan/challenge |
 | `/suggest` | https://songaday.fan/suggestions |
 | `/jamuary` | https://songaday.fan/jamuary |
