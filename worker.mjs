@@ -7,13 +7,12 @@ import { songDate } from './calendar.mjs';
 
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
-// cache them for good. /songs and /all go to songaday.fan's Explore until the new gallery
-// replaces the old one, which stops at #5852. /commission goes to the Bandcamp commission
-// listings until jonathanmann.net has a commissions page. /data goes to the data lab's code until
-// the lab has its page here.
+// cache them for good. /songs and /all go to the gallery, every song on one zoomable wall.
+// /commission goes to the Bandcamp commission listings until jonathanmann.net has a
+// commissions page.
 const SECTION_REDIRECTS = {
-  '/all': 'https://songaday.fan/explore',
-  '/songs': 'https://songaday.fan/explore',
+  '/all': 'https://gallery.songaday.world/',
+  '/songs': 'https://gallery.songaday.world/',
   '/listen': 'https://songaday.fan/challenge',
   '/suggest': 'https://songaday.fan/suggestions',
   '/jamuary': 'https://songaday.fan/jamuary',
