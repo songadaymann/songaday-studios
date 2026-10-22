@@ -161,4 +161,35 @@ await writePage("now/index.html", documentHtml({
   url: "https://songaday.studio/now/",
   body: hostedMedia(withChrome(nowSource).replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))),
 }));
+
+// The data lab (songaday.studio/data/). data/lab.html is a self-contained page with its own
+// title, styles and script, which reads data/lab.json (exported by songaday-data's
+// web/export.py). The same file is published on its own for review, so here it only gets a
+// document around it and the bar on top.
+const lab = await readFile(path.join(projectRoot, "data", "lab.html"), "utf8");
+const labTitle = lab.match(/<title>([\s\S]*?)<\/title>/)[1];
+const labStyle = lab.match(/<style>[\s\S]*?<\/style>/)[0];
+const labBody = lab.replace(/<title>[\s\S]*?<\/title>\s*/, "")
+  .replace(/<meta name="claude:viewport-fit-sides"[^>]*>\s*/, "")
+  .replace(labStyle, () => "");
+await writePage("data/index.html", `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline' https:; connect-src 'self' https:;">
+  <title>${labTitle}</title>
+  <meta name="description" content="Every Song A Day song since 2009 next to the weather, the moon, the planets, the news and its views, and what held up.">
+  <meta property="og:title" content="${labTitle}">
+  <meta property="og:url" content="https://songaday.studio/data/">
+  ${labStyle}
+  <style>body{padding-top:0}songaday-bar{display:block;height:36px;margin:0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 40px calc(-1 * max(16px, env(safe-area-inset-left, 0px)))}</style>
+</head>
+<body>
+<songaday-bar data-here="see"></songaday-bar>
+<script type="module" src="/bar/v1/bar.js" data-here="see"></script>
+${labBody}
+</body>
+</html>
+`);
 console.log(`Built Song A Day Studio index.html, films/, everything/ and now/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);

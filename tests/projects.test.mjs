@@ -56,7 +56,7 @@ test('the places the front door promises are listed', () => {
     films: { verb: 'watch' },
     donate: { verb: 'support' },
     albums: { verb: 'listen' },
-    'data-lab': { verb: 'see', status: 'soon', path: '/data' },
+    'data-lab': { verb: 'see', status: 'active', path: '/data' },
     'song-6000': { status: 'archived', url: 'https://6000.songaday.world/' },
     rmxd: { status: 'archived', crypto: true },
     'every-two-million-blocks': { crypto: true },
@@ -100,7 +100,7 @@ test('the home page directory groups live places by verb and hides crypto ones w
   assert.match(html, /<a href="\/fumble">The Museum of Fumbled Bags<\/a>/);
   assert.match(html, /Suggest tomorrow&#39;s song/);
   // Only live places: nothing coming soon, nothing archived, no donate (it's the rest of the page).
-  assert.doesNotMatch(html, /Drum Expander|data lab|RMXD|Support Song A Day|jonathanmann\.net/);
+  assert.doesNotMatch(html, /Drum Expander|RMXD|Support Song A Day|jonathanmann\.net/);
   // Every collect row is crypto, so the whole group waits for a wallet.
   assert.match(html, /<section class="directory-group" data-crypto aria-labelledby="directory-collect">/);
   assert.match(html, /<li data-crypto><a href="https:\/\/songaday\.world\/">/);

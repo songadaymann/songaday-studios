@@ -14,6 +14,9 @@ await cp('index.html', 'dist/index.html');
 await cp('films/index.html', 'dist/films/index.html');
 await cp('everything/index.html', 'dist/everything/index.html');
 await cp('now/index.html', 'dist/now/index.html');
+// The data lab: its built page and the data it reads.
+await cp('data/index.html', 'dist/data/index.html');
+await cp('data/lab.json', 'dist/data/lab.json');
 // The universe bar and the list it reads, for every Song A Day site (the Worker adds CORS).
 await cp('bar', 'dist/bar', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
 await cp('projects.json', 'dist/projects.json');

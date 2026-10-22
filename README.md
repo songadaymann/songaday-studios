@@ -33,6 +33,11 @@ outside the Fridays at The Park app.
   phone-sized column of links with a line each, today's song at the top. A standalone static
   page with no script or web fonts. The Worker fills in today's song (as a YouTube link) and its
   number. Its links use the short addresses below, so changing one there changes it here too.
+- `data/lab.html`, `data/lab.json` — the data lab (songaday.studio/data): every song next to the
+  weather, moon, planets, news and views, and the tested findings. `lab.html` is a self-contained
+  page; `build.mjs` wraps it in a document with the bar. `lab.json` comes from the public
+  [songaday-data](https://github.com/songadaymann/songaday-data) repo: run its `web/export.py`
+  and copy `web/lab.json` here to refresh it.
 - `calendar.mjs`, `build-calendar.mjs`, `calendar.json` — "This is all of it": every song as
   one picture, an image per year; see "Calendar" below
 - `plugins/index.html` — the plugin downloads page (songaday.studio/plugins), a standalone static
