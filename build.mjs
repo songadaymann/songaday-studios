@@ -162,11 +162,11 @@ await writePage("now/index.html", documentHtml({
   body: hostedMedia(withChrome(nowSource).replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))),
 }));
 
-// The data lab (songaday.studio/data/). data/lab.html is a self-contained page with its own
-// title, styles and script, which reads data/lab.json (exported by songaday-data's
+// The data lab (songaday.studio/data/). data-lab/lab.html is a self-contained page with its own
+// title, styles and script, which reads lab.json (data-lab/lab.json, exported by songaday-data's
 // web/export.py). The same file is published on its own for review, so here it only gets a
 // document around it and the bar on top.
-const lab = await readFile(path.join(projectRoot, "data", "lab.html"), "utf8");
+const lab = await readFile(path.join(projectRoot, "data-lab", "lab.html"), "utf8");
 const labTitle = lab.match(/<title>([\s\S]*?)<\/title>/)[1];
 const labStyle = lab.match(/<style>[\s\S]*?<\/style>/)[0];
 const labBody = lab.replace(/<title>[\s\S]*?<\/title>\s*/, "")
