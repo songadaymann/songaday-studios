@@ -165,13 +165,16 @@ await writePage("now/index.html", documentHtml({
 // The data lab (songaday.studio/data/). data-lab/lab.html is a self-contained page with its own
 // title, styles and script, which reads lab.json (data-lab/lab.json, exported by songaday-data's
 // web/export.py). The same file is published on its own for review, so here it only gets a
-// document around it and the bar on top.
+// document around it, with the eyebrow linking back to the studio's home page.
 const lab = await readFile(path.join(projectRoot, "data-lab", "lab.html"), "utf8");
 const labTitle = lab.match(/<title>([\s\S]*?)<\/title>/)[1];
 const labStyle = lab.match(/<style>[\s\S]*?<\/style>/)[0];
+const eyebrow = '<p class="eyebrow">Song A Day · Data lab</p>';
+if (!lab.includes(eyebrow)) throw new Error("data-lab/lab.html's eyebrow changed; update the link to the studio in build.mjs.");
 const labBody = lab.replace(/<title>[\s\S]*?<\/title>\s*/, "")
   .replace(/<meta name="claude:viewport-fit-sides"[^>]*>\s*/, "")
-  .replace(labStyle, () => "");
+  .replace(labStyle, () => "")
+  .replace(eyebrow, '<p class="eyebrow"><a href="/">Song A Day Studio</a> · Data lab</p>');
 await writePage("data/index.html", `<!doctype html>
 <html lang="en">
 <head>
@@ -183,11 +186,9 @@ await writePage("data/index.html", `<!doctype html>
   <meta property="og:title" content="${labTitle}">
   <meta property="og:url" content="https://songaday.studio/data/">
   ${labStyle}
-  <style>body{padding-top:0}songaday-bar{display:block;height:36px;margin:0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 40px calc(-1 * max(16px, env(safe-area-inset-left, 0px)))}</style>
+  <style>.eyebrow a{color:inherit;text-decoration:none}.eyebrow a:hover,.eyebrow a:focus-visible{text-decoration:underline}</style>
 </head>
 <body>
-<songaday-bar data-here="see"></songaday-bar>
-<script type="module" src="/bar/v1/bar.js" data-here="see"></script>
 ${labBody}
 </body>
 </html>

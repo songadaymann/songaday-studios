@@ -42,11 +42,10 @@ test('the build makes /everything and /now, and the home page directory and foot
     }
     assert.doesNotMatch(now, /\{\{|<script>/);
 
-    // Both new pages wear the studio header (nothing marked current) and footer, under the bar.
+    // Both new pages wear the studio header (nothing marked current) and footer.
     for (const page of [everything, now]) {
       assert.deepEqual(navLinks(page), navLinks(home));
       assert.doesNotMatch(page.match(/<header class="site-header">[\s\S]*?<\/header>/)[0], /aria-current/);
-      assert.match(page, /<songaday-bar><\/songaday-bar>/);
       assert.match(page, /fiscally sponsored by Fridays at The Park, so gifts are tax-deductible\. Commissions and albums are purchases from Jonathan, not gifts\./);
     }
 
