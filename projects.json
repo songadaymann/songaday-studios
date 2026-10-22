@@ -365,6 +365,18 @@
       "sourceUrl": "https://github.com/SongADAO/rmxd.songaday.world",
       "crypto": true,
       "inBar": false
+    },
+    {
+      "id": "sadvatars",
+      "title": "SADvatars",
+      "verb": "collect",
+      "path": null,
+      "url": "https://songaday.world/pfp",
+      "tagline": "A profile-picture maker for Song A Day holders. No longer updated.",
+      "status": "archived",
+      "sourceUrl": null,
+      "crypto": true,
+      "inBar": false
     }
   ]
 }
