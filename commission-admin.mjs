@@ -319,7 +319,7 @@ async function queuePage(request, env, url, identity, now) {
       .bind(ADMIN_PAGE_SIZE + 1, offset).all();
     more = results.length > ADMIN_PAGE_SIZE;
     list = results.slice(0, ADMIN_PAGE_SIZE).map((plan) => `<article class="card">
-  <p class="meta"><strong>${plan.paid_count} of ${plan.months} paid</strong> · ${escapeHtml(plan.status)} · ${escapeHtml(dollars(plan.monthly_cents))} a month · started ${escapeHtml(shortDate(plan.started_at, now))}</p>
+  <p class="meta"><strong>${plan.paid_count} of ${plan.months} paid</strong> · ${escapeHtml(plan.status)}${plan.status === 'active' && !plan.schedule_id ? ' · <span class="tag soon">NO END SET</span>' : ''} · ${escapeHtml(dollars(plan.monthly_cents))} a month · started ${escapeHtml(shortDate(plan.started_at, now))}</p>
   <p><a href="/commission/admin/${plan.request_id}">#${plan.request_id} “${escapeHtml(plan.title ?? '')}” for ${escapeHtml(plan.recipient)}</a> · ${escapeHtml(plan.buyer_name)}</p>
 </article>`).join('\n') || '<p>No monthly plans.</p>';
   } else {

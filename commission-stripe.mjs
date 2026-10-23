@@ -86,14 +86,19 @@ export const planAmounts = (amount, months) => ({ monthly: Math.ceil(amount / mo
 
 // A Checkout Session for one payment, a monthly plan, or an extra. Product names are generic,
 // so the recipient's name never goes to Stripe, and nothing says donate, gift or patron.
-export function checkoutParams(env, request, { plan, amount }) {
+// A session lasts an hour (Stripe's default is a day, its least is 30 minutes), so a tab left open
+// on Checkout can't pay for a song Jonathan has since pulled back with Undo delivery.
+const CHECKOUT_SECONDS = 3600;
+
+export function checkoutParams(env, request, { plan, amount }, now = new Date()) {
   const page = pageUrl(env, request);
   const common = {
     success_url: `${page}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${page}#pay`,
     client_reference_id: String(request.id),
     customer_email: request.buyer_email,
-    submit_type: 'pay'
+    submit_type: 'pay',
+    expires_at: Math.floor(now.getTime() / 1000) + CHECKOUT_SECONDS
   };
   if (plan === 'once' || plan === 'extra') {
     return {
@@ -139,13 +144,14 @@ export function checkoutParams(env, request, { plan, amount }) {
   };
 }
 
-export const createCheckout = (env, request, choice) =>
-  stripe(env, 'POST', '/checkout/sessions', checkoutParams(env, request, choice));
+export const createCheckout = (env, request, choice, now = new Date()) =>
+  stripe(env, 'POST', '/checkout/sessions', checkoutParams(env, request, choice, now));
 
 // Statements for the caller's db.batch: the payment, paid_at (the first payment unlocks the
 // download), and the email that announces it, all keyed so a repeat changes nothing.
-// A payment on a cancelled request is still recorded, since the money is real; the daily
-// summary flags it for a refund, and the buyer isn't told to go download.
+// A payment on a request that isn't delivered (cancelled, or back in line after Undo delivery)
+// is still recorded, since the money is real; the daily summary flags it, and the buyer isn't
+// told to go download a song that isn't there.
 export function recordPayment(env, request, payment) {
   const db = env.COMMISSIONS_DB;
   const now = (payment.now ?? new Date()).toISOString();
@@ -156,12 +162,12 @@ export function recordPayment(env, request, payment) {
         payment.subscription ?? null, payment.note ?? '', now),
     db.prepare('UPDATE requests SET paid_at = COALESCE(paid_at, ?) WHERE id = ?').bind(now, request.id)
   ];
-  const notCancelled = "(SELECT status FROM requests WHERE id = ?) != 'cancelled'";
+  const delivered = "(SELECT status FROM requests WHERE id = ?) = 'delivered'";
   const email = (kind, data) => statements.push(queueEmail(env, kind, request, { now: payment.now, ...data }));
   if (payment.kind === 'once' || (payment.kind === 'manual' && payment.email)) {
-    email('paid', { amount: payment.amount, onceKey: `paid:${payment.ref}`, when: notCancelled, whenArgs: [request.id] });
+    email('paid', { amount: payment.amount, onceKey: `paid:${payment.ref}`, when: delivered, whenArgs: [request.id] });
   } else if (payment.kind === 'extra') {
-    email('extra-thanks', { amount: payment.amount, onceKey: `paid:${payment.ref}`, when: notCancelled, whenArgs: [request.id] });
+    email('extra-thanks', { amount: payment.amount, onceKey: `paid:${payment.ref}`, when: delivered, whenArgs: [request.id] });
   } else if (payment.kind === 'installment') {
     // The first payment of a plan gets the thank-you, the last one says it's over, and the ones
     // between get only Stripe's receipt. Both counts run inside the batch, after the insert,
@@ -169,7 +175,7 @@ export function recordPayment(env, request, payment) {
     const count = '(SELECT COUNT(*) FROM payments WHERE subscription_id = ?)';
     email('paid', {
       amount: payment.amount, months: payment.months, onceKey: `paid:${payment.ref}`,
-      when: `${notCancelled} AND ${count} = 1`, whenArgs: [request.id, payment.subscription]
+      when: `${delivered} AND ${count} = 1`, whenArgs: [request.id, payment.subscription]
     });
     email('plan-finished', {
       months: payment.months, onceKey: `plan-finished:${payment.subscription}`,
@@ -237,11 +243,23 @@ export async function settlePlanPayment(env, request, payment, ctx) {
 // The schedule update unsets any current-phase field it leaves out ("Stripe unsets omitted
 // parameters"), so the price, quantity and start date go back, and so does every other field
 // set on the phase. Dropping default_payment_method would leave months 2 to N with no card.
+// The phase from_subscription returns also has fields the update refuses (currency is only on
+// create), and one unknown parameter fails the whole update, so only these are carried.
 const idOf = (value) => typeof value === 'string' ? value : value?.id;
-const CARRIED = ['default_payment_method', 'description', 'collection_method', 'currency', 'on_behalf_of',
+const CARRIED = ['default_payment_method', 'description', 'collection_method', 'on_behalf_of',
   'billing_cycle_anchor', 'application_fee_percent'];
 
-export function scheduleUpdate(schedule, plan) {
+// The phase fields POST /v1/subscription_schedules/:id takes (docs.stripe.com/api/
+// subscription_schedules/update, phases). The tests check every field sent is one of these.
+export const PHASE_UPDATE_FIELDS = new Set(['add_invoice_items', 'application_fee_percent', 'automatic_tax',
+  'billing_cycle_anchor', 'billing_thresholds', 'collection_method', 'default_payment_method', 'default_tax_rates',
+  'description', 'discounts', 'duration', 'end_date', 'invoice_settings', 'items', 'metadata', 'on_behalf_of',
+  'proration_behavior', 'start_date', 'transfer_data', 'trial', 'trial_end']);
+
+// paid is how many of the plan's payments are in, this period's included. The phase runs from the
+// start of this billing period, so a schedule that arrives late (a missing key permission, an
+// outage longer than Stripe's retries) still ends the plan after its last month, not N months on.
+export function scheduleUpdate(schedule, plan, paid = 1) {
   const phase = schedule.phases[0];
   const carried = {};
   for (const field of CARRIED) {
@@ -258,11 +276,17 @@ export function scheduleUpdate(schedule, plan) {
       ...carried,
       start_date: phase.start_date,
       items: phase.items.map((item) => ({ price: idOf(item.price), quantity: item.quantity ?? 1 })),
-      duration: { interval: 'month', interval_count: plan.months },
+      duration: { interval: 'month', interval_count: plan.months - Math.max(1, paid) + 1 },
       metadata: { ...phase.metadata, commission_id: String(plan.request_id), months: String(plan.months) }
     }]
   };
 }
+
+// A plan Stripe has ended: finished when every payment came in, stopped otherwise. The webhook,
+// the daily check and a stop that finds Stripe already done all record it the same way.
+export const endPlan = (db, subscriptionId, now = new Date()) => db.prepare(`UPDATE plans SET status = CASE
+    WHEN (SELECT COUNT(*) FROM payments WHERE subscription_id = ?) >= months THEN 'finished' ELSE 'stopped' END,
+    ended_at = ? WHERE subscription_id = ? AND status = 'active'`).bind(subscriptionId, now.toISOString(), subscriptionId).run();
 
 // Makes sure a plan's subscription ends by itself after its last month. It works from Stripe's
 // own state, not idempotency keys alone: those last 24 hours, webhook retries go on for three
@@ -271,17 +295,28 @@ export async function ensurePlanSchedule(env, subscriptionId) {
   const db = env.COMMISSIONS_DB;
   const plan = await db.prepare('SELECT * FROM plans WHERE subscription_id = ?').bind(subscriptionId).first();
   if (!plan || plan.schedule_id || plan.status !== 'active') return plan;
+  const paid = await db.prepare('SELECT COUNT(*) AS count FROM payments WHERE subscription_id = ?').bind(subscriptionId).first('count');
   const sub = id(subscriptionId, SUBSCRIPTION_ID);
   const subscription = await stripe(env, 'GET', `/subscriptions/${sub}?expand%5B%5D=schedule`);
-  if (subscription.status === 'canceled') return plan;
+  if (subscription.status === 'canceled') {
+    // Over in Stripe, and its customer.subscription.deleted never arrived.
+    await endPlan(db, subscriptionId);
+    return plan;
+  }
   let schedule = subscription.schedule ?? null;
   if (typeof schedule === 'string') schedule = await stripe(env, 'GET', `/subscription_schedules/${id(schedule, SCHEDULE_ID)}`);
-  if (!schedule) {
-    schedule = await stripe(env, 'POST', '/subscription_schedules', { from_subscription: subscriptionId }, `plan-${subscriptionId}-schedule`);
-  }
-  // Just made, or left by a try that failed between the two calls.
-  if (schedule.end_behavior !== 'cancel') {
-    schedule = await stripe(env, 'POST', `/subscription_schedules/${id(schedule.id, SCHEDULE_ID)}`, scheduleUpdate(schedule, plan));
+  if (schedule?.end_behavior !== 'cancel') {
+    if (Math.max(1, paid) >= plan.months) {
+      // Every payment is in already, so the schedule came too late to end it: end it now, the
+      // way the schedule would have, with no credit and no final invoice. Stripe's
+      // customer.subscription.deleted then marks the plan finished.
+      if (schedule) await stripe(env, 'POST', `/subscription_schedules/${id(schedule.id, SCHEDULE_ID)}/cancel`, { invoice_now: false, prorate: false });
+      else await stripe(env, 'DELETE', `/subscriptions/${sub}`);
+      return plan;
+    }
+    schedule ??= await stripe(env, 'POST', '/subscription_schedules', { from_subscription: subscriptionId }, `plan-${subscriptionId}-schedule`);
+    // Just made, or left by a try that failed between the two calls.
+    schedule = await stripe(env, 'POST', `/subscription_schedules/${id(schedule.id, SCHEDULE_ID)}`, scheduleUpdate(schedule, plan, paid));
   }
   await db.prepare('UPDATE plans SET schedule_id = ? WHERE subscription_id = ? AND schedule_id IS NULL')
     .bind(schedule.id, subscriptionId).run();
@@ -289,15 +324,26 @@ export async function ensurePlanSchedule(env, subscriptionId) {
 }
 
 // The buyer stops the rest of their monthly payments (honor system: the song stays theirs).
+// Returns 'stopped', or 'ended' when Stripe had already ended it (its webhook went missing), so
+// the button can't fail for good on a plan that's over.
 export async function stopPlan(env, plan, now = new Date()) {
-  if (plan.schedule_id) {
-    // Both default to true here, which would credit unused time and raise a final invoice.
-    await stripe(env, 'POST', `/subscription_schedules/${id(plan.schedule_id, SCHEDULE_ID)}/cancel`, { invoice_now: false, prorate: false });
-  } else {
-    await stripe(env, 'DELETE', `/subscriptions/${id(plan.subscription_id, SUBSCRIPTION_ID)}`);
+  try {
+    if (plan.schedule_id) {
+      // Both default to true here, which would credit unused time and raise a final invoice.
+      await stripe(env, 'POST', `/subscription_schedules/${id(plan.schedule_id, SCHEDULE_ID)}/cancel`, { invoice_now: false, prorate: false });
+    } else {
+      await stripe(env, 'DELETE', `/subscriptions/${id(plan.subscription_id, SUBSCRIPTION_ID)}`);
+    }
+  } catch (error) {
+    if (!(error instanceof StripeError) || error.status >= 500) throw error;
+    const subscription = await stripe(env, 'GET', `/subscriptions/${id(plan.subscription_id, SUBSCRIPTION_ID)}`);
+    if (subscription.status !== 'canceled') throw error;
+    await endPlan(env.COMMISSIONS_DB, plan.subscription_id, now);
+    return 'ended';
   }
   await env.COMMISSIONS_DB.prepare(`UPDATE plans SET status = 'stopped', ended_at = ? WHERE subscription_id = ? AND status = 'active'`)
     .bind(now.toISOString(), plan.subscription_id).run();
+  return 'stopped';
 }
 
 const utf8 = (text) => new TextEncoder().encode(text);
@@ -321,11 +367,41 @@ export async function verifyStripeSignature(raw, header, secret, nowSeconds = Da
   return false;
 }
 
+const WEBHOOK_MAX_BYTES = 1024 * 1024;
+
+// The body's bytes, or null past max. Counted as they arrive, since a chunked body has no
+// Content-Length and would otherwise be read whole before its signature fails.
+async function readCapped(request, max) {
+  const declared = request.headers.get('Content-Length');
+  if (declared !== null && !(Number(declared) <= max)) return null;
+  if (!request.body) return new Uint8Array(0);
+  const reader = request.body.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => {});
+      return null;
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return bytes;
+}
+
 // POST /commission/stripe. Logs carry only the event type, its id and the outcome.
 export async function handleStripeWebhook(request, env, ctx) {
   if (!env.STRIPE_WEBHOOK_SECRET || !env.COMMISSIONS_DB) return new Response('Not set up', { status: 503 });
-  if (Number(request.headers.get('Content-Length')) > 1024 * 1024) return new Response('Too big', { status: 413 });
-  const raw = new Uint8Array(await request.arrayBuffer());
+  const raw = await readCapped(request, WEBHOOK_MAX_BYTES);
+  if (!raw) return new Response('Too big', { status: 413 });
   if (!(await verifyStripeSignature(raw, request.headers.get('Stripe-Signature'), env.STRIPE_WEBHOOK_SECRET))) {
     return new Response('Bad signature', { status: 400 });
   }
@@ -368,10 +444,8 @@ async function handleEvent(env, event, ctx) {
     case 'customer.subscription.deleted': {
       // Stopped means stopped by the buyer, or by Stripe after failed retries. The download
       // stays unlocked either way: it's the honor system.
-      const result = await env.COMMISSIONS_DB.prepare(`UPDATE plans SET status = CASE
-          WHEN (SELECT COUNT(*) FROM payments WHERE subscription_id = ?) >= months THEN 'finished' ELSE 'stopped' END,
-          ended_at = ? WHERE subscription_id = ? AND status = 'active'`)
-        .bind(object?.id, new Date().toISOString(), object?.id).run();
+      if (typeof object?.id !== 'string') return 'ignored';
+      const result = await endPlan(env.COMMISSIONS_DB, object.id);
       return result.meta.changes ? 'ended' : 'ignored';
     }
     default:

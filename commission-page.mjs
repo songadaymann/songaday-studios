@@ -122,17 +122,20 @@ function payForm(request, { stripeReady, error, pending }) {
 </section>`;
 }
 
+// A plan whose last payment is in is done, though Stripe only says so (customer.subscription.
+// deleted) a month later, when the schedule ends it.
 function planLine(plan, paidCount) {
   const monthly = plan.monthly_cents;
-  if (plan.status === 'finished') return `<p>All ${plan.months} monthly payments are done. Thank you.</p>`;
+  if (plan.status === 'finished' || (plan.status === 'active' && paidCount >= plan.months)) return `<p>All ${plan.months} monthly payments are done. Thank you.</p>`;
   if (plan.status === 'stopped') return '<p>Your monthly payments are stopped. The song is still yours.</p>';
   return `<p>${paidCount} of ${plan.months} monthly payments of ${dollars(monthly)} made. The rest come out once a month and stop by themselves after the last one.</p>`;
 }
 
 function paidSection(request, { payments, plans, stripeReady, error }) {
   const total = payments.reduce((sum, payment) => sum + payment.amount_cents, 0);
-  const active = plans.find((plan) => plan.status === 'active');
-  const planLines = plans.map((plan) => planLine(plan, payments.filter((payment) => payment.subscription_id === plan.subscription_id).length)).join('\n  ');
+  const paidOn = (plan) => payments.filter((payment) => payment.subscription_id === plan.subscription_id).length;
+  const active = plans.find((plan) => plan.status === 'active' && paidOn(plan) < plan.months);
+  const planLines = plans.map((plan) => planLine(plan, paidOn(plan))).join('\n  ');
   const stop = active ? `<details class="commission-cancel">
     <summary>Stop the rest of my payments?</summary>
     <p>The song stays yours, and the download stays unlocked.</p>

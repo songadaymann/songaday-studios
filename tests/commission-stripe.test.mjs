@@ -3,11 +3,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { STRIPE_VERSION } from '../commission-config.mjs';
-import { formEncode, verifyStripeSignature } from '../commission-stripe.mjs';
-import { call, commissionEnv, deliver, fakeFetch, makeRequest, signStripe, urlencoded } from './fake-cloudflare.mjs';
+import { runCommissionDaily } from '../commission.mjs';
+import { PHASE_UPDATE_FIELDS, formEncode, verifyStripeSignature } from '../commission-stripe.mjs';
+import { LOCAL, call, commissionEnv, deliver, fakeFetch, makeRequest, signStripe, urlencoded } from './fake-cloudflare.mjs';
 
 const SECRET = 'whsec_test_secret';
 const KEY = 'rk_test_key';
+
+// The phase fields the schedule update takes, copied from docs.stripe.com/api/subscription_schedules/
+// update (phases). The create endpoint also takes currency; the update refuses it.
+const UPDATE_PHASE_FIELDS = ['add_invoice_items', 'application_fee_percent', 'automatic_tax', 'billing_cycle_anchor',
+  'billing_thresholds', 'collection_method', 'default_payment_method', 'default_tax_rates', 'description', 'discounts',
+  'duration', 'end_date', 'invoice_settings', 'items', 'metadata', 'on_behalf_of', 'proration_behavior', 'start_date',
+  'transfer_data', 'trial', 'trial_end'];
+const phaseFields = (form) => [...new Set([...form.keys()].map((key) => /^phases\[\d+\]\[([^\]]+)\]/.exec(key)?.[1]).filter(Boolean))];
 
 // A stateful stand-in for the parts of Stripe's API the Worker uses.
 function fakeStripe() {
@@ -26,7 +35,13 @@ function fakeStripe() {
       const subscription = state.subscriptions.get(match[1]) ?? { id: match[1], status: 'active', schedule: null };
       return { ...subscription, schedule: subscription.schedule ? state.schedules.get(subscription.schedule) : null };
     }
-    if (entry.method === 'DELETE' && (match = /^\/subscriptions\/(.+)$/.exec(path))) return { id: match[1], status: 'canceled' };
+    if (entry.method === 'DELETE' && (match = /^\/subscriptions\/(.+)$/.exec(path))) {
+      if (state.subscriptions.get(match[1])?.status === 'canceled') {
+        return new Response(JSON.stringify({ error: { type: 'invalid_request_error', code: 'resource_missing' } }), { status: 404 });
+      }
+      state.subscriptions.set(match[1], { id: match[1], status: 'canceled', schedule: null });
+      return { id: match[1], status: 'canceled' };
+    }
     if (entry.method === 'POST' && path === '/subscription_schedules') {
       const sub = entry.form.get('from_subscription');
       const id = `sub_sched_${sub.slice(4)}`;
@@ -45,6 +60,11 @@ function fakeStripe() {
     }
     if (entry.method === 'POST' && (match = /^\/subscription_schedules\/([^/]+)\/cancel$/.exec(path))) return { id: match[1], status: 'canceled' };
     if (entry.method === 'POST' && (match = /^\/subscription_schedules\/([^/]+)$/.exec(path))) {
+      // Like Stripe: one parameter it doesn't take fails the whole update.
+      const unknown = phaseFields(entry.form).filter((field) => !UPDATE_PHASE_FIELDS.includes(field));
+      if (unknown.length) {
+        return new Response(JSON.stringify({ error: { type: 'invalid_request_error', code: 'parameter_unknown', param: `phases[0][${unknown[0]}]` } }), { status: 400 });
+      }
       const schedule = state.schedules.get(match[1]);
       schedule.end_behavior = entry.form.get('end_behavior');
       return schedule;
@@ -143,7 +163,11 @@ test('paying once sends Checkout exactly these parameters, and goes there', asyn
   assert.equal(checkout.headers.get('Stripe-Version'), STRIPE_VERSION);
   assert.equal(checkout.headers.get('Content-Type'), 'application/x-www-form-urlencoded');
   const page = `https://songaday.studio/commission/s/${token}`;
-  assert.deepEqual(Object.fromEntries(checkout.form), {
+  const params = Object.fromEntries(checkout.form);
+  // An hour, so a tab left open on Checkout can't pay for a song pulled back since.
+  assert.ok(Math.abs(Number(params.expires_at) - (Date.now() / 1000 + 3600)) < 60, params.expires_at);
+  delete params.expires_at;
+  assert.deepEqual(params, {
     success_url: `${page}?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${page}#pay`,
     client_reference_id: String(id),
@@ -323,6 +347,8 @@ test('a monthly plan records its first payment, then gets a schedule that ends i
   assert.equal(update.get('phases[0][description]'), 'Song commission #1: 6 monthly payments of $83.34');
   assert.equal(update.get('phases[0][metadata][commission_id]'), String(id));
   assert.equal(update.get('phases[0][end_date]'), null);
+  assert.equal(update.get('phases[0][currency]'), null, 'the update refuses currency');
+  for (const field of phaseFields(update)) assert.ok(PHASE_UPDATE_FIELDS.has(field) && UPDATE_PHASE_FIELDS.includes(field), field);
 
   const [thanks] = emails(env, 'paid');
   assert.match(thanks.text, /I got your first payment of \$83\.34\. The other 5 come out once a month and stop by themselves after the last one\./);
@@ -513,4 +539,133 @@ test('nothing sent to Stripe names the recipient or says donate, gift or patron'
 test('form encoding nests the way Stripe reads it', () => {
   assert.equal(decodeURIComponent(formEncode({ a: { b: [{ c: 1 }, { d: 'x y' }] }, skip: null, n: false }).toString()),
     'a[b][0][c]=1&a[b][1][d]=x+y&n=false');
+});
+
+test('a schedule that arrives late still ends the plan after its last month', async () => {
+  const { env, stub, state } = await (async () => {
+    const made = await delivered();
+    const fake = fakeStripe();
+    // The restricted key lacks the schedule permission for the first two months.
+    fake.state.fail = (entry, path) => path.startsWith('/subscription_schedules');
+    const plan = session({ id: 'cs_test_late', requestId: made.id, plan: 'installments', amount: 8334, months: 6, subscription: 'sub_late', invoice: 'in_1' });
+    assert.equal((await webhook(made.env, 'checkout.session.completed', plan, fake.stub)).status, 500);
+    assert.equal((await webhook(made.env, 'invoice.paid', invoice({ id: 'in_2', requestId: made.id, subscription: 'sub_late' }), fake.stub)).status, 500);
+    fake.state.fail = null;
+    fake.stub.calls.length = 0;
+    assert.equal((await webhook(made.env, 'invoice.paid', invoice({ id: 'in_3', requestId: made.id, subscription: 'sub_late' }), fake.stub)).status, 200);
+    return { ...made, ...fake };
+  })();
+  assert.equal(payments(env).length, 3);
+  const update = stub.calls.find((entry) => /\/subscription_schedules\/sub_sched_late$/.test(new URL(entry.url).pathname)).form;
+  // Payments 3, 4, 5 and 6 are left, counting this period's: four months from here.
+  assert.equal(update.get('phases[0][duration][interval_count]'), '4');
+  assert.equal(env.COMMISSIONS_DB.one('SELECT schedule_id FROM plans').schedule_id, 'sub_sched_late');
+  assert.equal(state.schedules.get('sub_sched_late').end_behavior, 'cancel');
+});
+
+test('the daily run ends a plan whose payments are all in but has no schedule, and the summary says so until then', async () => {
+  const { env, id } = await delivered();
+  const { state, stub } = fakeStripe();
+  // A Stripe outage that outlasts the webhook's retries.
+  state.fail = (entry, path) => path.startsWith('/subscription_schedules') || entry.method === 'DELETE';
+  await webhook(env, 'checkout.session.completed', session({ id: 'cs_test_all', requestId: id, plan: 'installments', amount: 10000, months: 3, subscription: 'sub_all', invoice: 'in_a1' }), stub);
+  for (const n of [2, 3]) await webhook(env, 'invoice.paid', invoice({ id: `in_a${n}`, requestId: id, subscription: 'sub_all', amount: 10000, months: 3 }), stub);
+  env.COMMISSIONS_DB.exec("UPDATE plans SET started_at = '2026-08-01T00:00:00Z'");
+
+  // Still failing: the summary flags it, the page says it's done.
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = stub.fetch;
+  try {
+    await runCommissionDaily(env, new Date('2026-11-03T14:00:00Z'));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.match(env.COMMISSIONS_DB.one("SELECT text FROM outbox WHERE kind = 'summary'").text, new RegExp(`#${id} has a monthly plan with no end set`));
+  const admin = await (await call(env, '/commission/admin?show=plans', {}, null, LOCAL)).text();
+  assert.match(admin, /NO END SET/);
+
+  // Fixed: every payment is in, so the subscription is cancelled now rather than scheduled.
+  state.fail = null;
+  stub.calls.length = 0;
+  globalThis.fetch = stub.fetch;
+  try {
+    await runCommissionDaily(env, new Date('2026-11-04T14:00:00Z'));
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.deepEqual(stripeCalls(stub), ['GET /v1/subscriptions/sub_all', 'DELETE /v1/subscriptions/sub_all']);
+  await webhook(env, 'customer.subscription.deleted', { id: 'sub_all', object: 'subscription' }, stub);
+  assert.equal(env.COMMISSIONS_DB.one('SELECT status FROM plans').status, 'finished');
+});
+
+test('once the last monthly payment is in, the page says it’s done and offers no stop', async () => {
+  const { env, token } = await planWithInvoices(async ({ env, stub, plan, invoices }) => {
+    await webhook(env, 'checkout.session.completed', plan, stub);
+    for (const item of invoices.slice(1)) await webhook(env, 'invoice.paid', item, stub);
+  });
+  assert.equal(env.COMMISSIONS_DB.one('SELECT status FROM plans').status, 'active', 'Stripe ends it a month later');
+  const html = await (await call(env, `/commission/s/${token}`)).text();
+  assert.match(html, /All 6 monthly payments are done\. Thank you\./);
+  assert.doesNotMatch(html, /Stop the rest of my payments/);
+});
+
+test('stopping a plan Stripe already ended records that instead of failing', async () => {
+  const { env, token, stub, id } = await planWithInvoices(async ({ env, stub, plan }) => {
+    await webhook(env, 'checkout.session.completed', plan, stub);
+  });
+  env.COMMISSIONS_DB.exec('UPDATE plans SET schedule_id = NULL');
+  // Stripe ended it, and its customer.subscription.deleted never arrived.
+  await stub.fetch('https://api.stripe.com/v1/subscriptions/sub_plan1', { method: 'DELETE' });
+  stub.calls.length = 0;
+  const response = await call(env, `/commission/s/${token}`, urlencoded({ action: 'stop-plan' }), stub);
+  assert.equal(response.status, 303);
+  assert.deepEqual(stripeCalls(stub), ['DELETE /v1/subscriptions/sub_plan1', 'GET /v1/subscriptions/sub_plan1']);
+  assert.equal(env.COMMISSIONS_DB.one('SELECT status FROM plans WHERE request_id = ?', id).status, 'stopped');
+});
+
+test('the return trip calls Stripe only for a delivered song, within the link’s rate limit', async () => {
+  const { env, token, id } = await delivered();
+  const { state, stub } = fakeStripe();
+  const done = session({ id: 'cs_test_trip', requestId: id });
+  state.sessions.set(done.id, done);
+  env.COMMISSION_LIMIT.limit = async () => ({ success: false });
+  let response = await call(env, `/commission/s/${token}?session_id=${done.id}`, {}, stub);
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get('Location'), `/commission/s/${token}#pay`);
+  assert.equal(stub.calls.length, 0, 'limited');
+
+  env.COMMISSION_LIMIT.limit = async () => ({ success: true });
+  const waiting = await makeRequest(env, { email: 'w@example.com', story: 'Still in line, about a heron called Bill.' });
+  response = await call(env, `/commission/s/${waiting.token}?session_id=cs_test_whatever`, {}, stub);
+  assert.equal(response.status, 303);
+  assert.equal(stub.calls.length, 0, 'not delivered');
+});
+
+test('a payment for a song pulled back with Undo delivery is recorded and flagged, with no email', async () => {
+  const { env, id } = await delivered();
+  await call(env, `/commission/admin/${id}`, urlencoded({ action: 'undeliver' }, { Origin: LOCAL }), null, LOCAL);
+  const { stub } = fakeStripe();
+  await webhook(env, 'checkout.session.completed', session({ requestId: id }), stub);
+  assert.equal(payments(env).length, 1);
+  assert.equal(emails(env, 'paid').length, 0);
+  env.COMMISSIONS_DB.exec("UPDATE payments SET paid_at = '2026-11-03T13:00:00.000Z'");
+  await runCommissionDaily(env, new Date('2026-11-03T14:00:00Z'));
+  assert.match(env.COMMISSIONS_DB.one("SELECT text FROM outbox WHERE kind = 'summary'").text, new RegExp(`#${id} was paid while it was back in line`));
+});
+
+test('a webhook body is counted as it arrives: a chunked one past 1 MB is refused unread', async () => {
+  const { env } = await delivered();
+  let pulled = 0;
+  const body = new ReadableStream({
+    pull(controller) {
+      pulled++;
+      if (pulled > 40) return controller.close();
+      controller.enqueue(new Uint8Array(64 * 1024));
+    }
+  });
+  const response = await call(env, '/commission/stripe', { method: 'POST', body, duplex: 'half', headers: { 'Stripe-Signature': 't=1,v1=00' } });
+  assert.equal(response.status, 413);
+  assert.ok(pulled < 40, `stopped after ${pulled} chunks`);
+  const declared = await call(env, '/commission/stripe', { method: 'POST', body: '{}', headers: { 'Content-Length': String(2 * 1024 * 1024) } });
+  assert.equal(declared.status, 413);
 });

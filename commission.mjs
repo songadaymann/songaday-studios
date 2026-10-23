@@ -19,7 +19,9 @@ import {
   newYorkDate, parseDollars, placeInLine, readForm, sniffAudio, transitionProblem
 } from './commission-core.mjs';
 import { claimLapsedBefore, flushOutbox, queueEmail } from './commission-email.mjs';
-import { SESSION_ID, StripeError, createCheckout, handleStripeWebhook, paymentProblem, settleCheckoutSession, stopPlan, stripe } from './commission-stripe.mjs';
+import {
+  SESSION_ID, StripeError, createCheckout, ensurePlanSchedule, handleStripeWebhook, paymentProblem, settleCheckoutSession, stopPlan, stripe
+} from './commission-stripe.mjs';
 import { handleAdmin } from './commission-admin.mjs';
 import { BARE_PUBLIC_PAGE, BARE_SONG_SHELL, fillPublicPage, fillShell, messagePage, renderSongPage } from './commission-page.mjs';
 
@@ -264,11 +266,14 @@ async function songPage(request, env, url, r, { status = 200, error = '' } = {})
 
 // The return from Checkout: settle that session (the same code as the webhook), then show the
 // clean page. The id is checked before any Stripe call, or ?session_id=../../customers would
-// become a GET elsewhere in Stripe's API under Jonathan's key.
+// become a GET elsewhere in Stripe's API under Jonathan's key. Only a delivered song can be
+// paid for, and the calls share the buyer link's rate limit, so one link can't be used to
+// spend Jonathan's Stripe rate limit; the webhook records the payment either way.
 async function returnFromCheckout(env, url, r, ctx) {
   const sessionId = url.searchParams.get('session_id');
   let outcome = 'ignored';
-  if (SESSION_ID.test(sessionId) && stripeReady(env)) {
+  const allowed = async () => !env.COMMISSION_LIMIT || (await env.COMMISSION_LIMIT.limit({ key: `return:${r.token}` })).success;
+  if (SESSION_ID.test(sessionId) && stripeReady(env) && r.status === 'delivered' && await allowed()) {
     try {
       const session = await stripe(env, 'GET', `/checkout/sessions/${encodeURIComponent(sessionId)}`);
       outcome = await settleCheckoutSession(env, session, { request: r, ctx });
@@ -466,6 +471,20 @@ export async function runCommissionDaily(env, now = new Date()) {
   }
   if (emails.length) await db.batch(emails);
 
+  // A plan whose schedule never got made would bill every month for good. The webhook retries
+  // for three days; this keeps trying after that.
+  if (stripeReady(env)) {
+    const { results: unended } = await db.prepare(`SELECT subscription_id FROM plans WHERE status = 'active'
+      AND schedule_id IS NULL AND started_at < ?`).bind(new Date(now.getTime() - 3_600_000).toISOString()).all();
+    for (const plan of unended) {
+      try {
+        await ensurePlanSchedule(env, plan.subscription_id);
+      } catch (error) {
+        console.log('commission daily plan', error instanceof StripeError ? error.status : error?.name);
+      }
+    }
+  }
+
   const summary = await dailySummary(env, now, today);
   if (summary) await summary.run();
 
@@ -490,24 +509,30 @@ async function dailySummary(env, now, today) {
   const runStart = now.toISOString();
   const weekOut = new Date(Date.parse(`${today}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
   const all = async (sql, ...args) => (await db.prepare(sql).bind(...args).all()).results;
-  const [fresh, deadlines, payments, ended, inLine, unpaid, stuck, failed, afterCancel, twice] = await Promise.all([
+  const hourAgo = new Date(now.getTime() - 3_600_000).toISOString();
+  const [fresh, deadlines, payments, ended, inLine, unpaid, stuck, failed, notDelivered, twice, unended, overpaid] = await Promise.all([
     all('SELECT id, kind, occasion, deadline, buyer_name FROM requests WHERE requested_at > ? ORDER BY id', since),
     all(`SELECT id, deadline FROM requests WHERE ${IN_LINE} AND deadline IS NOT NULL AND deadline >= ? AND deadline <= ? ORDER BY deadline`, today, weekOut),
     all('SELECT amount_cents FROM payments WHERE paid_at > ?', since),
     all('SELECT status FROM plans WHERE ended_at > ?', since),
     db.prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(status = 'writing'), 0) AS writing FROM requests WHERE ${IN_LINE}`).first(),
-    db.prepare("SELECT COUNT(*) AS count FROM requests WHERE status = 'delivered' AND paid_at IS NULL").first('count'),
+    db.prepare("SELECT COUNT(*) AS count FROM requests WHERE status = 'delivered' AND paid_at IS NULL AND archived_at IS NULL").first('count'),
     db.prepare('SELECT COUNT(*) AS count FROM outbox WHERE sent_at IS NULL AND failed_at IS NULL AND created_at < ?').bind(runStart).first('count'),
     db.prepare('SELECT COUNT(*) AS count FROM outbox WHERE failed_at IS NOT NULL AND failed_at > ?').bind(since).first('count'),
-    all(`SELECT DISTINCT p.request_id AS id FROM payments p JOIN requests r ON r.id = p.request_id
-      WHERE r.status = 'cancelled' AND p.paid_at > ?`, since),
+    // Paid for a song that isn't there: cancelled, or back in line after Undo delivery.
+    all(`SELECT DISTINCT p.request_id AS id, r.status FROM payments p JOIN requests r ON r.id = p.request_id
+      WHERE r.status != 'delivered' AND p.paid_at > ?`, since),
     // Paid twice: more than one one-off payment or plan, with one of them new.
     all(`SELECT r.id FROM requests r WHERE
       (SELECT COUNT(*) FROM payments WHERE request_id = r.id AND kind = 'once') + (SELECT COUNT(*) FROM plans WHERE request_id = r.id) > 1
       AND (EXISTS (SELECT 1 FROM payments WHERE request_id = r.id AND kind = 'once' AND paid_at > ?)
-        OR EXISTS (SELECT 1 FROM plans WHERE request_id = r.id AND started_at > ?))`, since, since)
+        OR EXISTS (SELECT 1 FROM plans WHERE request_id = r.id AND started_at > ?))`, since, since),
+    // Plans that nothing will end, which the check above couldn't fix: these bill every month.
+    all(`SELECT request_id AS id FROM plans WHERE status = 'active' AND schedule_id IS NULL AND started_at < ?`, hourAgo),
+    all(`SELECT p.request_id AS id FROM plans p WHERE (SELECT COUNT(*) FROM payments WHERE subscription_id = p.subscription_id) > p.months`)
   ]);
-  const news = fresh.length + deadlines.length + payments.length + ended.length + stuck + failed + afterCancel.length + twice.length;
+  const news = fresh.length + deadlines.length + payments.length + ended.length + stuck + failed + notDelivered.length
+    + twice.length + unended.length + overpaid.length;
   if (!news) return null;
   const paidSum = payments.reduce((sum, payment) => sum + payment.amount_cents, 0);
   const finished = ended.filter((plan) => plan.status === 'finished').length;
@@ -521,7 +546,12 @@ async function dailySummary(env, now, today) {
     `Monthly plans finished: ${finished} · stopped early: ${ended.length - finished}`,
     `Emails that haven't gone out: ${stuck} · failed: ${failed}`
   ];
-  const look = [...afterCancel.map((row) => `#${row.id} was paid after it was cancelled`), ...twice.map((row) => `#${row.id} was paid twice`)];
+  const look = [
+    ...notDelivered.map((row) => `#${row.id} was paid ${row.status === 'cancelled' ? 'after it was cancelled' : 'while it was back in line'}`),
+    ...twice.map((row) => `#${row.id} was paid twice`),
+    ...unended.map((row) => `#${row.id} has a monthly plan with no end set`),
+    ...overpaid.map((row) => `#${row.id} has a monthly plan with more payments than months`)
+  ];
   if (look.length) lines.push(`Needs a look: ${look.join(' · ')}`);
   return queueEmail(env, 'summary', null, {
     now, lines, onceKey: `summary:${today}`,
