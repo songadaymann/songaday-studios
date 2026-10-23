@@ -88,7 +88,29 @@ test('/everything and /now land on their pages from any spelling', async () => {
 test('production copies the new pages, the bar and projects.json into dist/', async () => {
   const script = await readFile(new URL('build-production.mjs', root), 'utf8');
   for (const copy of ["cp('everything/index.html', 'dist/everything/index.html')", "cp('now/index.html', 'dist/now/index.html')",
-    "cp('bar', 'dist/bar'", "cp('projects.json', 'dist/projects.json')"]) {
+    "cp('bar', 'dist/bar'", "cp('projects.json', 'dist/projects.json')", "cp('captions', 'dist/captions'"]) {
     assert.ok(script.includes(copy), copy);
   }
+});
+
+test('the home page film has English captions, on by default', async () => {
+  const html = await readFile(new URL('profile.html', root), 'utf8');
+  const film = html.match(/<video[\s\S]*?id="hero-video"[\s\S]*?<\/video>/)[0];
+  assert.match(film, /<track kind="captions" src="\/captions\/welcome-to-song-a-day\.vtt" srclang="en" label="English" default>/);
+  assert.match(html, /id="hero-video-captions" aria-hidden="true" hidden/);
+  assert.match(html, /id="hero-video-cc" type="button" aria-pressed="true" aria-label="Captions"/);
+
+  // A well-formed WebVTT file: cues in order, each with text, none running past the film.
+  const vtt = await readFile(new URL('captions/welcome-to-song-a-day.vtt', root), 'utf8');
+  assert.match(vtt, /^WEBVTT\r?\n/);
+  const seconds = (stamp) => stamp.split(':').reduce((total, part) => total * 60 + Number(part), 0);
+  const cues = [...vtt.matchAll(/^((?:\d{2}:)?\d{2}:\d{2}\.\d{3}) --> ((?:\d{2}:)?\d{2}:\d{2}\.\d{3})[^\n]*\n([^\n]+(?:\n[^\n]+)*)/gm)]
+    .map(([, start, end, text]) => ({ start: seconds(start), end: seconds(end), text }));
+  assert.ok(cues.length > 20, `${cues.length} cues`);
+  cues.forEach((cue, index) => {
+    assert.ok(cue.end > cue.start, `cue ${index + 1} ends after it starts`);
+    assert.ok(index === 0 || cue.start >= cues[index - 1].start, `cue ${index + 1} is in order`);
+    assert.ok(cue.end <= 178.2, `cue ${index + 1} ends within the film`);
+    assert.ok(cue.text.trim(), `cue ${index + 1} has text`);
+  });
 });

@@ -26,6 +26,9 @@ await cp('projects.json', 'dist/projects.json');
 await cp('plugins', 'dist/plugins', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
 // Bio link page (songaday.studio/links), also static; the Worker fills in today's song.
 await cp('links', 'dist/links', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
+// Captions for the home page film (WebVTT). They're in the repo, unlike the films themselves,
+// so public checkouts have them too.
+await cp('captions', 'dist/captions', { recursive: true, filter: (source) => source.endsWith('.vtt') || !path.extname(source) });
 if (existsSync('assets')) {
   // Videos are served from R2 (node upload-media.mjs), so they stay out of dist/.
   const isVideo = (source) => MEDIA_PATH.test('/' + source.split(path.sep).join('/'));

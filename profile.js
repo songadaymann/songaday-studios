@@ -452,6 +452,40 @@
   ["loadedmetadata", "progress", "durationchange"].forEach((type) => {
     heroVideo?.addEventListener(type, renderSeekAvailability);
   });
+  // Captions: the film's track (captions/welcome-to-song-a-day.vtt) is drawn in our own box,
+  // above the controls, instead of by the browser. They start on, since the preview is muted;
+  // the CC button turns them off, and the choice is remembered on this device.
+  const captionTrack = heroVideo?.textTracks?.[0];
+  const captionBox = document.getElementById("hero-video-captions");
+  const captionToggle = document.getElementById("hero-video-cc");
+  let captionsOn = true;
+  try { captionsOn = localStorage.getItem("hero-captions") !== "off"; } catch {}
+
+  function renderCaptions() {
+    if (!captionBox) return;
+    const cue = captionsOn ? captionTrack?.activeCues?.[0] : null;
+    const text = cue ? cue.text.replace(/<[^>]*>/g, "").trim() : "";
+    captionBox.replaceChildren();
+    if (text) {
+      const line = document.createElement("span");
+      line.textContent = text;
+      captionBox.append(line);
+    }
+    captionBox.hidden = !text;
+    captionToggle?.setAttribute("aria-pressed", String(captionsOn));
+  }
+
+  if (captionTrack) {
+    captionTrack.mode = "hidden";
+    captionTrack.addEventListener("cuechange", renderCaptions);
+  }
+  captionToggle?.addEventListener("click", () => {
+    captionsOn = !captionsOn;
+    try { localStorage.setItem("hero-captions", captionsOn ? "on" : "off"); } catch {}
+    renderCaptions();
+  });
+  renderCaptions();
+
   if (heroVideo && canPreviewHero) {
     heroVideo.preload = "auto";
     void heroVideo.play().catch(() => {});
