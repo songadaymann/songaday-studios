@@ -185,7 +185,8 @@ function define() {
       toggle.setAttribute('aria-label', 'More from Song A Day');
       toggle.setAttribute('aria-controls', 'menu');
       toggle.setAttribute('aria-expanded', 'false');
-      const support = element('a', 'support', 'Support');
+      // "Donate", not "Support": on its own, "Support" reads like help with the website.
+      const support = element('a', 'support', 'Donate');
       support.href = supportHref(location.hostname);
       // songaday.studio's own header already has Donate, so the pill would be a second red button.
       support.hidden = location.hostname === 'songaday.studio' || location.hostname === 'www.songaday.studio';

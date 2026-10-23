@@ -74,6 +74,8 @@ test('the bar reads its links from projects.json, and its built-in list matches 
     null
   ] }), []);
   assert.equal(supportHref('songaday.fan'), 'https://songaday.studio/?from=songaday.fan#donate');
+  // The pill says Donate, like the studio's own header: "Support" reads like help with the website.
+  assert.match(barSource, /element\('a', 'support', 'Donate'\)/);
 });
 
 test('the bar carries the crypto-wallet-gate detector unchanged and fetches nothing else', async () => {
