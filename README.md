@@ -21,6 +21,8 @@ outside the Fridays at The Park app.
   "The universe bar" below
 - `everything.html` — songaday.studio/everything: every row of `projects.json`, by status
 - `now.html` — songaday.studio/now: what Jonathan is doing now, dated, in his words
+- `press.html`, `press-page.js`, `press.mjs`, `press/press.json`, `update-press.mjs` — the press
+  page (songaday.studio/press/), which `build.mjs` builds into `press/index.html`; see "Press" below
 - `wallet/wallet-detect.js`, `wallet/wallet-gate.js` — the crypto-wallet-gate skill's files,
   unchanged. `build.mjs` inlines them into the home page and /everything, where they show the
   `data-crypto` rows only to browsers with a wallet (`?crypto=1`, `?crypto=0` and
@@ -103,6 +105,8 @@ real page, later:
 | `/fumble` | The Museum of Fumbled Bags (`fumble.mjs`) |
 | `/everything/` | `everything/index.html`, built from `projects.json` |
 | `/now/` | `now/index.html`, built from `now.html` |
+| `/press/` | `press/index.html`, built from `press/press.json`; see "Press" |
+| `/podcasts`, `/interviews`, `/media` | `/press/` |
 | `/data` | https://github.com/songadaymann/songaday-data, until the data lab has its page here |
 | `/donate` | `/#donate`, the gift form on the home page |
 
@@ -262,6 +266,96 @@ asset path to "%40", an extra round trip) and `calendar.json`, which is tracked:
 and where most of its songs were recorded. The page says "Through #N", so it's honest when it
 falls behind. To bring it up to date, run it again, then `node build-production.mjs` and
 `wrangler deploy`. Image URLs carry `?v=<last song>`, so browsers fetch the new ones.
+
+## Press
+
+https://songaday.studio/press/ lists Jonathan's press, podcasts, radio and TV, newest first:
+the eight newest featured pieces (the rest open under "more featured"), then all of it by year,
+with filters for Press, Podcasts & radio, and TV & video. It replaces the press pages on
+jonathanmann.net.
+
+It comes from the Google Sheet "jonathan_mann_press_inventory". The sheet's **Public** tab is a
+formula over the Press Inventory tab that keeps only the rows to publish, with 12 columns: `id`,
+`date`, `outlet`, `title`, `kind`, `format`, `subject`, `project`, `url`, `byline`, `featured`
+and `wallet_only`.
+
+- **How it updates.** The build renders `press/press.json`, a committed snapshot of the Public
+  tab, into `press/index.html`. Once `PRESS_CSV_URL` is set, the Worker also reads the Public tab
+  (keeping a copy for 15 minutes) and shows that instead. Google republishes the tab a few
+  minutes after an edit, so a new row is on the site within about 20 minutes, with no deploy.
+  If the sheet can't be read, or has fewer than half as many good rows
+  as the snapshot (an emptied or broken tab), the page keeps the snapshot, and tries the sheet
+  again a minute later. It also keeps the snapshot if the tab has lost a column (all 12 must be
+  there, each once), or is over 1 MB or 2,000 rows.
+- **Adding a piece.** Add a row to Press Inventory with an ID starting `JM-`, Status
+  `Source found`, a Title / Segment, a Date (`YYYY-MM-DD`, or `YYYY-MM` / `YYYY` when that's all
+  you know) and the Source URL (or an Archive URL when the original is gone). A row without a
+  title doesn't show. Rating A makes it featured; Rating F keeps it off. Tick Wallet only for a
+  piece that's about buying the NFTs, like a marketplace's own blog (see below). Format decides
+  the filter: one that includes "podcast episode" or "podcast interview", or starts with
+  "radio", is Podcasts & radio; one that starts with "TV", "talk" or "interview / video", or
+  includes "livestream", is TV & video; everything else is Press.
+- **One-time setup.** In the sheet, File > Share > Publish to web:
+  1. Under Link, choose the Public tab and "Comma-separated values (.csv)".
+  2. Open "Published content & settings" and change "Entire document" to just **Public**. Left
+     as Entire document, every tab is published to anyone with the link, Press Inventory's notes
+     and ratings included, and the link goes in this public repo.
+  3. Tick "Automatically republish when changes are made", and publish.
+  4. Check it: open the address with `/pub?` changed to `/pubhtml?`, and only the Public tab
+     should be there. With `gid=` changed to Press Inventory's number (it's in the sheet's
+     address when that tab is open, usually 0), it should give an error, not the inventory.
+  5. Paste the address into `PRESS_CSV_URL` in `wrangler.jsonc`, then
+     `node build-production.mjs` and `wrangler deploy`.
+- **Refreshing the snapshot.** Now and then (and when rows have been removed on purpose), run
+  `node update-press.mjs` to rewrite `press/press.json` from the published tab, or
+  `node update-press.mjs public.csv` with a CSV downloaded from it. It lists any row it leaves
+  out and why, and won't drop below half the old rows (`--allow-shrink`) or show everyone a row
+  that was wallet-only (`--allow-wallet-change`) unless you say so. Commit the file, then build
+  and deploy.
+
+If the Public tab isn't there yet: Press Inventory needs column R "Archive URL" and column S
+"Wallet only" (checkboxes), and column K (Date) formatted as plain text. Add a tab named Public
+and paste this into A1. It keeps rows whose ID starts `JM-`, whose Status is `Source found`, that
+have a link and aren't rated F, sorted newest first:
+
+```
+=ARRAYFORMULA(LET(
+  ids,  'Press Inventory'!A5:A,
+  stat, 'Press Inventory'!B5:B,
+  subj, 'Press Inventory'!C5:C,
+  proj, 'Press Inventory'!D5:D,
+  outl, 'Press Inventory'!F5:F,
+  fmt,  'Press Inventory'!H5:H,
+  ttl,  'Press Inventory'!I5:I,
+  who,  'Press Inventory'!J5:J,
+  rawd, 'Press Inventory'!K5:K,
+  grade,'Press Inventory'!L5:L,
+  src,  'Press Inventory'!N5:N,
+  arc,  'Press Inventory'!R5:R,
+  wal,  'Press Inventory'!S5:S,
+  when, IF(ISNUMBER(rawd), IF(rawd<10000, TEXT(rawd,"0"), TEXT(rawd,"yyyy-mm-dd")), TRIM(rawd)),
+  link, IF(TRIM(arc)<>"", TRIM(arc), TRIM(src)),
+  low,  LOWER(fmt),
+  kd,   IF(REGEXMATCH(low,"podcast episode|podcast interview|^radio"), "Podcasts & radio",
+        IF(REGEXMATCH(low,"^tv|livestream|^talk|^interview / video"), "TV & video", "Press")),
+  keep, (LEFT(ids,3)="JM-")*(stat="Source found")*(link<>"")*(grade<>"F"),
+  body, FILTER(HSTACK(ids, when, outl, ttl, kd, fmt, subj, proj, link, who, grade="A", UPPER(TO_TEXT(wal))="TRUE"), keep),
+  VSTACK({"id","date","outlet","title","kind","format","subject","project","url","byline","featured","wallet_only"},
+         SORT(body, 2, FALSE, 1, FALSE))
+))
+```
+
+What the page checks: each row needs an `id` starting `JM-`, an http or https `url` and a real
+`date`, a `title`, and `featured` and `wallet_only` that are TRUE, FALSE or empty; rows that fail
+are left out. A `kind` it doesn't know counts as Press, and an empty outlet shows the site's name.
+Every value is escaped, so nothing in the sheet can add HTML or a script, and only http and https
+links are made.
+
+The filters are links (`/press/?kind=podcasts`), which the Worker answers with the other kinds
+hidden, so they work without JavaScript; with it, `press-page.js` filters in place. Rows with
+`wallet_only` (the OpenSea interview) are crypto parts: they're inside `data-crypto` and show only
+to browsers with a wallet (see `wallet/`), and only those browsers count them. Everything else,
+including the SEC suit and NFT news, shows to everyone.
 
 ## Fumble
 

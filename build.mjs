@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { songADayNumber } from "./song-day.mjs";
 import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFilms } from "./films.mjs";
 import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
+import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
 import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
@@ -173,6 +174,24 @@ await writePage("everything/index.html", documentHtml({
   url: "https://songaday.studio/everything/",
   body: hostedMedia(withChrome(everythingSource).replace("{{EVERYTHING}}", () => renderEverything(projects))),
   script: `(() => {\n  "use strict";\n${walletGateScript}\n  applyWalletGate();\n})();`,
+}));
+
+// songaday.studio/press/, from the snapshot of the press sheet in press/press.json (press.mjs).
+// The Worker swaps in the live sheet when PRESS_CSV_URL is set. The page script filters by kind
+// in place, and the wallet gate after it shows wallet-only rows to browsers with a wallet.
+const press = pressSnapshot();
+if (press.problems.length) {
+  throw new Error(`press/press.json has problems:\n${press.problems.join("\n")}`);
+}
+const [pressSource, pressJs] = await Promise.all([source("press.html"), source("press-page.js")]);
+await writePage("press/index.html", documentHtml({
+  title: "Press · Song A Day Studio",
+  description: "Press, podcasts, radio and TV about Jonathan Mann and Song A Day.",
+  url: "https://songaday.studio/press/",
+  body: hostedMedia(withChrome(pressSource)
+    .replace("{{PRESS_SUMMARY}}", () => renderPressSummary(press.items))
+    .replace("{{PRESS}}", () => renderPress(press.items))),
+  script: `${pressJs}(() => {\n  "use strict";\n${walletGateScript}\n  applyWalletGate();\n})();`,
 }));
 
 await writePage("now/index.html", documentHtml({

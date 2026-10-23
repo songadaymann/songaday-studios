@@ -93,7 +93,10 @@
     // Empty means the admin answers only on localhost (wrangler dev).
     "ACCESS_TEAM_DOMAIN": "",
     // PLACEHOLDER: the Access application's AUD tag.
-    "ACCESS_AUD": ""
+    "ACCESS_AUD": "",
+    // songaday.studio/press/ (press.mjs): the press sheet's Public tab, published to the web as
+    // CSV. Empty keeps the snapshot in press/press.json (README, "Press").
+    "PRESS_CSV_URL": ""
   },
   "routes": [
     {
