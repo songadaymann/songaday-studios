@@ -1,0 +1,530 @@
+// songaday.studio/commission: Jonathan's song commissions. A buyer fills in the request form and
+// gets their place in line (#N) and a private page. Each morning a cron emails anyone who moved
+// up. Jonathan reads the requests in order on /commission/admin (commission-admin.mjs), and
+// delivers each song there. The buyer's page then plays it and shows the lyrics; they pay what
+// they want through Stripe (commission-stripe.mjs), once or over months, and paying unlocks the
+// download. It's a purchase from Jonathan: nothing here says donate, gift or patron.
+//
+// Requests are in the D1 database bound as COMMISSIONS_DB (schema in commission-migrations/),
+// voice memos and songs in the private R2 bucket bound as COMMISSION_FILES, and emails go
+// through the outbox table (commission-email.mjs). See README.md, "Commissions".
+import { serveMedia } from './media.mjs';
+import { isHuman } from './turnstile.mjs';
+import {
+  FORM_MAX_BYTES, LIMITS, MAX_OPEN_PER_EMAIL, MEMO_MAX_BYTES, OUTBOX_KEEP_DAYS, PLAN_MONTHS, PRICES,
+  REMINDER_DAYS, VIDEO_PRICE_CENTS
+} from './commission-config.mjs';
+import {
+  IN_LINE, TOKEN, cleanLine, cleanText, daysBetween, dollars, later, lineLength, loadByToken, newToken,
+  newYorkDate, parseDollars, placeInLine, readForm, sniffAudio, transitionProblem
+} from './commission-core.mjs';
+import { claimLapsedBefore, flushOutbox, queueEmail } from './commission-email.mjs';
+import { SESSION_ID, StripeError, createCheckout, handleStripeWebhook, paymentProblem, settleCheckoutSession, stopPlan, stripe } from './commission-stripe.mjs';
+import { handleAdmin } from './commission-admin.mjs';
+import { BARE_PUBLIC_PAGE, BARE_SONG_SHELL, fillPublicPage, fillShell, messagePage, renderSongPage } from './commission-page.mjs';
+
+export const COMMISSIONS_DATABASE = 'songaday-commissions';
+export const COMMISSION_BUCKET = 'songaday-commissions';
+
+const BUYER_PATH = /^\/commission\/s\/([0-9a-f]{32})(?:\/(pay|quiet|listen|download))?\/?$/;
+const SMALL_FORM = 16 * 1024;
+const DUPLICATE_MINUTES = 10;
+
+// ---- Responses ------------------------------------------------------------------------------
+
+const PUBLIC_HEADERS = {
+  'Content-Type': 'text/html; charset=utf-8',
+  'Cache-Control': 'no-cache',
+  'Referrer-Policy': 'same-origin',
+  'X-Content-Type-Options': 'nosniff',
+  // The page's own CSP is a meta tag (build.mjs); frame-ancestors only works as a header.
+  'Content-Security-Policy': "frame-ancestors 'none'"
+};
+
+// A buyer's page is private: never cached, never indexed, and the token never leaves in a
+// Referer (including to Stripe).
+const BUYER_HEADERS = {
+  'Content-Type': 'text/html; charset=utf-8',
+  'Cache-Control': 'no-store',
+  'X-Robots-Tag': 'noindex, nofollow',
+  'Referrer-Policy': 'no-referrer',
+  'X-Content-Type-Options': 'nosniff',
+  'Content-Security-Policy': "frame-ancestors 'none'"
+};
+
+const BUYER_MEDIA = {
+  cacheControl: 'private, no-store',
+  headers: {
+    'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': 'sandbox',
+    'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer'
+  }
+};
+
+const respond = (request, body, status, headers) =>
+  new Response(request.method === 'HEAD' ? null : body, { status, headers });
+const redirect = (location, headers = {}) =>
+  new Response(null, { status: 303, headers: { Location: location, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', ...headers } });
+
+// A built page through the assets binding (an internal fetch, which run_worker_first doesn't
+// send back through the Worker). /commission/ and /commission/song, not .../index.html or
+// song.html: under the default html_handling those answer 307s. Without a build, the bare page.
+async function builtPage(env, url, path, fallback) {
+  try {
+    const response = await env.ASSETS?.fetch(new Request(new URL(path, url)));
+    if (response?.ok && response.headers.get('Content-Type')?.includes('text/html')) return await response.text();
+  } catch {
+    // fall through to the bare page
+  }
+  return fallback;
+}
+
+async function shellPage(request, env, url, content, status = 200, headers = BUYER_HEADERS) {
+  const shell = await builtPage(env, url, '/commission/song', BARE_SONG_SHELL);
+  return respond(request, fillShell(shell, content), status, headers);
+}
+
+const notFound = (request, env, url) => shellPage(request, env, url,
+  messagePage('That page isn’t here', 'If you followed a link from one of my emails, check it was copied whole.', '\n<p><a href="/commission">Get a song written for you</a></p>'), 404);
+
+// ---- The public page ------------------------------------------------------------------------
+
+function closedReason(env) {
+  if (env.COMMISSION_REQUESTS !== 'open') return 'Requests open soon.';
+  if (!env.COMMISSIONS_DB || !env.TURNSTILE_SECRET_KEY) return 'Requests are closed right now. Try again later.';
+  return null;
+}
+
+async function publicPage(request, env, url) {
+  const html = await builtPage(env, url, '/commission/', BARE_PUBLIC_PAGE);
+  const line = env.COMMISSIONS_DB ? (await lineLength(env.COMMISSIONS_DB)).total : null;
+  return respond(request, fillPublicPage(html, { line, closed: closedReason(env), siteKey: env.TURNSTILE_SITE_KEY }), 200, PUBLIC_HEADERS);
+}
+
+// ---- Making a request -----------------------------------------------------------------------
+
+// The email must be one plain address: so `to` can only ever name one recipient.
+const EMAIL = /^[^\s@,;:<>()[\]"'\\]+@[^\s@,;:<>()[\]"'\\]+\.[^\s@,;:<>()[\]"'\\.]+$/;
+const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+  && new Date(`${value}T00:00:00Z`).toISOString().startsWith(value);
+
+export function readAnswers(form) {
+  return {
+    kind: String(form.get('kind') ?? ''),
+    recipient: cleanLine(form.get('recipient')),
+    relationship: cleanLine(form.get('relationship')),
+    occasion: cleanLine(form.get('occasion')),
+    names: cleanText(form.get('names')),
+    story: cleanText(form.get('story')),
+    leave_out: cleanText(form.get('leave_out')),
+    deadline: String(form.get('deadline') ?? '').trim(),
+    may_publish: String(form.get('may_publish') ?? ''),
+    wants_video: form.get('video') ? 1 : 0,
+    buyer_name: cleanLine(form.get('name')),
+    buyer_email: String(form.get('email') ?? '').trim().toLowerCase()
+  };
+}
+
+// Why a request can't go in as written, or null when it can. One plain sentence each.
+export function requestProblem(answers, now = new Date()) {
+  const tooLong = (value, limit, what) => value.length > limit ? `Keep ${what} under ${limit.toLocaleString('en-US')} characters.` : null;
+  if (!['personal', 'business'].includes(answers.kind)) return 'Say whether the song is for a person or a business.';
+  if (!answers.recipient) return 'Tell me who the song is for.';
+  if (answers.story.length < LIMITS.storyMin) return `Tell me a little more about them (at least ${LIMITS.storyMin} characters).`;
+  if (!['yes', 'no'].includes(answers.may_publish)) return 'Say whether it can be that day’s Song A Day.';
+  if (!answers.buyer_name) return 'Tell me your name.';
+  if (!answers.buyer_email) return 'Tell me your email, so I can send you your song.';
+  const problem = tooLong(answers.recipient, LIMITS.recipient, 'who it’s for')
+    ?? tooLong(answers.relationship, LIMITS.relationship, 'what they are to you')
+    ?? tooLong(answers.occasion, LIMITS.occasion, 'the occasion')
+    ?? tooLong(answers.names, LIMITS.names, 'the names')
+    ?? tooLong(answers.story, LIMITS.story, 'the story')
+    ?? tooLong(answers.leave_out, LIMITS.leave_out, 'what to leave out')
+    ?? tooLong(answers.buyer_name, LIMITS.name, 'your name');
+  if (problem) return problem;
+  if (answers.buyer_email.length > LIMITS.email || !EMAIL.test(answers.buyer_email) || /[\u0000-\u001f\u007f]/.test(answers.buyer_email)) {
+    return 'That email address doesn’t look right. Give one address.';
+  }
+  if (answers.deadline) {
+    if (!isDate(answers.deadline)) return 'Give the deadline as a date.';
+    const today = newYorkDate(now);
+    if (answers.deadline < today) return 'That deadline has already passed.';
+    if (daysBetween(today, answers.deadline) > 731) return 'That deadline is more than two years away. Leave it blank instead.';
+  }
+  return null;
+}
+
+// Makes a request and queues its "received" email in one batch. Returns { id, token, position }.
+// It's one function so the later monthly song plan can call it too. The new row's id is higher
+// than every other, so its place is everyone in line plus one.
+export async function createRequest(env, answers, { memoKey = null, now = new Date() } = {}) {
+  const db = env.COMMISSIONS_DB;
+  const token = newToken();
+  const floor = PRICES[answers.kind].floor + (answers.wants_video && VIDEO_PRICE_CENTS ? VIDEO_PRICE_CENTS : 0);
+  const position = (await lineLength(db)).total + 1;
+  const row = {
+    token, kind: answers.kind, floor_cents: floor, buyer_name: answers.buyer_name, buyer_email: answers.buyer_email,
+    recipient: answers.recipient, relationship: answers.relationship, occasion: answers.occasion, names: answers.names,
+    memo_key: memoKey, story: answers.story, leave_out: answers.leave_out, deadline: answers.deadline || null,
+    may_publish: answers.may_publish === 'yes' ? 1 : 0, wants_video: answers.wants_video, requested_at: now.toISOString()
+  };
+  const columns = Object.keys(row);
+  await db.batch([
+    db.prepare(`INSERT INTO requests (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`).bind(...Object.values(row)),
+    queueEmail(env, 'received', row, { now, position, onceKey: `received:${token}` })
+  ]);
+  const id = await db.prepare('SELECT id FROM requests WHERE token = ?').bind(token).first('id');
+  return { id, token, position };
+}
+
+async function submit(request, env, url, ctx) {
+  const wantsJson = request.headers.get('Accept')?.includes('application/json');
+  // Without JavaScript the form posts normally: success goes to the buyer's page, and a problem
+  // is a short page (the browser keeps the answers when they go back).
+  const reply = (status, error, location) => {
+    if (wantsJson) return Response.json(error ? { error } : { ok: true, url: location }, { status, headers: { 'Cache-Control': 'no-store' } });
+    if (!error) return redirect(location);
+    return shellPage(request, env, url, messagePage('That didn’t go through', error,
+      '\n<p>Go back to fix it; your answers are still there.</p>'), status, { ...BUYER_HEADERS, 'Referrer-Policy': 'same-origin' });
+  };
+
+  const closed = closedReason(env);
+  if (closed) return reply(503, closed);
+  // Cheapest checks first. Turnstile is never asked about a request that will be refused.
+  const { form, status, error } = await readForm(request, FORM_MAX_BYTES);
+  if (!form) return reply(status, status === 413 ? 'That’s too big to send. The voice memo can be up to 10 MB.' : error);
+  // Bots fill in every field, including this one people can't see.
+  if (form.get('website')) return reply(200, null, '/commission');
+
+  const answers = readAnswers(form);
+  const now = new Date();
+  const problem = requestProblem(answers, now);
+  if (problem) return reply(400, problem);
+  const memo = form.get('memo');
+  let sniffed = null;
+  if (memo && typeof memo === 'object' && memo.size > 0) {
+    if (memo.size > MEMO_MAX_BYTES) return reply(413, 'The voice memo can be up to 10 MB.');
+    sniffed = sniffAudio(new Uint8Array(await memo.slice(0, 12).arrayBuffer()));
+    if (!sniffed) return reply(400, 'That voice memo doesn’t look like an audio file. MP3, M4A or WAV, please.');
+    if (!env.COMMISSION_FILES) return reply(503, 'Voice memos can’t be sent right now. Leave it off, and spell the names out instead.');
+  }
+
+  if (env.COMMISSION_LIMIT) {
+    const { success } = await env.COMMISSION_LIMIT.limit({ key: request.headers.get('CF-Connecting-IP') ?? 'unknown' });
+    if (!success) return reply(429, 'Too many at once. Try again in a minute.');
+  }
+  const db = env.COMMISSIONS_DB;
+  // A double click: the same email and story within ten minutes goes to the request already
+  // made. Checked before Turnstile, whose tokens work once, so the second click of a double
+  // click still lands on the page instead of a failed human check.
+  const since = new Date(now.getTime() - DUPLICATE_MINUTES * 60_000).toISOString();
+  const duplicate = await db.prepare(`SELECT token FROM requests WHERE buyer_email = ? AND story = ? AND requested_at > ?
+    AND status != 'cancelled' ORDER BY id DESC LIMIT 1`).bind(answers.buyer_email, answers.story, since).first('token');
+  if (duplicate) return reply(200, null, `/commission/s/${duplicate}?new`);
+
+  if (!(await isHuman(env, form.get('cf-turnstile-response'), 'commission'))) {
+    return reply(403, 'The human check didn’t go through. Try again.');
+  }
+  const open = await db.prepare(`SELECT COUNT(*) AS count FROM requests WHERE buyer_email = ?
+    AND (${IN_LINE} OR (status = 'delivered' AND paid_at IS NULL))`).bind(answers.buyer_email).first('count');
+  if (open >= MAX_OPEN_PER_EMAIL) return reply(429, `You have ${MAX_OPEN_PER_EMAIL} songs waiting with me already. Email me if you need another.`);
+
+  // The memo goes to R2 after every check passes, just before the insert.
+  const memoKey = sniffed ? `memos/${newToken()}.${sniffed.ext}` : null;
+  if (memoKey) await env.COMMISSION_FILES.put(memoKey, memo, { httpMetadata: { contentType: sniffed.type } });
+  let created;
+  try {
+    created = await createRequest(env, answers, { memoKey, now });
+  } catch (failure) {
+    if (memoKey) await env.COMMISSION_FILES.delete(memoKey);
+    throw failure;
+  }
+  console.log('commission request', created.id);
+  later(ctx, flushOutbox(env, { requestId: created.id }));
+  return reply(200, null, `/commission/s/${created.token}?new`);
+}
+
+// ---- The buyer's page -----------------------------------------------------------------------
+
+const stripeReady = (env) => Boolean(env.STRIPE_SECRET_KEY);
+
+async function songPage(request, env, url, r, { status = 200, error = '' } = {}) {
+  const db = env.COMMISSIONS_DB;
+  const [{ results: payments }, { results: plans }] = await Promise.all([
+    db.prepare('SELECT * FROM payments WHERE request_id = ? ORDER BY id').bind(r.id).all(),
+    db.prepare('SELECT * FROM plans WHERE request_id = ? ORDER BY started_at').bind(r.id).all()
+  ]);
+  const position = ['requested', 'writing'].includes(r.status) ? await placeInLine(db, r.id) : null;
+  const content = renderSongPage(r, {
+    payments, plans, position, error, stripeReady: stripeReady(env),
+    isNew: url.searchParams.has('new'),
+    pending: url.searchParams.has('pending') && !r.paid_at
+  });
+  return shellPage(request, env, url, content, status);
+}
+
+// The return from Checkout: settle that session (the same code as the webhook), then show the
+// clean page. The id is checked before any Stripe call, or ?session_id=../../customers would
+// become a GET elsewhere in Stripe's API under Jonathan's key.
+async function returnFromCheckout(env, url, r, ctx) {
+  const sessionId = url.searchParams.get('session_id');
+  let outcome = 'ignored';
+  if (SESSION_ID.test(sessionId) && stripeReady(env)) {
+    try {
+      const session = await stripe(env, 'GET', `/checkout/sessions/${encodeURIComponent(sessionId)}`);
+      outcome = await settleCheckoutSession(env, session, { request: r, ctx });
+    } catch (error) {
+      // The money is recorded before any later Stripe call, so the page below is still right.
+      console.log('commission return', error instanceof StripeError ? error.status : error?.name);
+    }
+  }
+  const fresh = await loadByToken(env.COMMISSIONS_DB, r.token);
+  const path = `/commission/s/${r.token}`;
+  return redirect(fresh?.paid_at ? `${path}#paid` : outcome === 'pending' ? `${path}?pending#pay` : `${path}#pay`);
+}
+
+async function buyerPost(request, env, url, r, ctx) {
+  const { form, status, error } = await readForm(request, SMALL_FORM);
+  if (!form) return songPage(request, env, url, r, { status, error });
+  const action = form.get('action');
+  const db = env.COMMISSIONS_DB;
+  const path = `/commission/s/${r.token}`;
+  if (action === 'cancel') {
+    const problem = transitionProblem(r, 'buyer-cancel');
+    if (problem) return shellPage(request, env, url, messagePage('That can’t be cancelled', problem, `\n<p><a href="${path}">Back to your page</a></p>`), 409);
+    const at = new Date().toISOString();
+    // The email goes in only if this batch's update did (cancelled_at is this moment).
+    await db.batch([
+      db.prepare(`UPDATE requests SET status = 'cancelled', cancelled_at = ?, cancelled_by = 'buyer' WHERE id = ? AND status = 'requested'`).bind(at, r.id),
+      queueEmail(env, 'cancelled', r, { by: 'buyer', when: 'EXISTS (SELECT 1 FROM requests WHERE id = ? AND cancelled_at = ?)', whenArgs: [r.id, at] })
+    ]);
+    later(ctx, flushOutbox(env, { requestId: r.id }));
+    return redirect(path);
+  }
+  if (action === 'updates') {
+    await db.prepare('UPDATE requests SET quiet = ? WHERE id = ?').bind(form.get('value') === 'off' ? 1 : 0, r.id).run();
+    return redirect(`${path}#updates`);
+  }
+  if (action === 'stop-plan') {
+    const plan = await db.prepare("SELECT * FROM plans WHERE request_id = ? AND status = 'active' ORDER BY started_at DESC LIMIT 1").bind(r.id).first();
+    if (plan) {
+      if (!stripeReady(env)) return songPage(request, env, url, r, { status: 503, error: 'Payments aren’t set up right now. Reply to any of my emails and I’ll stop them.' });
+      try {
+        await stopPlan(env, plan);
+      } catch (failure) {
+        console.log('commission stop-plan', failure instanceof StripeError ? failure.status : failure?.name);
+        return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again, or reply to any of my emails.' });
+      }
+    }
+    return redirect(`${path}#paid`);
+  }
+  return songPage(request, env, url, r, { status: 400, error: 'That didn’t come through. Try again.' });
+}
+
+async function buyerPay(request, env, url, r) {
+  if (!stripeReady(env)) return songPage(request, env, url, r, { status: 503, error: 'Payments aren’t set up yet. I’ll email you when they are.' });
+  const { form, status, error } = await readForm(request, SMALL_FORM);
+  if (!form) return songPage(request, env, url, r, { status, error });
+  const plan = String(form.get('plan') ?? '');
+  const typed = form.get('amount') === 'other' ? form.get('other') : form.get('amount');
+  const amount = parseDollars(typed);
+  if (!['once', 'extra', ...PLAN_MONTHS.map(String)].includes(plan)) {
+    return songPage(request, env, url, r, { status: 400, error: 'Pick how you want to pay.' });
+  }
+  const activePlan = await env.COMMISSIONS_DB.prepare("SELECT 1 FROM plans WHERE request_id = ? AND status = 'active'").bind(r.id).first();
+  const problem = amount === null ? 'Type an amount in whole dollars.' : paymentProblem(r, { plan, amount }, { activePlan: Boolean(activePlan) });
+  if (problem) return songPage(request, env, url, r, { status: 400, error: problem });
+  if (env.COMMISSION_LIMIT) {
+    const { success } = await env.COMMISSION_LIMIT.limit({ key: `pay:${r.token}` });
+    if (!success) return songPage(request, env, url, r, { status: 429, error: 'Too many at once. Try again in a minute.' });
+  }
+  let session;
+  try {
+    session = await createCheckout(env, r, { plan, amount });
+  } catch (failure) {
+    console.log('commission checkout', failure instanceof StripeError ? failure.status : failure?.name);
+    return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again in a minute.' });
+  }
+  if (typeof session.url !== 'string' || !session.url.startsWith('https://')) {
+    return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again in a minute.' });
+  }
+  return redirect(session.url);
+}
+
+// "<Title> - Jonathan Mann.mp3", plain ASCII in filename= and the real title in filename*=.
+function downloadName(r) {
+  const ext = r.audio_key.split('.').pop();
+  const name = `${r.title} - Jonathan Mann.${ext}`;
+  const ascii = name.normalize('NFKD').replace(/[^\x20-\x7e]/g, '').replace(/["\\/]/g, '').trim() || `Song - Jonathan Mann.${ext}`;
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+}
+
+async function buyerRoute(request, env, url, ctx, token, sub) {
+  const method = request.method;
+  const read = method === 'GET' || method === 'HEAD';
+  const r = env.COMMISSIONS_DB && TOKEN.test(token) ? await loadByToken(env.COMMISSIONS_DB, token) : null;
+  if (!r) return notFound(request, env, url);
+  const path = `/commission/s/${token}`;
+
+  if (!sub) {
+    if (read) {
+      if (url.searchParams.has('session_id')) return returnFromCheckout(env, url, r, ctx);
+      return songPage(request, env, url, r);
+    }
+    if (method === 'POST') return buyerPost(request, env, url, r, ctx);
+  } else if (sub === 'pay') {
+    if (method === 'POST') return buyerPay(request, env, url, r);
+    if (read) return redirect(`${path}#pay`);
+  } else if (sub === 'quiet') {
+    // One-click unsubscribe (RFC 8058) from the place-in-line email's List-Unsubscribe header.
+    if (method === 'POST') {
+      await env.COMMISSIONS_DB.prepare('UPDATE requests SET quiet = 1 WHERE id = ?').bind(r.id).run();
+      return new Response('<!doctype html><meta charset="utf-8"><title>Done</title><p>Done. No more place-in-line emails. I’ll still email you when your song is done.</p>',
+        { headers: BUYER_HEADERS });
+    }
+    if (read) return redirect(`${path}#updates`);
+  } else if (read) {
+    // listen and download: only once delivered, never when cancelled; download once paid.
+    if (r.status !== 'delivered' || !r.audio_key || !env.COMMISSION_FILES) return notFound(request, env, url);
+    if (sub === 'download' && !r.paid_at) return redirect(`${path}#pay`);
+    const media = await serveMedia(request, env.COMMISSION_FILES, r.audio_key, {
+      ...BUYER_MEDIA,
+      disposition: sub === 'download' ? downloadName(r) : 'inline'
+    });
+    return media ?? notFound(request, env, url);
+  }
+  const allow = { pay: 'POST', quiet: 'GET, HEAD, POST', listen: 'GET, HEAD', download: 'GET, HEAD' }[sub] ?? 'GET, HEAD, POST';
+  return new Response(null, { status: 405, headers: { Allow: allow, 'Cache-Control': 'no-store' } });
+}
+
+// ---- Routing --------------------------------------------------------------------------------
+
+// Answers everything under /commission, or returns null for other paths.
+export async function handleCommission(request, env, url, ctx) {
+  const { pathname } = url;
+  if (!/^\/+commission(?:\/|$)/i.test(pathname)) return null;
+  const tidy = pathname.replace(/\/{2,}/g, '/').toLowerCase();
+  // Any spelling of the admin gets the Access check before anything else.
+  if (/^\/commission\/admin(?:\/|$)/.test(tidy)) return handleAdmin(request, env, url, ctx);
+
+  const method = request.method;
+  if (pathname === '/commission' || pathname === '/commission/') {
+    if (method === 'POST') return submit(request, env, url, ctx);
+    if (method === 'GET' || method === 'HEAD') return publicPage(request, env, url);
+    return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD, POST' } });
+  }
+  // /Commission, /COMMISSION/ and the like land on the page.
+  if (tidy.replace(/\/+$/, '') === '/commission') {
+    return new Response(null, { status: 302, headers: { Location: '/commission' + url.search, 'Cache-Control': 'no-store' } });
+  }
+  if (pathname === '/commission/stripe') {
+    if (method === 'POST') return handleStripeWebhook(request, env, ctx);
+    return new Response(null, { status: 405, headers: { Allow: 'POST' } });
+  }
+  const buyer = BUYER_PATH.exec(pathname);
+  if (buyer) return buyerRoute(request, env, url, ctx, buyer[1], buyer[2]);
+  return notFound(request, env, url);
+}
+
+// ---- The daily run --------------------------------------------------------------------------
+
+// Cron (wrangler.jsonc triggers), once a day: place-in-line emails, the one payment reminder,
+// Jonathan's summary, then the outbox. Every email it queues has a once_key made of the request
+// and the New York date, so a second run the same day, even an overlapping one, adds nothing.
+export async function runCommissionDaily(env, now = new Date()) {
+  const db = env.COMMISSIONS_DB;
+  if (!db) return { skipped: true };
+  const runStart = now.toISOString();
+  const today = newYorkDate(now);
+
+  // A place-in-line email still unsent from an earlier day is out of date by now: drop it.
+  await db.prepare(`DELETE FROM outbox WHERE kind = 'moved' AND sent_at IS NULL AND failed_at IS NULL
+    AND (claimed_at IS NULL OR claimed_at < ?) AND once_key NOT LIKE ?`).bind(claimLapsedBefore(now), `%:${today}`).run();
+
+  // One pass over the line, in order. What someone was last told is the place on their newest
+  // email that actually went out.
+  const { results: line } = await db.prepare(`SELECT r.*,
+      (SELECT o.position FROM outbox o WHERE o.request_id = r.id AND o.position IS NOT NULL
+         AND o.sent_at IS NOT NULL ORDER BY o.id DESC LIMIT 1) AS told
+    FROM requests r WHERE r.${IN_LINE} ORDER BY r.id`).all();
+  const emails = [];
+  line.forEach((row, index) => {
+    const position = index + 1;
+    if (row.status !== 'requested') return;               // being written: no place-in-line emails
+    if (row.quiet) return;                                // they turned them off
+    if (newYorkDate(row.requested_at) === today) return;  // they got their number today already
+    if (row.told == null || position >= row.told) return; // only when it went down from what they last heard
+    emails.push(queueEmail(env, 'moved', row, { now, position, was: row.told, onceKey: `moved:${row.id}:${today}` }));
+  });
+
+  // The one "your song is waiting" nudge, REMINDER_DAYS after delivery, if unpaid.
+  const remindBefore = new Date(now.getTime() - REMINDER_DAYS * 86_400_000).toISOString();
+  const { results: waiting } = await db.prepare(`SELECT * FROM requests WHERE status = 'delivered' AND paid_at IS NULL
+    AND archived_at IS NULL AND reminded_at IS NULL AND delivered_at <= ?`).bind(remindBefore).all();
+  for (const row of waiting) {
+    emails.push(db.prepare('UPDATE requests SET reminded_at = ? WHERE id = ? AND reminded_at IS NULL').bind(runStart, row.id));
+    emails.push(queueEmail(env, 'reminder', row, { now, onceKey: `reminder:${row.id}` }));
+  }
+  if (emails.length) await db.batch(emails);
+
+  const summary = await dailySummary(env, now, today);
+  if (summary) await summary.run();
+
+  const sent = await flushOutbox(env, { now });
+
+  // Sent emails' bodies hold names and links. A place-in-line email for someone still in line
+  // is kept: it's what they were last told.
+  const keepAfter = new Date(now.getTime() - OUTBOX_KEEP_DAYS * 86_400_000).toISOString();
+  await db.prepare(`DELETE FROM outbox WHERE sent_at IS NOT NULL AND sent_at < ? AND NOT (kind IN ('received', 'moved')
+    AND request_id IN (SELECT id FROM requests WHERE ${IN_LINE}))`).bind(keepAfter).run();
+
+  console.log('commission daily', `moved+reminders ${emails.length}`, `sent ${sent.sent}`);
+  return { queued: emails.length, ...sent };
+}
+
+// Jonathan's summary email, when something happened since the last one, or null.
+async function dailySummary(env, now, today) {
+  const db = env.COMMISSIONS_DB;
+  if (!env.COMMISSION_NOTIFY_TO) return null;
+  const last = await db.prepare("SELECT created_at FROM outbox WHERE kind = 'summary' ORDER BY id DESC LIMIT 1").first('created_at');
+  const since = last ?? new Date(now.getTime() - 86_400_000).toISOString();
+  const runStart = now.toISOString();
+  const weekOut = new Date(Date.parse(`${today}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
+  const all = async (sql, ...args) => (await db.prepare(sql).bind(...args).all()).results;
+  const [fresh, deadlines, payments, ended, inLine, unpaid, stuck, failed, afterCancel, twice] = await Promise.all([
+    all('SELECT id, kind, occasion, deadline, buyer_name FROM requests WHERE requested_at > ? ORDER BY id', since),
+    all(`SELECT id, deadline FROM requests WHERE ${IN_LINE} AND deadline IS NOT NULL AND deadline >= ? AND deadline <= ? ORDER BY deadline`, today, weekOut),
+    all('SELECT amount_cents FROM payments WHERE paid_at > ?', since),
+    all('SELECT status FROM plans WHERE ended_at > ?', since),
+    db.prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(status = 'writing'), 0) AS writing FROM requests WHERE ${IN_LINE}`).first(),
+    db.prepare("SELECT COUNT(*) AS count FROM requests WHERE status = 'delivered' AND paid_at IS NULL").first('count'),
+    db.prepare('SELECT COUNT(*) AS count FROM outbox WHERE sent_at IS NULL AND failed_at IS NULL AND created_at < ?').bind(runStart).first('count'),
+    db.prepare('SELECT COUNT(*) AS count FROM outbox WHERE failed_at IS NOT NULL AND failed_at > ?').bind(since).first('count'),
+    all(`SELECT DISTINCT p.request_id AS id FROM payments p JOIN requests r ON r.id = p.request_id
+      WHERE r.status = 'cancelled' AND p.paid_at > ?`, since),
+    // Paid twice: more than one one-off payment or plan, with one of them new.
+    all(`SELECT r.id FROM requests r WHERE
+      (SELECT COUNT(*) FROM payments WHERE request_id = r.id AND kind = 'once') + (SELECT COUNT(*) FROM plans WHERE request_id = r.id) > 1
+      AND (EXISTS (SELECT 1 FROM payments WHERE request_id = r.id AND kind = 'once' AND paid_at > ?)
+        OR EXISTS (SELECT 1 FROM plans WHERE request_id = r.id AND started_at > ?))`, since, since)
+  ]);
+  const news = fresh.length + deadlines.length + payments.length + ended.length + stuck + failed + afterCancel.length + twice.length;
+  if (!news) return null;
+  const paidSum = payments.reduce((sum, payment) => sum + payment.amount_cents, 0);
+  const finished = ended.filter((plan) => plan.status === 'finished').length;
+  const lines = [
+    `New since the last summary: ${fresh.length}`,
+    ...fresh.map((row) => `  #${row.id} · ${row.kind} · ${row.occasion || 'no occasion'}${row.deadline ? ` · deadline ${row.deadline}` : ''} · ${row.buyer_name}`),
+    `In line: ${inLine.total} (${inLine.writing} being written)`,
+    `Deadlines in the next 7 days: ${deadlines.length ? deadlines.map((row) => `#${row.id} (${row.deadline})`).join(', ') : 'none'}`,
+    `Delivered, not paid: ${unpaid}`,
+    `Paid since the last summary: ${payments.length} payment${payments.length === 1 ? '' : 's'}, ${dollars(paidSum)}`,
+    `Monthly plans finished: ${finished} · stopped early: ${ended.length - finished}`,
+    `Emails that haven't gone out: ${stuck} · failed: ${failed}`
+  ];
+  const look = [...afterCancel.map((row) => `#${row.id} was paid after it was cancelled`), ...twice.map((row) => `#${row.id} was paid twice`)];
+  if (look.length) lines.push(`Needs a look: ${look.join(' · ')}`);
+  return queueEmail(env, 'summary', null, {
+    now, lines, onceKey: `summary:${today}`,
+    subject: `Commissions: ${fresh.length} new, ${payments.length} paid (${dollars(paidSum)}), ${inLine.total} in line`
+  });
+}

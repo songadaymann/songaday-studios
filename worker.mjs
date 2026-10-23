@@ -2,14 +2,14 @@ import { songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 import { handleFumble } from './fumble.mjs';
+import { handleCommission, runCommissionDaily } from './commission.mjs';
 import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from './today-song.mjs';
 import { songDate } from './calendar.mjs';
 
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
 // cache them for good. /songs and /all go to the gallery, every song on one zoomable wall.
-// /commission goes to the Bandcamp commission listings until jonathanmann.net has a
-// commissions page.
+// /commission is a page of its own (commission.mjs); /commissions lands on it.
 const SECTION_REDIRECTS = {
   '/all': 'https://gallery.songaday.world/',
   '/songs': 'https://gallery.songaday.world/',
@@ -19,8 +19,7 @@ const SECTION_REDIRECTS = {
   '/today': '/#today',
   '/games': 'https://mann.cool/',
   '/wamp': 'https://wamp.land/',
-  '/commission': 'https://jonathanmann.bandcamp.com/merch',
-  '/commissions': 'https://jonathanmann.bandcamp.com/merch',
+  '/commissions': '/commission',
   '/albums': 'https://jonathanmann.bandcamp.com/music',
   '/discord': 'https://discord.gg/rGTQH7mFNS',
   '/me': 'https://www.jonathanmann.net/',
@@ -102,7 +101,7 @@ async function liveFilms() {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const hostDestination = HOST_REDIRECTS[url.hostname];
     if (hostDestination) {
@@ -144,6 +143,10 @@ export default {
       const video = await serveMedia(request, env.MEDIA, media[1]);
       if (video) return video;
     }
+
+    // songaday.studio/commission: song commissions, the buyer pages and the admin (commission.mjs).
+    const commission = await handleCommission(request, env, url, ctx);
+    if (commission) return commission;
 
     // songaday.studio/fumble: anonymous bag-fumble stories (fumble.mjs).
     const fumble = await handleFumble(request, env, url);
@@ -195,5 +198,11 @@ export default {
     page.headers.delete('ETag');
     page.headers.delete('Last-Modified');
     return page;
+  },
+
+  // Daily (wrangler.jsonc triggers): commission place-in-line emails, the payment reminder,
+  // Jonathan's summary, and any email that didn't go out.
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(runCommissionDaily(env, new Date(controller.scheduledTime)));
   }
 };
