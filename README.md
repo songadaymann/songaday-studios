@@ -16,7 +16,7 @@ outside the Fridays at The Park app.
   the pages somewhere else; the tests use both.
 - `projects.json`, `projects.mjs`, `validate-projects.mjs` — every place Song A Day lives, one
   row each, served at https://songaday.studio/projects.json; see "Projects" below
-- `bar/v1/bar.js` — the universe bar, the strip across the top of every Song A Day site; see
+- `bar/v1/bar.js` — the universe bar, the strip across the top of the other Song A Day sites; see
   "The universe bar" below
 - `everything.html` — songaday.studio/everything: every row of `projects.json`, by status
 - `now.html` — songaday.studio/now: what Jonathan is doing now, dated, in his words
@@ -147,8 +147,12 @@ picks up the change within five minutes; the home page and /everything with the 
 `bar/v1/bar.js` is a 36px strip that links the Song A Day sites to each other: "Song A Day
 #6,503 · by Jonathan Mann" (to songaday.studio), the `inBar` projects (Listen · See all · Play
 · Get a song), and a Support pill to `https://songaday.studio/?from=<this site's hostname>#donate`.
-On phones it folds into "#6,503 ☰ Support" with a small menu. Any site adds it with one tag;
-`data-here` is the site's verb from `projects.json`, and marks its link as the current one:
+On phones it folds into "#6,503 ☰ Support" with a small menu. It's for the other Song A Day
+sites: songaday.studio's own pages don't show it, since their header already links to
+everything the bar does (the data lab, which has no header, links home from its eyebrow).
+
+Any site adds it with one tag; `data-here` is the site's verb from `projects.json`, and marks
+its link as the current one:
 
 ```html
 <script type="module" src="https://songaday.studio/bar/v1/bar.js" data-here="listen" defer></script>
@@ -156,7 +160,7 @@ On phones it folds into "#6,503 ☰ Support" with a small menu. Any site adds it
 
 It goes at the top of `<body>`. For no layout shift, also put `<songaday-bar></songaday-bar>`
 where it should go with `songaday-bar { display: block; height: 36px; background: #000; }` in
-the page's CSS, as the studio's own pages do; the bar fills that element in.
+the page's CSS; the bar fills that element in.
 
 - It's a custom element with its own shadow DOM, so it can't restyle the host page or be
   restyled by it. It uses the system font and makes no requests other than `projects.json`.

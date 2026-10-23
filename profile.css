@@ -51,9 +51,6 @@ main:focus { outline: none; }
 .skip-link { position: fixed; top: 10px; left: 10px; z-index: 100; transform: translateY(-160%); padding: .75rem 1rem; border: 3px solid var(--ink); background: var(--white); font-weight: 700; }
 .skip-link:focus { transform: translateY(0); }
 
-/* The Song A Day universe bar (bar/v1/bar.js) holds its 36px before its script arrives. */
-songaday-bar { display: block; height: 36px; background: var(--ink); }
-
 /* Crypto parts show only when this browser has a wallet (wallet/wallet-gate.js). */
 [data-crypto] { display: none !important; }
 html[data-wallet="yes"] [data-crypto] { display: revert !important; }

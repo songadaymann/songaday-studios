@@ -92,23 +92,15 @@ test('the bar carries the crypto-wallet-gate detector unchanged and fetches noth
   assert.doesNotMatch(barSource, /patreon/i);
 });
 
-test('every studio page with the bar keeps its place before the script arrives', async () => {
-  const sources = {
-    'profile.html': 'support', 'films.html': 'watch', 'plugins/index.html': 'make', 'fumble-page.mjs': 'join',
-    'everything.html': null, 'now.html': null
-  };
-  for (const [file, here] of Object.entries(sources)) {
-    const html = await readFile(new URL(file, root), 'utf8');
-    assert.match(html, /<songaday-bar><\/songaday-bar>\n\s*<script type="module"[^>]* src="\/bar\/v1\/bar\.js"/, file);
-    if (here) assert.match(html, new RegExp(`src="/bar/v1/bar.js" data-here="${here}"`), file);
-    // The bar goes above the studio header.
-    const header = ['${HEADER}', '{{HEADER}}', '<header class="site-header">'].map((mark) => html.indexOf(mark)).find((at) => at >= 0);
-    assert.ok(html.indexOf('<songaday-bar>') < header, file);
+test("the bar is for the other sites: songaday.studio's own pages don't show it", async () => {
+  // Their header already links everywhere the bar does.
+  for (const file of ['profile.html', 'profile.css', 'films.html', 'plugins/index.html', 'fumble-page.mjs',
+    'everything.html', 'now.html', 'links/index.html', 'build.mjs']) {
+    assert.doesNotMatch(await readFile(new URL(file, root), 'utf8'), /songaday-bar|bar\/v1\/bar\.js/, file);
   }
-  for (const file of ['profile.css', 'plugins/index.html', 'fumble-page.mjs']) {
-    assert.match(await readFile(new URL(file, root), 'utf8'), /songaday-bar \{ display: block; height: 36px;/, file);
-  }
+  // The data lab has no studio header, so its eyebrow links home instead.
+  assert.match(await readFile(new URL('build.mjs', root), 'utf8'), /<p class="eyebrow"><a href="\/">Song A Day Studio<\/a> · Data lab<\/p>/);
+  assert.match(await readFile(new URL('data-lab/lab.html', root), 'utf8'), /<p class="eyebrow">Song A Day · Data lab<\/p>/);
+  // Other sites reserve the bar's height themselves (README, "The universe bar").
   assert.match(barSource, /:host \{ all: initial; display: block; position: relative; height: 36px;/);
-  // The bio link page stays bar-free.
-  assert.doesNotMatch(await readFile(new URL('links/index.html', root), 'utf8'), /songaday-bar|bar\.js/);
 });

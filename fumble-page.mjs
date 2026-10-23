@@ -151,9 +151,6 @@ button:disabled { background: var(--dim); cursor: wait; }
   .frame { border-width: 10px; }
 }
 
-/* The Song A Day universe bar (bar/v1/bar.js) holds its 36px before its script arrives. */
-songaday-bar { display: block; height: 36px; background: #000; }
-
 /* The songaday.studio site header, kept in step with profile.html and profile.css. */
 .site-header {
   --red: #ff2445;
@@ -263,8 +260,6 @@ export function renderFumblePage({
 <style>${STYLE}</style>
 </head>
 <body>
-<songaday-bar></songaday-bar>
-<script type="module" nonce="${nonce}" src="/bar/v1/bar.js" data-here="join"></script>
 ${HEADER}
 <main class="museum${story ? ' single' : ''}">
   ${main}
