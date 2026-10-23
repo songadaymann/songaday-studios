@@ -128,7 +128,7 @@ test('a good request is saved cleaned, gets its place in line, and queues the re
   assert.equal(email.position, 1);
   assert.equal(email.request_id, row.id);
   assert.equal(email.to_email, 'pat@example.com');
-  assert.equal(email.subject, "Got it. You're #1 in line");
+  assert.equal(email.subject, `Got it. You're #1 in line (request ${row.id})`);
   assert.match(email.text, /You're #1 in line\./);
   assert.ok(email.text.includes(`https://songaday.studio/commission/s/${token}`));
   assert.equal(email.sent_at, null, 'no email binding: it waits');
@@ -543,7 +543,7 @@ test('past the day’s alarm, new requests are held out of line, Jonathan hears 
   assert.match(await (await call(env, '/commission')).text(), /Nobody’s in line right now\./, 'held isn’t in line');
 
   const [held] = db.rows('outbox', `kind = 'held' AND request_id = ${first.id}`);
-  assert.equal(held.subject, 'Got your song request');
+  assert.equal(held.subject, `Got your song request (request ${first.id})`);
   assert.doesNotMatch(held.text + held.html, /invoice|555-0100|Billing/);
   assert.match(held.text, /^Hi,\n/);
   const alarms = db.rows('outbox', "kind = 'alarm'");

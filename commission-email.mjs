@@ -182,7 +182,8 @@ export const EMAIL_KINDS = Object.keys(TEMPLATES);
 const BUTTON = 'display:inline-block;padding:12px 18px;background:#e6203f;color:#ffffff;font-weight:700;text-decoration:none';
 
 // { subject, text, html } for one email. Every value in the HTML part is escaped, the title
-// Jonathan typed included. Subjects carry nothing a buyer typed.
+// Jonathan typed included. Subjects carry nothing a buyer typed; queueEmail adds the request
+// number to a buyer's.
 export function renderEmail(kind, request, data) {
   const { subject, body } = TEMPLATES[kind](request ?? {}, data);
   const text = body.map((part) => typeof part === 'string' ? part : [part.lead, part.url].filter(Boolean).join('\n')).join('\n\n') + '\n';
@@ -204,6 +205,11 @@ export const emailParts = (env, kind, request, data = {}) => renderEmail(kind, r
   origin: siteOrigin(env)
 });
 
+// A buyer's subject ends "(request 57)", so a reply to any email can be matched to its request
+// in the admin. It's added in SQL, from the id the token finds, since the first email goes in
+// the same batch as the request and its id doesn't exist before then.
+export const SUBJECT_SQL = "? || COALESCE(' (request ' || (SELECT id FROM requests WHERE token = ?) || ')', '')";
+
 // The INSERT for one email, for the caller's own db.batch, so an email exists if and only if the
 // fact it announces does. With once_key it's ON CONFLICT DO NOTHING, so it exists once. `when`
 // is an SQL condition that must hold at insert time (bound with whenArgs). The request's id is
@@ -217,10 +223,10 @@ export function queueEmail(env, kind, request, data = {}) {
   const unsubscribe = kind === 'moved' ? `${page}/quiet` : null;
   return env.COMMISSIONS_DB.prepare(`INSERT INTO outbox
       (request_id, kind, once_key, position, to_email, subject, text, html, unsubscribe_url, created_at)
-    SELECT (SELECT id FROM requests WHERE token = ?), ?, ?, ?, ?, ?, ?, ?, ?, ?
+    SELECT (SELECT id FROM requests WHERE token = ?), ?, ?, ?, ?, ${SUBJECT_SQL}, ?, ?, ?, ?
     WHERE ${data.when ?? '1'}${data.onceKey ? ' ON CONFLICT (once_key) DO NOTHING' : ''}`)
-    .bind(request?.token ?? null, kind, data.onceKey ?? null, data.position ?? null, to, subject, text, html,
-      unsubscribe, now.toISOString(), ...(data.whenArgs ?? []));
+    .bind(request?.token ?? null, kind, data.onceKey ?? null, data.position ?? null, to, subject, request?.token ?? null,
+      text, html, unsubscribe, now.toISOString(), ...(data.whenArgs ?? []));
 }
 
 // Emails to Jonathan rather than a buyer.

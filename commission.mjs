@@ -15,10 +15,11 @@ import {
   MEMO_MAX_BYTES, OUTBOX_KEEP_DAYS, PLAN_MONTHS, PRICES, REMINDER_DAYS, VIDEO_PRICE_CENTS
 } from './commission-config.mjs';
 import {
-  IN_LINE, OPEN, TOKEN, cleanLine, cleanText, daysBetween, dollars, emailKey, later, lineLength, loadByShareToken,
-  loadByToken, newToken, newYorkDate, parseDollars, placeInLine, readForm, sniffAudio, transitionProblem, visitorKey
+  IN_LINE, OPEN, TOKEN, cleanLine, cleanText, daysBetween, deadlineWatch, dollars, emailKey, later, lineLength,
+  loadByShareToken, loadByToken, newToken, newYorkDate, parseDollars, placeInLine, readForm, shortDate, siteOrigin,
+  sniffAudio, transitionProblem, visitorKey
 } from './commission-core.mjs';
-import { claimLapsedBefore, emailParts, flushOutbox, queueEmail } from './commission-email.mjs';
+import { SUBJECT_SQL, claimLapsedBefore, emailParts, flushOutbox, queueEmail } from './commission-email.mjs';
 import {
   SESSION_ID, StripeError, createCheckout, ensurePlanSchedule, handleStripeWebhook, paymentProblem, settleCheckoutSession, stopPlan, stripe
 } from './commission-stripe.mjs';
@@ -209,8 +210,8 @@ export async function createRequest(env, answers, { memoKey = null, now = new Da
   const actual = await placeInLine(db, id);
   if (actual !== position) {
     const { subject, text, html } = emailParts(env, 'received', row, { now, position: actual });
-    await db.prepare(`UPDATE outbox SET position = ?, subject = ?, text = ?, html = ? WHERE once_key = ?
-      AND sent_at IS NULL AND claimed_at IS NULL`).bind(actual, subject, text, html, `received:${token}`).run();
+    await db.prepare(`UPDATE outbox SET position = ?, subject = ${SUBJECT_SQL}, text = ?, html = ? WHERE once_key = ?
+      AND sent_at IS NULL AND claimed_at IS NULL`).bind(actual, subject, token, text, html, `received:${token}`).run();
   }
   return { id, token, position: actual, held: false };
 }
@@ -617,12 +618,11 @@ async function dailySummary(env, now, today) {
   const last = await db.prepare("SELECT created_at FROM outbox WHERE kind = 'summary' ORDER BY id DESC LIMIT 1").first('created_at');
   const since = last ?? new Date(now.getTime() - 86_400_000).toISOString();
   const runStart = now.toISOString();
-  const weekOut = new Date(Date.parse(`${today}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
   const all = async (sql, ...args) => (await db.prepare(sql).bind(...args).all()).results;
   const hourAgo = new Date(now.getTime() - 3_600_000).toISOString();
   const [fresh, deadlines, payments, ended, inLine, unpaid, stuck, failed, notDelivered, twice, unended, overpaid, held] = await Promise.all([
-    all('SELECT id, kind, occasion, deadline, buyer_name FROM requests WHERE requested_at > ? ORDER BY id', since),
-    all(`SELECT id, deadline FROM requests WHERE ${IN_LINE} AND deadline IS NOT NULL AND deadline >= ? AND deadline <= ? ORDER BY deadline`, today, weekOut),
+    all('SELECT id, kind, occasion, deadline, buyer_name, wants_video FROM requests WHERE requested_at > ? ORDER BY id', since),
+    deadlineWatch(db, today),
     all('SELECT amount_cents FROM payments WHERE paid_at > ?', since),
     all('SELECT status FROM plans WHERE ended_at > ?', since),
     db.prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(status = 'writing'), 0) AS writing FROM requests WHERE ${IN_LINE}`).first(),
@@ -649,10 +649,11 @@ async function dailySummary(env, now, today) {
   const finished = ended.filter((plan) => plan.status === 'finished').length;
   const lines = [
     `New since the last summary: ${fresh.length}`,
-    ...fresh.map((row) => `  #${row.id} · ${row.kind} · ${row.occasion || 'no occasion'}${row.deadline ? ` · deadline ${row.deadline}` : ''} · ${row.buyer_name}`),
+    ...fresh.map((row) => `  #${row.id} · ${row.kind} · ${row.occasion || 'no occasion'}${row.deadline ? ` · deadline ${row.deadline}` : ''}${row.wants_video ? ' · video' : ''} · ${row.buyer_name}`),
     `In line: ${inLine.total} (${inLine.writing} being written)`,
     ...(held ? [`Held, waiting for you to let them in: ${held}`] : []),
-    `Deadlines in the next 7 days: ${deadlines.length ? deadlines.map((row) => `#${row.id} (${row.deadline})`).join(', ') : 'none'}`,
+    `Deadlines in the next 7 days, or at risk:${deadlines.length ? '' : ' none'}`,
+    ...deadlines.map((row) => `  #${row.position} in line, request ${row.id}, ${shortDate(row.deadline, now)} (${row.days === 0 ? 'today' : `${row.days} day${row.days === 1 ? '' : 's'}`})${row.risk ? ', at risk' : ''}: ${siteOrigin(env)}/commission/admin/${row.id}`),
     `Delivered, not paid: ${unpaid}`,
     `Paid since the last summary: ${payments.length} payment${payments.length === 1 ? '' : 's'}, ${dollars(paidSum)}`,
     `Monthly plans finished: ${finished} · stopped early: ${ended.length - finished}`,

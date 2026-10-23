@@ -133,10 +133,11 @@ test('the queue shows every answer, in order, escaped, with deadlines that are c
   assert.match(html, />Delivered 1<\/a>/);
   const cards = [...html.matchAll(/<article class="card" id="r(\d+)">/g)].map((match) => Number(match[1]));
   assert.deepEqual(cards, [2, third.id]);
-  assert.match(html, /<strong>#1 in line<\/strong> · received [A-Z][a-z]{2} \d+ · <span class="tag">BUSINESS<\/span> · Private/);
-  assert.match(html, /<strong>#2 in line<\/strong>[^\n]*PERSONAL<\/span> · OK to be Song A Day/);
+  assert.match(html, /<strong>Request 2 · #1 in line<\/strong> · received [A-Z][a-z]{2} \d+ · <span class="tag">BUSINESS<\/span> · <span class="tag">PRIVATE<\/span>/);
+  assert.match(html, /<strong>Request 3 · #2 in line<\/strong>[^\n]*PERSONAL<\/span> · <span class="tag">PUBLIC OK<\/span>/);
   assert.match(html, /<dt>For<\/dt><dd>Acme Bees, My sister<\/dd>/);
-  assert.match(html, /<dt>From<\/dt><dd>Pat Doe · b@example\.com<\/dd>/);
+  assert.match(html, /<dt>From<\/dt><dd>Pat Doe · <a href="mailto:b@example\.com">b@example\.com<\/a><\/dd>/);
+  assert.match(html, /<form class="search" method="get" action="\/commission\/admin">/);
   assert.match(html, new RegExp(`<audio controls preload="none" src="/commission/admin/${third.id}/memo">`));
 
   const delivered = await (await asAdmin(env, '/commission/admin?show=delivered')).text();
@@ -163,7 +164,7 @@ test('delivering stores the song, marks it delivered and emails them the title',
   assert.match(row.audio_key, new RegExp(`^songs/${id}/[0-9a-f]{16}\\.mp3$`));
   assert.equal(env.COMMISSION_FILES.objects.get(row.audio_key).httpMetadata.contentType, 'audio/mpeg');
   const [email] = env.COMMISSIONS_DB.rows('outbox', "kind = 'delivered'");
-  assert.equal(email.subject, 'Your song is ready');
+  assert.equal(email.subject, `Your song is ready (request ${id})`);
   assert.match(email.text, /I finished your song for Siobhan, my sister\. It's called "Forty & Fabulous"\./);
   assert.match(email.html, /Forty &amp; Fabulous/);
   assert.match(email.text, /spread it over 3, 6 or 12 months/);
@@ -456,4 +457,46 @@ test('Delete for good removes a request with no payments, and blanks one with pa
   response = await post(env, planned.id, { action: 'delete', confirm: 'yes' });
   assert.equal(response.status, 409);
   assert.match(await response.text(), /monthly payments are still going/);
+});
+
+
+test('the admin finds a request by number, email, name or who it’s for, in any state', async () => {
+  const env = await commissionEnv();
+  const one = await makeRequest(env, { email: 'pat.reply@example.com', name: 'Pat Reply', recipient: 'Grandma Jo' });
+  const two = await makeRequest(env, { email: 'other@example.com', name: 'Someone Else', recipient: 'Uncle Bo', story: 'A different story entirely, about bowling.' });
+  await post(env, two.id, { action: 'cancel' });
+  const find = async (q) => [...(await (await asAdmin(env, `/commission/admin?q=${encodeURIComponent(q)}`)).text()).matchAll(/<article class="card" id="r(\d+)">/g)].map((match) => Number(match[1]));
+  assert.deepEqual(await find('PAT.REPLY@'), [one.id]);
+  assert.deepEqual(await find('grandma'), [one.id]);
+  assert.deepEqual(await find(`request ${two.id}`), [two.id]);
+  assert.deepEqual(await find(`#${two.id}`), [two.id]);
+  assert.deepEqual(await find('example.com'), [two.id, one.id]);
+  assert.deepEqual(await find('nobody'), []);
+  assert.match(await (await asAdmin(env, '/commission/admin?q=%3Cb%3E')).text(), /matching “&lt;b&gt;”/);
+});
+
+test('the line opens with the deadlines that are close or at risk, linked', async () => {
+  const env = await commissionEnv();
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const inDays = (days) => new Date(Date.parse(`${today}T12:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  const soon = await makeRequest(env, { deadline: inDays(3), recipient: 'Soon Person' });
+  await makeRequest(env, { email: 'far@example.com', deadline: inDays(60), recipient: 'Far Person', story: 'Months away, no hurry at all.' });
+  const html = await (await asAdmin(env, '/commission/admin')).text();
+  assert.match(html, new RegExp(`<h2 id="watch-title">Deadlines in the next 7 days, or at risk</h2><ul>\\n  <li><a href="/commission/admin/${soon.id}">#1 in line · request ${soon.id} · for Soon Person</a> · [A-Z][a-z]{2} \\d+ \\(3 days\\)</li>`));
+  assert.doesNotMatch(html.match(/<section class="watch"[\s\S]*?<\/section>/)[0], /Far Person/);
+});
+
+test('after delivering, the admin offers the next in line; Start writing on the line goes back to the line', async () => {
+  const env = await commissionEnv();
+  const first = await makeRequest(env);
+  const second = await makeRequest(env, { email: 'second@example.com', story: 'The next one along, about a tandem bike.' });
+  await deliver(env, first.id);
+  const detail = await (await asAdmin(env, `/commission/admin/${first.id}?done=deliver`)).text();
+  assert.match(detail, new RegExp(`Delivered\\. <a href="/commission/admin/${second.id}">Next in line →</a>`));
+  // Fixing a typo in a delivered song doesn't email them unless asked.
+  assert.match(detail, /<input type="checkbox" name="email_them" value="yes"> Email them that I updated it/);
+  assert.match(detail, /The link they can pass on/);
+  assert.match(await (await asAdmin(env, '/commission/admin')).text(), /name="back" value="line"/);
+  const fromLine = await asAdmin(env, `/commission/admin/${second.id}`, urlencoded({ action: 'writing', back: 'line' }, { Origin: LOCAL }));
+  assert.equal(fromLine.headers.get('Location'), `/commission/admin#r${second.id}`);
 });

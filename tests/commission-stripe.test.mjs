@@ -254,7 +254,7 @@ test('a one-off payment is recorded once, however many times Stripe says so', as
   assert.equal(row.status, 'delivered');
   assert.ok(row.paid_at);
   const [email] = emails(env, 'paid');
-  assert.equal(email.subject, 'Thank you. Your song is ready to download');
+  assert.equal(email.subject, `Thank you. Your song is ready to download (request ${id})`);
   assert.match(email.text, /I got your payment of \$300\. You can download "Siobhan at Forty" from your page now:/);
 
   await webhook(env, 'checkout.session.completed', paid, stub);
@@ -678,7 +678,7 @@ test('stopping a plan from the page emails the buyer, since anyone with the link
   const { stub } = fakeStripe();
   await call(env, `/commission/s/${token}`, urlencoded({ action: 'stop-plan' }), stub);
   const [stopped] = emails(env, 'plan-stopped');
-  assert.equal(stopped.subject, 'Your monthly payments are stopped');
+  assert.match(stopped.subject, /^Your monthly payments are stopped \(request \d+\)$/);
   assert.match(stopped.text, /2 of 6 went through\. Nothing more will be charged\./);
   assert.match(stopped.text, /If you didn't stop them, reply and tell me\./);
   const [paid] = emails(env, 'paid');

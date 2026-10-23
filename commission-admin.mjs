@@ -9,8 +9,8 @@ import {
   ADMIN_PAGE_SIZE, AMOUNT_MAX_CENTS, CANCELLED_KEEP_DAYS, DELIVER_MAX_BYTES, INTAKE_ALARM_PER_DAY, LIMITS, SONG_MAX_BYTES
 } from './commission-config.mjs';
 import {
-  IN_LINE, LOCAL_HOSTS, cleanLine, cleanText, daysBetween, dollars, later, loadRequest, newYorkDate,
-  pageUrl, parseDollars, parseMoney, placeInLine, randomHex, readForm, shortDate, sniffAudio, transitionProblem
+  IN_LINE, LOCAL_HOSTS, cleanLine, cleanText, daysBetween, deadlineWatch, dollars, later, loadRequest, newYorkDate,
+  pageUrl, parseDollars, parseMoney, placeInLine, randomHex, readForm, shareUrl, shortDate, sniffAudio, transitionProblem
 } from './commission-core.mjs';
 import { flushOutbox, queueEmail } from './commission-email.mjs';
 import { recordPayment } from './commission-stripe.mjs';
@@ -157,7 +157,7 @@ dd p { margin: 0 0 .7em; }
 dd p:last-child { margin-bottom: 0; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 16px; }
 .actions form { margin: 0; }
-button, .button { display: inline-block; padding: 10px 16px; border: 2px solid #111; background: #111; color: #fff; font: 700 16px/1.2 inherit; font-family: inherit; text-decoration: none; cursor: pointer; }
+button, .button { display: inline-block; padding: 10px 16px; border: 2px solid #111; background: #111; color: #fff; font-family: inherit; font-size: 16px; font-weight: 700; line-height: 1.2; text-decoration: none; cursor: pointer; }
 button.quiet, .button.quiet { background: #fff; color: #111; }
 button.danger { background: #b0102b; border-color: #b0102b; }
 form.panel { margin: 0 0 24px; padding: 16px; background: #fff; border: 2px solid #111; }
@@ -178,6 +178,11 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #fff; padding:
 details { margin: 0 0 16px; }
 summary { cursor: pointer; font-weight: 700; }
 .pager { display: flex; justify-content: space-between; margin-top: 16px; }
+form.search { display: flex; gap: 8px; align-items: flex-end; margin: 0 0 16px; }
+form.search label { flex: 1; margin: 0; }
+.watch { margin: 0 0 20px; padding: 12px 16px; background: #fff; border: 2px solid #ff2445; }
+.watch h2 { margin: 0 0 8px; font-size: 18px; }
+.watch ul { margin: 0; padding-left: 20px; }
 @media (max-width: 560px) {
   dl { grid-template-columns: minmax(0, 1fr); gap: 0; }
   dt { margin-top: 10px; }
@@ -231,13 +236,14 @@ function deadlineTag(request, today) {
 const STATUS_WORDS = { held: 'held', requested: 'in line', writing: 'being written', delivered: 'delivered', cancelled: 'cancelled' };
 
 // Every answer, in full, so Jonathan can write from the card. Links in answers stay plain text.
+// "Request 57" is the number in every email's subject; "#12 in line" is its place.
 function card(request, { position = null, today, now, full = false }) {
-  const where = position ? `#${position} in line` : STATUS_WORDS[request.status];
+  const where = `Request ${request.id} · ${position ? `#${position} in line` : STATUS_WORDS[request.status]}`;
   const meta = [
     `<strong>${escapeHtml(where)}</strong>`,
     `received ${escapeHtml(shortDate(request.requested_at, now))}`,
     `<span class="tag">${request.kind === 'business' ? 'BUSINESS' : 'PERSONAL'}</span>`,
-    request.may_publish ? 'OK to be Song A Day' : 'Private',
+    `<span class="tag">${request.may_publish ? 'PUBLIC OK' : 'PRIVATE'}</span>`,
     request.wants_video ? '<span class="tag">VIDEO WANTED</span>' : '',
     request.status === 'writing' ? '<span class="tag">WRITING</span>' : '',
     request.paid_at ? '<span class="tag">PAID</span>' : '',
@@ -252,14 +258,14 @@ function card(request, { position = null, today, now, full = false }) {
     ['The story', text(request.story)],
     ['Leave out', text(request.leave_out)],
     ['Deadline', request.deadline ? escapeHtml(shortDate(request.deadline, now)) : ''],
-    ['From', `${escapeHtml(request.buyer_name)} · ${escapeHtml(request.buyer_email)}`],
+    ['From', [escapeHtml(request.buyer_name), request.buyer_email ? `<a href="mailto:${escapeHtml(request.buyer_email)}">${escapeHtml(request.buyer_email)}</a>` : ''].filter(Boolean).join(' · ')],
     ['Least to pay', escapeHtml(dollars(request.floor_cents))],
     ['Song', request.title ? `“${escapeHtml(request.title)}”` : ''],
     ['My note', text(request.admin_note)]
   ].filter(([, value]) => value);
   const actions = full ? '' : `<div class="actions">
     ${request.status === 'held' ? `<form method="post" action="/commission/admin/${request.id}"><input type="hidden" name="action" value="let-in"><button type="submit" class="quiet">Let in</button></form>` : ''}
-    ${request.status === 'requested' ? `<form method="post" action="/commission/admin/${request.id}"><input type="hidden" name="action" value="writing"><button type="submit" class="quiet">Start writing</button></form>` : ''}
+    ${request.status === 'requested' ? `<form method="post" action="/commission/admin/${request.id}"><input type="hidden" name="action" value="writing"><input type="hidden" name="back" value="line"><button type="submit" class="quiet">Start writing</button></form>` : ''}
     <a class="button" href="/commission/admin/${request.id}">Open &amp; deliver →</a>
   </div>`;
   return `<article class="card" id="r${request.id}">
@@ -299,7 +305,7 @@ async function stats(db, now) {
   return { line, delivered, paid, waiting, failed };
 }
 
-async function top(db, now, current) {
+async function top(db, now, current, q = '') {
   const s = await stats(db, now);
   const counts = await Promise.all(TABS.map(([name]) => name === 'plans'
     ? db.prepare('SELECT COUNT(*) AS count FROM plans').first('count')
@@ -315,13 +321,33 @@ async function top(db, now, current) {
 ${TABS.map(([name, label], index) => name === 'held' && !counts[index] && current !== name ? ''
     : `  <a href="/commission/admin${name === 'line' ? '' : `?show=${name}`}"${current === name ? ' aria-current="page"' : ''}${name === 'held' ? ' class="alert"' : ''}>${label} ${counts[index]}</a>`).filter(Boolean).join('\n')}
   <a href="/commission/admin/emails"${current === 'emails' ? ' aria-current="page"' : ''}>Emails</a>
-</nav>`;
+</nav>
+<form class="search" method="get" action="/commission/admin"><label>Find a request <span>A request number, or part of an email, a name, or who it’s for.</span><input type="text" name="q" value="${escapeHtml(q)}" maxlength="254"></label><button type="submit" class="quiet">Find</button></form>`;
 }
 
 // ---- Pages ----------------------------------------------------------------------------------
 
+// Replies to buyer emails come from the buyer's address, with "(request 57)" in the subject:
+// either finds the request, in any state.
+async function searchPage(request, env, url, identity, now, q) {
+  const db = env.COMMISSIONS_DB;
+  const number = /^#?(?:request\s*)?(\d{1,10})$/i.exec(q)?.[1];
+  const needle = q.toLowerCase();
+  const { results } = await db.prepare(`SELECT * FROM requests WHERE id = ? OR instr(lower(buyer_email), ?) > 0
+      OR instr(lower(buyer_name), ?) > 0 OR instr(lower(recipient), ?) > 0 ORDER BY id DESC LIMIT 50`)
+    .bind(number ? Number(number) : null, needle, needle, needle).all();
+  const today = newYorkDate(now);
+  const cards = await Promise.all(results.map(async (row) =>
+    card(row, { position: ['requested', 'writing'].includes(row.status) ? await placeInLine(db, row.id) : null, today, now })));
+  return html(request, layout('Find', identity, `${await top(db, now, 'search', q)}
+<h1>Requests matching “${escapeHtml(q)}”</h1>
+${cards.join('\n') || '<p>Nothing matches.</p>'}`));
+}
+
 async function queuePage(request, env, url, identity, now) {
   const db = env.COMMISSIONS_DB;
+  const q = String(url.searchParams.get('q') ?? '').trim().slice(0, 254);
+  if (q) return searchPage(request, env, url, identity, now, q);
   const show = TABS.some(([name]) => name === url.searchParams.get('show')) ? url.searchParams.get('show') : 'line';
   const pageNumber = Math.max(1, Math.min(10_000, Number.parseInt(url.searchParams.get('page'), 10) || 1));
   const offset = (pageNumber - 1) * ADMIN_PAGE_SIZE;
@@ -355,6 +381,14 @@ async function queuePage(request, env, url, identity, now) {
       return extra + card(row, { position: show === 'line' ? offset + index + 1 : null, today, now });
     }).join('\n') || `<p>${show === 'line' ? 'Nobody’s in line.' : 'Nothing here.'}</p>`;
   }
+  // What's due soon, or likely to miss its date at this place in line, above the line itself.
+  let watch = '';
+  if (show === 'line' && pageNumber === 1) {
+    const rows = await deadlineWatch(db, today);
+    watch = rows.length ? `<section class="watch" aria-labelledby="watch-title"><h2 id="watch-title">Deadlines in the next 7 days, or at risk</h2><ul>
+${rows.map((row) => `  <li><a href="/commission/admin/${row.id}">#${row.position} in line · request ${row.id} · for ${escapeHtml(row.recipient)}</a> · ${escapeHtml(shortDate(row.deadline, now))} (${row.days === 0 ? 'today' : `${row.days} day${row.days === 1 ? '' : 's'}`})${row.risk ? ' · <strong>at risk</strong>' : ''}</li>`).join('\n')}
+</ul></section>` : '';
+  }
   const bulk = show === 'held' && list.includes('<article') ? `<p>These came in past ${INTAKE_ALARM_PER_DAY} requests in 24 hours, so they’re not in line yet and their buyers haven’t been told a place.</p>
 <div class="actions">
   <form method="post" action="/commission/admin/held">${hidden('action', 'let-in-all')}<button type="submit">Let the oldest ${HELD_BATCH} in</button></form>
@@ -372,6 +406,7 @@ async function queuePage(request, env, url, identity, now) {
   return html(request, layout(label, identity, `${await top(db, now, show)}
 ${done ? `<p class="done" role="status">${escapeHtml(done)}</p>` : ''}
 <h1>${label}</h1>
+${watch}
 ${bulk}
 ${list}
 ${pager}`));
@@ -409,7 +444,13 @@ async function detailPage(request, env, url, identity, now, id) {
     db.prepare('SELECT id, kind, subject, created_at, sent_at, failed_at, attempts, last_error FROM outbox WHERE request_id = ? ORDER BY id DESC').bind(id).all(),
     db.prepare('SELECT * FROM plans WHERE request_id = ? ORDER BY started_at').bind(id).all()
   ]);
-  const done = DONE[url.searchParams.get('done')];
+  const doneAction = url.searchParams.get('done');
+  const done = DONE[doneAction];
+  // After Deliver or Start writing, the way on to the next song: the next one waiting after
+  // this one, or the first one waiting.
+  const next = ['deliver', 'writing'].includes(doneAction)
+    ? await db.prepare(`SELECT id FROM requests WHERE status = 'requested' AND id != ? ORDER BY id > ? DESC, id LIMIT 1`).bind(r.id, r.id).first('id')
+    : null;
   const allowed = (action) => !transitionProblem(r, action);
   const delivered = r.status === 'delivered';
 
@@ -423,7 +464,7 @@ ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song
   <label>Song file <span>MP3, M4A or WAV, up to ${SONG_MAX_BYTES / 1024 / 1024} MB${delivered ? '. Leave it empty to keep the current one.' : '.'}</span><input type="file" name="song" accept="audio/*"${delivered ? '' : ' required'}></label>
   <label>Lyrics<textarea name="lyrics" maxlength="${LIMITS.lyrics}" rows="10">${escapeHtml(r.lyrics ?? '')}</textarea></label>
   <label>Video link <span>Optional, https only (an unlisted YouTube link, say).</span><input type="url" name="video_url" maxlength="${LIMITS.video_url}" value="${escapeHtml(r.video_url ?? '')}"></label>
-  <label class="check"><input type="checkbox" name="email_them" value="yes" checked> Email them</label>
+  <label class="check"><input type="checkbox" name="email_them" value="yes"${delivered ? '' : ' checked'}> Email them${delivered ? ' that I updated it' : ''}</label>
   <button type="submit">${delivered ? 'Save changes' : 'Deliver'}</button>
 </form>` : '';
 
@@ -473,9 +514,9 @@ ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song
 
   const emailRows = emails.map((email) => `<tr><td>${escapeHtml(email.kind)}</td><td>${escapeHtml(email.subject)}</td><td>${emailStatus(email, now)}</td><td><a href="/commission/admin/emails/${email.id}">View</a></td><td><form method="post" action="/commission/admin/emails/${email.id}">${hidden('action', 'send')}<button type="submit" class="quiet">${email.sent_at || email.failed_at ? 'Resend' : 'Send now'}</button></form></td></tr>`).join('');
 
-  return html(request, layout(`#${r.id}`, identity, `<p><a href="/commission/admin">← The line</a></p>
-${done ? `<p class="done" role="status">${escapeHtml(done)}</p>` : ''}
-<h1>#${r.id} for ${escapeHtml(r.recipient)}</h1>
+  return html(request, layout(`Request ${r.id}`, identity, `<p><a href="/commission/admin">← The line</a></p>
+${done ? `<p class="done" role="status">${escapeHtml(done)}${next ? ` <a href="/commission/admin/${next}">Next in line →</a>` : ''}</p>` : ''}
+<h1>Request ${r.id}${r.recipient ? ` for ${escapeHtml(r.recipient)}` : ''}</h1>
 ${card(r, { position, today, now, full: true })}
 ${deliver}
 ${markPaid}
@@ -484,6 +525,8 @@ ${payments.length || plans.length ? `<h2>Payments</h2>${planLines ? `<ul>${planL
 ${timeline(r, now)}
 <p>Their page:</p>
 <p class="link">${escapeHtml(pageUrl(env, r))}</p>
+${r.status === 'delivered' ? `<p>The link they can pass on (the song and lyrics only):</p>
+<p class="link">${escapeHtml(shareUrl(env, r))}</p>` : ''}
 ${moves ? `<div class="actions">${moves}</div>` : ''}
 ${cancel}
 ${r.deleted_at ? '' : edit}
@@ -551,7 +594,8 @@ async function act(request, env, url, ctx, identity, now, id) {
   const refuse = (text, code = 400) => problemPage(request, identity, text, code, id);
   const done = () => {
     later(ctx, flushOutbox(env, { requestId: r.id }));
-    return back(`/commission/admin/${r.id}?done=${action}`);
+    // Start writing from the line goes back to the line, at this card.
+    return back(form.get('back') === 'line' ? `/commission/admin#r${r.id}` : `/commission/admin/${r.id}?done=${action}`);
   };
 
   switch (action) {

@@ -162,6 +162,16 @@ export function lateBy(request, position, today) {
 // "a day" or "about 4 days".
 export const aboutDays = (days) => days <= 1 ? 'about a day' : `about ${days} days`;
 
+// The requests in line with a deadline that's close (within a week) or at risk (their place is
+// after it), soonest first: { id, recipient, deadline, position, days, risk }.
+export async function deadlineWatch(db, today) {
+  const { results } = await db.prepare(`SELECT id, recipient, deadline, position FROM (
+      SELECT id, recipient, deadline, ROW_NUMBER() OVER (ORDER BY id) AS position FROM requests WHERE ${IN_LINE})
+    WHERE deadline IS NOT NULL AND deadline >= ? ORDER BY deadline, id`).bind(today).all();
+  return results.map((row) => ({ ...row, days: daysBetween(today, row.deadline), risk: lateBy(row, row.position, today) > 0 }))
+    .filter((row) => row.days <= 7 || row.risk);
+}
+
 export async function lineLength(db) {
   const row = await db.prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(status = 'writing'), 0) AS writing
     FROM requests WHERE ${IN_LINE}`).first();

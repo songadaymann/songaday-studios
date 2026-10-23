@@ -37,7 +37,7 @@ test('the morning after two songs are delivered, everyone behind them hears thei
   assert.match(rows[0].text, /Your song for Siobhan, my sister is now #1 in line \(it was #3\)\./);
   assert.match(rows[2].text, /now #3 in line \(it was #5\)/);
   const email = env.COMMISSIONS_DB.one("SELECT * FROM outbox WHERE kind = 'moved' AND request_id = 3");
-  assert.equal(email.subject, "You're now #1 in line");
+  assert.equal(email.subject, "You're now #1 in line (request 3)");
   assert.equal(email.once_key, 'moved:3:2026-11-03');
   assert.equal(email.unsubscribe_url, `https://songaday.studio/commission/s/${made[2].token}/quiet`);
   assert.match(email.text, /To stop these updates, turn them off on your page\./);
@@ -119,7 +119,7 @@ test('putting a request back in line, or undoing a delivery, moves people back w
   await admin(env, made[1].id, { action: 'restore' });
   const restored = env.COMMISSIONS_DB.one("SELECT * FROM outbox WHERE kind = 'restored' AND request_id = 2");
   assert.equal(restored.position, 2);
-  assert.equal(restored.subject, "You're back in line: #2");
+  assert.equal(restored.subject, "You're back in line: #2 (request 2)");
   assert.match(restored.text, /I've put your request for a song for Siobhan, my sister back in line, in its old place\. You're #2\./);
   assert.equal(env.COMMISSIONS_DB.one('SELECT status FROM requests WHERE id = 2').status, 'requested');
   await runCommissionDaily(env, DAY2);
@@ -152,7 +152,7 @@ test('one payment reminder, a week after delivery, only when unpaid and not arch
   await runCommissionDaily(env, DAY2);
   const reminders = env.COMMISSIONS_DB.rows('outbox', "kind = 'reminder'");
   assert.deepEqual(reminders.map((row) => row.request_id), [1]);
-  assert.equal(reminders[0].subject, 'Your song is waiting for you');
+  assert.equal(reminders[0].subject, 'Your song is waiting for you (request 1)');
   assert.match(reminders[0].text, /"Siobhan at Forty" is ready on your page/);
   assert.ok(env.COMMISSIONS_DB.one('SELECT reminded_at FROM requests WHERE id = 1').reminded_at);
 });
@@ -163,7 +163,7 @@ test('Jonathan’s summary goes only when there’s news, and flags what needs a
   assert.equal(env.COMMISSIONS_DB.rows('outbox', "kind = 'summary'").length, 0, 'nothing happened');
 
   const a = await makeRequest(env, { deadline: '2026-11-08', occasion: 'A retirement' });
-  const b = await makeRequest(env, { email: 'b@example.com', story: 'For my brother, who builds boats in his garage.' });
+  const b = await makeRequest(env, { email: 'b@example.com', story: 'For my brother, who builds boats in his garage.', video: 'yes' });
   await deliver(env, b.id);
   await admin(env, b.id, { action: 'cancel' });
   const cancelled = env.COMMISSIONS_DB.one('SELECT * FROM requests WHERE id = ?', b.id);
@@ -186,7 +186,8 @@ test('Jonathan’s summary goes only when there’s news, and flags what needs a
   assert.equal(summary.request_id, null);
   assert.equal(summary.subject, 'Commissions: 2 new, 1 paid ($300), 1 in line');
   assert.match(summary.text, new RegExp(`#${a.id} · personal · A retirement · deadline 2026-11-08 · Pat Doe`));
-  assert.match(summary.text, /Deadlines in the next 7 days: #1 \(2026-11-08\)/);
+  assert.match(summary.text, new RegExp(`#${b.id} · personal · A 40th birthday · video · Pat Doe`));
+  assert.match(summary.text, new RegExp(`Deadlines in the next 7 days, or at risk:\n  #1 in line, request ${a.id}, Nov 8 \\(5 days\\): https://songaday\\.studio/commission/admin/${a.id}`));
   assert.match(summary.text, new RegExp(`Needs a look: #${b.id} was paid after it was cancelled`));
   assert.match(summary.text, /https:\/\/songaday\.studio\/commission\/admin/);
 
@@ -414,7 +415,7 @@ test('transactional email goes before place-in-line email, and a stale place-in-
   await flushOutbox(env, { now: DAY1 });
   const subjects = env.COMMISSION_EMAIL.sent.map((message) => message.subject);
   const firstMoved = subjects.findIndex((subject) => /now #/.test(subject));
-  assert.ok(firstMoved > subjects.lastIndexOf('Your song is ready'), subjects.join(' | '));
+  assert.ok(firstMoved > subjects.findLastIndex((subject) => subject.startsWith('Your song is ready')), subjects.join(' | '));
   assert.deepEqual(env.COMMISSIONS_DB.rows('outbox', "kind = 'moved'").map((row) => row.request_id), [3]);
 });
 
