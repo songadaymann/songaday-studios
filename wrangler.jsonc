@@ -64,6 +64,12 @@
       "allowed_sender_addresses": ["songs@songaday.studio"]
     }
   ],
+  // Workers Logs keeps the Worker's own console.log lines (routes, ids and outcomes), but no
+  // invocation logs: those record every request's URL, and buyer links carry their token.
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
+  },
   // Daily at 14:00 UTC (9am in New York in winter, 10am in summer): commission place-in-line
   // emails, the one payment reminder, Jonathan's summary, and any email that didn't go out.
   "triggers": {
