@@ -1,4 +1,5 @@
 import { renderFumblePage } from './fumble-page.mjs';
+import { isHuman } from './turnstile.mjs';
 
 // songaday.studio/fumble: anonymous bag-fumble stories. A visitor's story goes into the D1
 // database bound as FUMBLE_DB, waiting. Nothing is public until Jonathan publishes it with
@@ -14,7 +15,6 @@ const PAGE_SIZE = 30;
 // While this many stories wait for review, new ones are turned away (a flood can't fill D1).
 const WAITING_LIMIT = 300;
 const MAX_BODY = 32 * 1024;
-const SITEVERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const IMAGE_PATH = /^\/fumble\/images\/([a-z0-9-]+\.(?:jpg|png))$/;
 
 const PUBLISHED = `SELECT number, story, published_at, image_key, image_alt FROM fumbles
@@ -37,22 +37,6 @@ export function storyProblem(story) {
   if (/https?:\/\/|www\.|\b(?:t\.me|discord\.gg)\//i.test(story)) return 'Leave out links.';
   if (/0x[0-9a-f]{40}/i.test(story)) return 'Take out the wallet address or transaction hash. It would show who you are.';
   return null;
-}
-
-async function isHuman(env, token) {
-  if (typeof token !== 'string' || !token || token.length > 2048) return false;
-  try {
-    const response = await fetch(SITEVERIFY, {
-      method: 'POST',
-      body: new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: token }),
-      signal: AbortSignal.timeout(5000)
-    });
-    const outcome = await response.json();
-    // Turnstile's test keys answer without an action; real widgets report data-action.
-    return outcome.success === true && (!outcome.action || outcome.action === 'fumble');
-  } catch {
-    return false;
-  }
 }
 
 const newId = () => [...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, '0')).join('');
@@ -128,7 +112,7 @@ async function submit(request, env, url) {
     const { success } = await env.FUMBLE_LIMIT.limit({ key: request.headers.get('CF-Connecting-IP') ?? 'unknown' });
     if (!success) return reply(429, 'Too many at once. Try again in a minute.', story);
   }
-  if (!(await isHuman(env, form.get('cf-turnstile-response')))) {
+  if (!(await isHuman(env, form.get('cf-turnstile-response'), 'fumble'))) {
     return reply(403, 'The human check didn’t go through. Try again.', story);
   }
   const waiting = await env.FUMBLE_DB.prepare("SELECT COUNT(*) AS count FROM fumbles WHERE status = 'pending'").first('count');
