@@ -5,13 +5,14 @@
 //   node update-press.mjs              # the published CSV at PRESS_CSV_URL (env, or wrangler.jsonc)
 //   node update-press.mjs public.csv   # a CSV downloaded from the Public tab
 //
-// It lists each row it leaves out and why. Then node build-production.mjs and wrangler deploy.
+// It lists each row it leaves out and why, and each project no group in press.mjs lists (those
+// rows show under Other). Then node build-production.mjs and wrangler deploy.
 // Because the snapshot is the safety net, it refuses to shrink it below half its rows (pass
 // --allow-shrink when rows were removed on purpose), or to show everyone a row that was
 // wallet-only (pass --allow-wallet-change when that's on purpose).
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { PRESS_COLUMNS, pressFromCsv, pressMinimum } from './press.mjs';
+import { PRESS_COLUMNS, PRESS_OTHER, pressFromCsv, pressMinimum, pressProjectGroup } from './press.mjs';
 
 const root = import.meta.dirname;
 const snapshotFile = path.join(root, 'press', 'press.json');
@@ -35,6 +36,10 @@ function refuse(message) {
 
 const { items, problems } = pressFromCsv(await csvText());
 for (const problem of problems) console.warn(`Left out: ${problem}`);
+const ungrouped = [...new Set(items.filter((item) => pressProjectGroup(item.project) === PRESS_OTHER).map((item) => item.project))];
+if (ungrouped.length) {
+  console.warn(`Under Other on the page until PRESS_PROJECTS in press.mjs lists ${ungrouped.length === 1 ? 'it' : 'them'}: ${ungrouped.map((project) => JSON.stringify(project)).join(', ')}.`);
+}
 if (!items.length) refuse('No rows to keep.');
 
 const old = JSON.parse(await readFile(snapshotFile, 'utf8'));
