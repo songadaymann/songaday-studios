@@ -4,7 +4,7 @@ import { existsSync } from "node:fs";
 import { songADayNumber } from "./song-day.mjs";
 import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFilms } from "./films.mjs";
 import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
-import { PRESS_SNAPSHOT, renderPress, renderPressSummary } from "./press.mjs";
+import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
 
@@ -159,8 +159,9 @@ await writePage("everything/index.html", documentHtml({
 // songaday.studio/press/, from the snapshot of the press sheet in press/press.json (press.mjs).
 // The Worker swaps in the live sheet when PRESS_CSV_URL is set. The page script filters by kind
 // in place, and the wallet gate after it shows wallet-only rows to browsers with a wallet.
-if (PRESS_SNAPSHOT.problems.length) {
-  throw new Error(`press/press.json has problems:\n${PRESS_SNAPSHOT.problems.join("\n")}`);
+const press = pressSnapshot();
+if (press.problems.length) {
+  throw new Error(`press/press.json has problems:\n${press.problems.join("\n")}`);
 }
 const [pressSource, pressJs] = await Promise.all([source("press.html"), source("press-page.js")]);
 await writePage("press/index.html", documentHtml({
@@ -168,8 +169,8 @@ await writePage("press/index.html", documentHtml({
   description: "Press, podcasts, radio and TV about Jonathan Mann and Song A Day.",
   url: "https://songaday.studio/press/",
   body: hostedMedia(withChrome(pressSource)
-    .replace("{{PRESS_SUMMARY}}", () => renderPressSummary(PRESS_SNAPSHOT.items))
-    .replace("{{PRESS}}", () => renderPress(PRESS_SNAPSHOT.items))),
+    .replace("{{PRESS_SUMMARY}}", () => renderPressSummary(press.items))
+    .replace("{{PRESS}}", () => renderPress(press.items))),
   script: `${pressJs}(() => {\n  "use strict";\n${walletGateScript}\n  applyWalletGate();\n})();`,
 }));
 

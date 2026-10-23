@@ -4,7 +4,7 @@ import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 import { handleFumble } from './fumble.mjs';
 import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from './today-song.mjs';
 import { songDate } from './calendar.mjs';
-import { PRESS_SNAPSHOT, livePress, pressKind, renderPress, renderPressSummary } from './press.mjs';
+import { livePress, pressKind, pressSnapshot, renderPress, renderPressSummary } from './press.mjs';
 
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
@@ -206,7 +206,7 @@ export default {
       }).on('#press', {
         async element(element) {
           const live = await pressPromise;
-          if (live || kind) element.setInnerContent(renderPress(live ?? PRESS_SNAPSHOT.items, { kind }), { html: true });
+          if (live || kind) element.setInnerContent(renderPress(live ?? pressSnapshot().items, { kind }), { html: true });
         }
       });
     }
