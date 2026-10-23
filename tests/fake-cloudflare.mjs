@@ -17,7 +17,8 @@ export const migration = await readFile(new URL('commission-migrations/0001_comm
 
 // D1's prepare/bind/all/first/run/batch over node:sqlite. A batch is one transaction, like D1's.
 // Each call runs synchronously, so two "concurrent" requests interleave only at awaits, as they
-// would against D1's single writer.
+// would against D1's single writer. `queries` counts them the way D1's per-invocation limit
+// does: every all, first and run, and every statement in a batch.
 export function fakeD1(sql = migration) {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec(sql);
@@ -29,21 +30,30 @@ export function fakeD1(sql = migration) {
   };
   const db = {
     sqlite,
+    queries: 0,
     prepare(text) {
       const statement = (args) => ({
         sql: text,
         args,
         bind: (...values) => statement(values.map((value) => value === undefined ? null : value)),
-        all: async () => ({ results: sqlite.prepare(text).all(...args), success: true }),
+        all: async () => {
+          db.queries++;
+          return { results: sqlite.prepare(text).all(...args), success: true };
+        },
         first: async (column) => {
+          db.queries++;
           const row = sqlite.prepare(text).get(...args);
           return row === undefined ? null : column ? row[column] : row;
         },
-        run: async () => execute(text, args)
+        run: async () => {
+          db.queries++;
+          return execute(text, args);
+        }
       });
       return statement([]);
     },
     async batch(statements) {
+      db.queries += statements.length;
       sqlite.exec('BEGIN');
       try {
         const results = statements.map((statement) => execute(statement.sql, statement.args));

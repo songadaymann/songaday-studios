@@ -1,9 +1,10 @@
 // Emails for songaday.studio/commission. Every email is written to the outbox table first, in the
 // same batch as the fact it announces, then sent through the Email Service binding
-// (COMMISSION_EMAIL) when there is one. Without it (wrangler dev, or before email is set up) the
-// emails wait in the outbox, where the admin shows them, and nothing is lost.
+// (COMMISSION_EMAIL) when there is one. Without it, or while sending isn't working yet (the
+// domain not verified, the quota used up), the emails wait in the outbox, where the admin
+// shows them, and nothing is lost. wrangler dev simulates the binding and marks them sent.
 import { escapeHtml } from './fumble-page.mjs';
-import { OUTBOX_BATCH, OUTBOX_MAX_ATTEMPTS, PLAN_MONTHS } from './commission-config.mjs';
+import { D1_QUERY_BUDGET, OUTBOX_BATCH, OUTBOX_MAX_ATTEMPTS, PLAN_MONTHS } from './commission-config.mjs';
 import { dollars, pageUrl, siteOrigin } from './commission-core.mjs';
 
 // The form can mail any address, so the only words a buyer typed that reach an email are their
@@ -136,17 +137,20 @@ ${body.map((part) => typeof part === 'string' ? paragraph(part)
   return { subject, text, html };
 }
 
+// One email's subject, text and HTML, with the links filled in for this site.
+export const emailParts = (env, kind, request, data = {}) =>
+  renderEmail(kind, request, { ...data, page: request ? pageUrl(env, request) : null, origin: siteOrigin(env) });
+
 // The INSERT for one email, for the caller's own db.batch, so an email exists if and only if the
 // fact it announces does. With once_key it's ON CONFLICT DO NOTHING, so it exists once. `when`
 // is an SQL condition that must hold at insert time (bound with whenArgs). The request's id is
 // looked up by its token, so an email can go in the same batch as the request it's about.
 export function queueEmail(env, kind, request, data = {}) {
   const now = data.now ?? new Date();
-  const origin = siteOrigin(env);
   const page = request ? pageUrl(env, request) : null;
-  const to = kind === 'summary' ? env.COMMISSION_NOTIFY_TO : request.buyer_email;
+  const to = TO_JONATHAN.has(kind) ? env.COMMISSION_NOTIFY_TO : request.buyer_email;
   if (!to) return null;
-  const { subject, text, html } = renderEmail(kind, request, { ...data, page, origin });
+  const { subject, text, html } = emailParts(env, kind, request, data);
   const unsubscribe = kind === 'moved' ? `${page}/quiet` : null;
   return env.COMMISSIONS_DB.prepare(`INSERT INTO outbox
       (request_id, kind, once_key, position, to_email, subject, text, html, unsubscribe_url, created_at)
@@ -156,17 +160,44 @@ export function queueEmail(env, kind, request, data = {}) {
       unsubscribe, now.toISOString(), ...(data.whenArgs ?? []));
 }
 
+// Emails to Jonathan rather than a buyer.
+const TO_JONATHAN = new Set(['summary']);
+
 // Sending again can't help these.
 const PERMANENT = new Set(['E_RECIPIENT_SUPPRESSED', 'E_RECIPIENT_NOT_ALLOWED', 'E_VALIDATION_ERROR', 'E_FIELD_MISSING']);
-// The quota isn't the email's fault: stop this run and try again later, counting nothing.
-const QUOTA = new Set(['E_DAILY_LIMIT_EXCEEDED', 'E_RATE_LIMIT_EXCEEDED']);
+// Sending itself isn't working: the domain isn't verified or onboarded yet, or the account is
+// paused. No email is at fault, so the run stops and every email waits for the fix, rather
+// than each one failing for good after five tries.
+export const SENDING_BROKEN = new Set(['E_SENDER_NOT_VERIFIED', 'E_SENDER_DOMAIN_NOT_AVAILABLE', 'E_ACCOUNT_SUSPENDED']);
+// The quota isn't the email's fault either: stop this run and try again later, counting nothing.
+const STOP = new Set(['E_DAILY_LIMIT_EXCEEDED', 'E_RATE_LIMIT_EXCEEDED', ...SENDING_BROKEN]);
+// Email Service down: this many in a row is an outage, so the run stops before every email
+// spends a try on it. One on its own counts against that email, like any other error.
+const OUTAGE_AFTER = 3;
 const CLAIM_MINUTES = 10;
 
 export const claimLapsedBefore = (now) => new Date(now.getTime() - CLAIM_MINUTES * 60_000).toISOString();
 
+// Whether an email would only confuse them now, from its request as it is at send time.
+function outOfDate(kind, request) {
+  if (!request) return kind !== 'summary';
+  switch (kind) {
+    // A place in line for someone no longer waiting (delivered, being written, cancelled), or
+    // who turned the updates off.
+    case 'moved': return request.status !== 'requested' || Boolean(request.quiet);
+    case 'received': return request.status === 'cancelled';
+    // A song pulled back with Undo delivery, or cancelled since.
+    case 'delivered': case 'updated': return request.status !== 'delivered';
+    case 'reminder': return request.status !== 'delivered' || Boolean(request.paid_at);
+    default: return false;
+  }
+}
+
 // Sends unsent emails: one request's (after an action), some ids (the admin's Send now), or the
-// rest (the daily cron), transactional mail before place-in-line updates, oldest first.
-export async function flushOutbox(env, { requestId = null, ids = null, now = new Date(), limit = OUTBOX_BATCH } = {}) {
+// rest (the daily cron), transactional mail before place-in-line updates, oldest first. Each
+// email costs up to three D1 queries, and an invocation gets about 1,000 (D1's limit on Workers
+// Paid), so the run stops when `budget` would run out; the rest go next time.
+export async function flushOutbox(env, { requestId = null, ids = null, now = new Date(), limit = OUTBOX_BATCH, budget = D1_QUERY_BUDGET } = {}) {
   const db = env.COMMISSIONS_DB;
   const result = { sent: 0, failed: 0, deleted: 0, stopped: false };
   // No binding or sender: everything waits, and no attempt is counted.
@@ -179,21 +210,27 @@ export async function flushOutbox(env, { requestId = null, ids = null, now = new
   const { results } = await db.prepare(`SELECT * FROM outbox
     WHERE sent_at IS NULL AND failed_at IS NULL AND (claimed_at IS NULL OR claimed_at < ?) ${filters.join(' ')}
     ORDER BY (kind = 'moved'), id LIMIT ?`).bind(...args, limit).all();
+  let queries = 1;
 
   // One clock for the whole run (the cron passes its scheduled time), so claims compare fairly.
   const at = now.toISOString();
+  let outage = 0;
   for (const row of results) {
-    const claimedAt = at;
+    if (queries + 3 > budget) {
+      result.stopped = true;
+      break;
+    }
     const claim = await db.prepare(`UPDATE outbox SET claimed_at = ? WHERE id = ? AND sent_at IS NULL
-      AND failed_at IS NULL AND (claimed_at IS NULL OR claimed_at < ?)`).bind(claimedAt, row.id, lapsed).run();
+      AND failed_at IS NULL AND (claimed_at IS NULL OR claimed_at < ?)`).bind(at, row.id, lapsed).run();
+    queries++;
     if (claim.meta.changes !== 1) continue;
 
-    // A place-in-line update for someone no longer waiting (delivered, being written, cancelled,
-    // or who turned the updates off) would only confuse them.
-    if (row.kind === 'moved') {
-      const request = await db.prepare('SELECT status, quiet FROM requests WHERE id = ?').bind(row.request_id).first();
-      if (!request || request.status !== 'requested' || request.quiet) {
+    if (row.request_id !== null) {
+      const request = await db.prepare('SELECT status, quiet, paid_at FROM requests WHERE id = ?').bind(row.request_id).first();
+      queries++;
+      if (outOfDate(row.kind, request)) {
         await db.prepare('DELETE FROM outbox WHERE id = ?').bind(row.id).run();
+        queries++;
         result.deleted++;
         continue;
       }
@@ -214,12 +251,15 @@ export async function flushOutbox(env, { requestId = null, ids = null, now = new
       });
       await db.prepare('UPDATE outbox SET sent_at = ?, message_id = ? WHERE id = ?')
         .bind(at, sent?.messageId ?? null, row.id).run();
+      queries++;
       result.sent++;
+      outage = 0;
     } catch (error) {
       // Only the code is kept, never the message: it can quote the address or the body.
       const code = typeof error?.code === 'string' ? error.code.slice(0, 64) : 'unknown';
       console.log('commission email', row.kind, row.id, code);
-      if (QUOTA.has(code)) {
+      queries++;
+      if (STOP.has(code)) {
         await db.prepare('UPDATE outbox SET claimed_at = NULL, last_error = ? WHERE id = ?').bind(code, row.id).run();
         result.stopped = true;
         break;
@@ -229,6 +269,11 @@ export async function flushOutbox(env, { requestId = null, ids = null, now = new
       await db.prepare(`UPDATE outbox SET attempts = ?, last_error = ?, claimed_at = NULL, failed_at = ? WHERE id = ?`)
         .bind(attempts, code, failed ? at : null, row.id).run();
       if (failed) result.failed++;
+      outage = code === 'E_INTERNAL_SERVER_ERROR' ? outage + 1 : 0;
+      if (outage >= OUTAGE_AFTER) {
+        result.stopped = true;
+        break;
+      }
     }
   }
   return result;

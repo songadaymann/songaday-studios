@@ -11,14 +11,14 @@
 import { serveMedia } from './media.mjs';
 import { isHuman } from './turnstile.mjs';
 import {
-  FORM_MAX_BYTES, LIMITS, MAX_OPEN_PER_EMAIL, MEMO_MAX_BYTES, OUTBOX_KEEP_DAYS, PLAN_MONTHS, PRICES,
-  REMINDER_DAYS, VIDEO_PRICE_CENTS
+  CANCELLED_KEEP_DAYS, D1_QUERY_BUDGET, FORM_MAX_BYTES, LIMITS, MAX_OPEN_PER_EMAIL, MEMO_KEEP_DAYS, MEMO_MAX_BYTES,
+  OUTBOX_KEEP_DAYS, PLAN_MONTHS, PRICES, REMINDER_DAYS, VIDEO_PRICE_CENTS
 } from './commission-config.mjs';
 import {
   IN_LINE, TOKEN, cleanLine, cleanText, daysBetween, dollars, later, lineLength, loadByToken, newToken,
   newYorkDate, parseDollars, placeInLine, readForm, sniffAudio, transitionProblem
 } from './commission-core.mjs';
-import { claimLapsedBefore, flushOutbox, queueEmail } from './commission-email.mjs';
+import { claimLapsedBefore, emailParts, flushOutbox, queueEmail } from './commission-email.mjs';
 import {
   SESSION_ID, StripeError, createCheckout, ensurePlanSchedule, handleStripeWebhook, paymentProblem, settleCheckoutSession, stopPlan, stripe
 } from './commission-stripe.mjs';
@@ -157,7 +157,9 @@ export function requestProblem(answers, now = new Date()) {
 
 // Makes a request and queues its "received" email in one batch. Returns { id, token, position }.
 // It's one function so the later monthly song plan can call it too. The new row's id is higher
-// than every other, so its place is everyone in line plus one.
+// than every other, so its place is everyone in line plus one. Two requests at once can both
+// count the line before either is in it, so the place is checked again once it's in, and the
+// email (not sent yet) corrected.
 export async function createRequest(env, answers, { memoKey = null, now = new Date() } = {}) {
   const db = env.COMMISSIONS_DB;
   const token = newToken();
@@ -175,7 +177,13 @@ export async function createRequest(env, answers, { memoKey = null, now = new Da
     queueEmail(env, 'received', row, { now, position, onceKey: `received:${token}` })
   ]);
   const id = await db.prepare('SELECT id FROM requests WHERE token = ?').bind(token).first('id');
-  return { id, token, position };
+  const actual = await placeInLine(db, id);
+  if (actual !== position) {
+    const { subject, text, html } = emailParts(env, 'received', row, { now, position: actual });
+    await db.prepare(`UPDATE outbox SET position = ?, subject = ?, text = ?, html = ? WHERE once_key = ?
+      AND sent_at IS NULL AND claimed_at IS NULL`).bind(actual, subject, text, html, `received:${token}`).run();
+  }
+  return { id, token, position: actual };
 }
 
 async function submit(request, env, url, ctx) {
@@ -467,7 +475,8 @@ export async function runCommissionDaily(env, now = new Date()) {
     AND archived_at IS NULL AND reminded_at IS NULL AND delivered_at <= ?`).bind(remindBefore).all();
   for (const row of waiting) {
     emails.push(db.prepare('UPDATE requests SET reminded_at = ? WHERE id = ? AND reminded_at IS NULL').bind(runStart, row.id));
-    emails.push(queueEmail(env, 'reminder', row, { now, onceKey: `reminder:${row.id}` }));
+    // Keyed by the delivery, so a song redelivered after Undo delivery gets its own reminder.
+    emails.push(queueEmail(env, 'reminder', row, { now, onceKey: `reminder:${row.id}:${row.delivered_at}` }));
   }
   if (emails.length) await db.batch(emails);
 
@@ -488,16 +497,56 @@ export async function runCommissionDaily(env, now = new Date()) {
   const summary = await dailySummary(env, now, today);
   if (summary) await summary.run();
 
-  const sent = await flushOutbox(env, { now });
+  const removed = await forget(env, now);
 
-  // Sent emails' bodies hold names and links. A place-in-line email for someone still in line
-  // is kept: it's what they were last told.
-  const keepAfter = new Date(now.getTime() - OUTBOX_KEEP_DAYS * 86_400_000).toISOString();
-  await db.prepare(`DELETE FROM outbox WHERE sent_at IS NOT NULL AND sent_at < ? AND NOT (kind IN ('received', 'moved')
-    AND request_id IN (SELECT id FROM requests WHERE ${IN_LINE}))`).bind(keepAfter).run();
+  // What the run has used so far, generously (the queries above, plus the batch's statements),
+  // so the flush can stop before the invocation's D1 limit.
+  const sent = await flushOutbox(env, { now, budget: D1_QUERY_BUDGET - 60 - emails.length - removed * 2 });
 
-  console.log('commission daily', `moved+reminders ${emails.length}`, `sent ${sent.sent}`);
-  return { queued: emails.length, ...sent };
+  console.log('commission daily', `moved+reminders ${emails.length}`, `sent ${sent.sent}`, `removed ${removed}`);
+  return { queued: emails.length, removed, ...sent };
+}
+
+const RETENTION_BATCH = 100;
+
+// What's kept, and for how long (README, "Where things live"): voice memos until MEMO_KEEP_DAYS
+// after their song is delivered or the request cancelled; requests cancelled with no payment,
+// with their emails and files, for CANCELLED_KEEP_DAYS; emails, sent or not, for
+// OUTBOX_KEEP_DAYS, except the place-in-line email someone still in line was last told.
+// Returns how many requests and memos it removed.
+async function forget(env, now) {
+  const db = env.COMMISSIONS_DB;
+  const files = env.COMMISSION_FILES;
+  const daysAgo = (days) => new Date(now.getTime() - days * 86_400_000).toISOString();
+
+  const memoBefore = daysAgo(MEMO_KEEP_DAYS);
+  const { results: memos } = await db.prepare(`SELECT id, memo_key FROM requests WHERE memo_key IS NOT NULL
+    AND ((status = 'delivered' AND delivered_at < ?) OR (status = 'cancelled' AND cancelled_at < ?)) LIMIT ?`)
+    .bind(memoBefore, memoBefore, RETENTION_BATCH).all();
+  if (memos.length && files) {
+    await files.delete(memos.map((row) => row.memo_key));
+    await db.batch(memos.map((row) => db.prepare('UPDATE requests SET memo_key = NULL WHERE id = ? AND memo_key = ?').bind(row.id, row.memo_key)));
+  }
+
+  // Payments are money records, so a request with any stays (Delete for good in the admin
+  // clears its answers).
+  const { results: gone } = await db.prepare(`SELECT id, memo_key, audio_key FROM requests r WHERE status = 'cancelled'
+    AND cancelled_at < ? AND NOT EXISTS (SELECT 1 FROM payments WHERE request_id = r.id)
+    AND NOT EXISTS (SELECT 1 FROM plans WHERE request_id = r.id) LIMIT ?`).bind(daysAgo(CANCELLED_KEEP_DAYS), RETENTION_BATCH).all();
+  if (gone.length) {
+    const keys = gone.flatMap((row) => [row.memo_key, row.audio_key]).filter(Boolean);
+    if (keys.length && files) await files.delete(keys);
+    await db.batch(gone.flatMap((row) => [
+      db.prepare('DELETE FROM outbox WHERE request_id = ?').bind(row.id),
+      db.prepare("DELETE FROM requests WHERE id = ? AND status = 'cancelled'").bind(row.id)
+    ]));
+  }
+
+  const keepAfter = daysAgo(OUTBOX_KEEP_DAYS);
+  await db.prepare(`DELETE FROM outbox WHERE (sent_at < ? OR failed_at < ? OR (sent_at IS NULL AND created_at < ?))
+    AND NOT (sent_at IS NOT NULL AND kind IN ('received', 'moved') AND request_id IN (SELECT id FROM requests WHERE ${IN_LINE}))`)
+    .bind(keepAfter, keepAfter, keepAfter).run();
+  return memos.length + gone.length;
 }
 
 // Jonathan's summary email, when something happened since the last one, or null.

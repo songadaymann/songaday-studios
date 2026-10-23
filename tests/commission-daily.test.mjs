@@ -5,7 +5,7 @@ import test from 'node:test';
 import { runCommissionDaily } from '../commission.mjs';
 import { EMAIL_KINDS, flushOutbox, queueEmail, renderEmail } from '../commission-email.mjs';
 import { recordPayment } from '../commission-stripe.mjs';
-import { LOCAL, call, commissionEnv, deliver, fakeEmail, makeRequest, markSent, urlencoded } from './fake-cloudflare.mjs';
+import { LOCAL, audio, call, commissionEnv, deliver, fakeEmail, makeRequest, markSent, urlencoded } from './fake-cloudflare.mjs';
 
 const DAY1 = new Date('2026-11-03T14:00:00Z');
 const DAY2 = new Date('2026-11-04T14:00:00Z');
@@ -171,8 +171,16 @@ test('Jonathan’s summary goes only when there’s news, and flags what needs a
   env.COMMISSIONS_DB.exec('UPDATE requests SET requested_at = ?', '2026-11-03T12:00:00.000Z');
   env.COMMISSIONS_DB.exec('UPDATE payments SET paid_at = ?', '2026-11-03T13:00:00.000Z');
 
+  // Delivered and unpaid, but archived: not counted, as in the admin.
+  const old = await makeRequest(env, { email: 'old@example.com', story: 'Delivered long ago and archived since.' });
+  await deliver(env, old.id);
+  await admin(env, old.id, { action: 'archive' });
+  markSent(env.COMMISSIONS_DB);
+  env.COMMISSIONS_DB.exec('UPDATE requests SET requested_at = ? WHERE id = ?', '2026-10-01T12:00:00.000Z', old.id);
+
   await runCommissionDaily(env, new Date('2026-11-03T14:00:00Z'));
   const [summary] = env.COMMISSIONS_DB.rows('outbox', "kind = 'summary'");
+  assert.match(summary.text, /Delivered, not paid: 0/);
   assert.equal(summary.to_email, 'notify@songaday.studio');
   assert.equal(summary.request_id, null);
   assert.equal(summary.subject, 'Commissions: 2 new, 1 paid ($300), 1 in line');
@@ -253,11 +261,146 @@ test('send errors: permanent ones fail at once, quota ones stop the run, others 
   const flaky = await line(1);
   flaky.env.COMMISSIONS_DB.exec('UPDATE outbox SET sent_at = NULL');
   flaky.env.COMMISSION_EMAIL = fakeEmail();
-  flaky.env.COMMISSION_EMAIL.fail = 'E_INTERNAL_SERVER_ERROR';
+  flaky.env.COMMISSION_EMAIL.fail = 'E_DELIVERY_FAILED';
   for (let i = 0; i < 7; i++) await flushOutbox(flaky.env, { now: DAY1 });
   const [row] = flaky.env.COMMISSIONS_DB.rows('outbox');
   assert.equal(row.attempts, 5);
   assert.ok(row.failed_at);
+});
+
+test('when sending itself is broken, every email waits for the fix, however many runs go by', async () => {
+  for (const code of ['E_SENDER_NOT_VERIFIED', 'E_SENDER_DOMAIN_NOT_AVAILABLE', 'E_ACCOUNT_SUSPENDED']) {
+    const { env } = await line(3);
+    env.COMMISSIONS_DB.exec('UPDATE outbox SET sent_at = NULL');
+    env.COMMISSION_EMAIL = fakeEmail();
+    env.COMMISSION_EMAIL.fail = code;
+    for (let day = 0; day < 6; day++) await runCommissionDaily(env, new Date(DAY1.getTime() + day * 86_400_000));
+    const rows = env.COMMISSIONS_DB.rows('outbox', "kind = 'received'");
+    assert.deepEqual(rows.map((row) => [row.attempts, row.failed_at]), [[0, null], [0, null], [0, null]], code);
+    assert.equal(rows[0].last_error, code);
+    env.COMMISSION_EMAIL.fail = null;
+    await runCommissionDaily(env, new Date(DAY1.getTime() + 6 * 86_400_000));
+    assert.ok(env.COMMISSIONS_DB.rows('outbox', "kind = 'received'").every((row) => row.sent_at), code);
+  }
+});
+
+test('an Email Service outage spends a try on three emails, not on all of them', async () => {
+  const { env } = await line(6);
+  env.COMMISSIONS_DB.exec('UPDATE outbox SET sent_at = NULL');
+  env.COMMISSION_EMAIL = fakeEmail();
+  env.COMMISSION_EMAIL.fail = 'E_INTERNAL_SERVER_ERROR';
+  const result = await flushOutbox(env, { now: DAY1 });
+  assert.equal(result.stopped, true);
+  assert.deepEqual(env.COMMISSIONS_DB.rows('outbox').map((row) => row.attempts), [1, 1, 1, 0, 0, 0]);
+  // One on its own is that email's problem, and the run goes on.
+  env.COMMISSION_EMAIL.fail = (message) => message.to === 'buyer4@example.com' ? 'E_INTERNAL_SERVER_ERROR' : null;
+  await flushOutbox(env, { now: DAY2 });
+  assert.equal(env.COMMISSION_EMAIL.sent.length, 5);
+});
+
+test('a long line’s daily run stays inside D1’s query limit; what doesn’t fit waits', async () => {
+  const env = await commissionEnv({ COMMISSION_EMAIL: fakeEmail() });
+  const db = env.COMMISSIONS_DB;
+  const n = 400;
+  for (let i = 1; i <= n; i++) {
+    db.exec(`INSERT INTO requests (token, kind, floor_cents, buyer_name, buyer_email, recipient, story, may_publish, requested_at)
+      VALUES (?, 'personal', 20000, 'Pat', ?, 'Sam', 'A story long enough to count.', 1, ?)`,
+    i.toString(16).padStart(32, '0'), `b${i}@example.com`, EARLIER);
+    db.exec(`INSERT INTO outbox (request_id, kind, position, to_email, subject, text, html, created_at, sent_at)
+      VALUES (?, 'received', ?, ?, 's', 't', 'h', ?, ?)`, i, i, `b${i}@example.com`, EARLIER, EARLIER);
+  }
+  db.exec("UPDATE requests SET status = 'delivered', delivered_at = ? WHERE id = 1", EARLIER);
+  db.queries = 0;
+  const result = await runCommissionDaily(env, DAY1);
+  assert.ok(db.queries <= 1000, `${db.queries} queries`);
+  assert.equal(result.stopped, true);
+  assert.ok(result.sent > 100 && result.sent < n - 1, `${result.sent} sent`);
+  assert.equal(moved(db).length, n - 1);
+});
+
+test('two requests sent at the same moment are told #1 and #2, not #1 twice', async () => {
+  const env = await commissionEnv();
+  await Promise.all([
+    makeRequest(env, { email: 'one@example.com', story: 'The first of two at once, about a canoe.' }),
+    makeRequest(env, { email: 'two@example.com', story: 'The second of two at once, about a kayak.' })
+  ]);
+  const received = env.COMMISSIONS_DB.rows('outbox', "kind = 'received'");
+  assert.deepEqual(received.map((row) => [row.request_id, row.position]).sort(), [[1, 1], [2, 2]]);
+  for (const row of received) assert.match(row.text, new RegExp(`You're #${row.position} in line\\.`));
+});
+
+test('resending an old place-in-line email doesn’t change what the next morning compares against', async () => {
+  const { env, made } = await line(4);
+  await deliver(env, made[0].id);
+  await runCommissionDaily(env, DAY1);
+  markSent(env.COMMISSIONS_DB, DAY1.toISOString());
+  // #4's first email said #4; its moved email said #3. Jonathan resends the first one.
+  const original = env.COMMISSIONS_DB.one("SELECT id FROM outbox WHERE kind = 'received' AND request_id = 4");
+  env.COMMISSION_EMAIL = fakeEmail();
+  await call(env, `/commission/admin/emails/${original.id}`, urlencoded({ action: 'send' }, { Origin: LOCAL }), null, LOCAL);
+  await runCommissionDaily(env, DAY2);
+  assert.deepEqual(moved(env.COMMISSIONS_DB, 'request_id = 4').map(({ position }) => position), [3]);
+});
+
+test('emails that went out of date before sending are dropped', async () => {
+  const { env, made } = await line(3);
+  // A reminder for a song paid since; a delivered email for a song pulled back; a received
+  // email for a request cancelled before it went.
+  await deliver(env, made[0].id);
+  env.COMMISSIONS_DB.exec("UPDATE requests SET delivered_at = '2026-10-20T15:00:00.000Z' WHERE id = 1");
+  await runCommissionDaily(env, DAY1);
+  env.COMMISSIONS_DB.exec("UPDATE requests SET paid_at = ? WHERE id = 1", DAY1.toISOString());
+  await deliver(env, made[1].id);
+  await admin(env, made[1].id, { action: 'undeliver' });
+  const late = await makeRequest(env, { email: 'late@example.com', story: 'Cancelled before the email could go.' });
+  await call(env, `/commission/s/${late.token}`, urlencoded({ action: 'cancel' }));
+  env.COMMISSION_EMAIL = fakeEmail();
+  await flushOutbox(env, { now: DAY1 });
+  const subjects = env.COMMISSION_EMAIL.sent.map((message) => `${message.to} ${message.subject}`);
+  assert.ok(!subjects.some((line) => line.includes('Your song is waiting')), subjects.join(' | '));
+  assert.ok(!subjects.some((line) => line.startsWith('buyer2@') && line.includes('Your song is ready')), subjects.join(' | '));
+  assert.ok(!subjects.some((line) => line.startsWith('late@') && line.includes('in line')), subjects.join(' | '));
+  assert.ok(subjects.some((line) => line.startsWith('late@') && line.includes('cancelled')), subjects.join(' | '));
+});
+
+test('a song redelivered after Undo delivery gets its own reminder', async () => {
+  const { env, made } = await line(1);
+  await deliver(env, made[0].id);
+  env.COMMISSIONS_DB.exec("UPDATE requests SET delivered_at = '2026-10-20T15:00:00.000Z'");
+  await runCommissionDaily(env, DAY1);
+  await admin(env, made[0].id, { action: 'undeliver' });
+  await deliver(env, made[0].id);
+  env.COMMISSIONS_DB.exec("UPDATE requests SET delivered_at = '2026-10-27T15:00:00.000Z'");
+  await runCommissionDaily(env, DAY2);
+  assert.equal(env.COMMISSIONS_DB.rows('outbox', "kind = 'reminder'").length, 2);
+});
+
+test('memos, cancelled requests and old emails are deleted on time', async () => {
+  const { env, made } = await line(3);
+  const db = env.COMMISSIONS_DB;
+  const memo = await makeRequest(env, { email: 'memo@example.com', story: 'With a memo of the names, said slowly.', memo: [audio.m4a(), 'names.m4a', 'audio/mp4'] });
+  const memoKey = db.one('SELECT memo_key FROM requests WHERE id = ?', memo.id).memo_key;
+  await deliver(env, memo.id);
+  const songKey = db.one('SELECT audio_key FROM requests WHERE id = ?', memo.id).audio_key;
+  db.exec("UPDATE requests SET delivered_at = '2026-10-01T00:00:00.000Z' WHERE id = ?", memo.id);
+  // Cancelled long ago with no payment: gone. Cancelled long ago but paid: kept.
+  await admin(env, made[0].id, { action: 'cancel' });
+  await admin(env, made[1].id, { action: 'cancel' });
+  db.exec("UPDATE requests SET cancelled_at = '2026-07-01T00:00:00.000Z' WHERE id IN (?, ?)", made[0].id, made[1].id);
+  db.exec(`INSERT INTO payments (request_id, kind, amount_cents, method, ref, paid_at) VALUES (?, 'manual', 100, 'other', 'manual:x', '2026-07-01T00:00:00Z')`, made[1].id);
+  // An email that failed, and one that never went, both long ago.
+  db.exec("UPDATE outbox SET failed_at = '2026-01-01T00:00:00.000Z', sent_at = NULL WHERE request_id = ? AND kind = 'received'", made[2].id);
+  db.exec(`INSERT INTO outbox (request_id, kind, to_email, subject, text, html, created_at) VALUES (?, 'updated', 'x@example.com', 's', 't', 'h', '2026-01-02T00:00:00.000Z')`, made[2].id);
+
+  const result = await runCommissionDaily(env, DAY1);
+  assert.equal(result.removed, 2);
+  assert.equal(db.one('SELECT memo_key FROM requests WHERE id = ?', memo.id).memo_key, null);
+  assert.equal(env.COMMISSION_FILES.objects.has(memoKey), false);
+  assert.equal(env.COMMISSION_FILES.objects.has(songKey), true, 'the song stays');
+  assert.equal(db.one('SELECT id FROM requests WHERE id = ?', made[0].id), undefined);
+  assert.equal(db.rows('outbox', `request_id = ${made[0].id}`).length, 0);
+  assert.ok(db.one('SELECT id FROM requests WHERE id = ?', made[1].id), 'paid: kept');
+  assert.equal(db.rows('outbox', `request_id = ${made[2].id} AND created_at < '2026-02-01'`).length, 0);
 });
 
 test('transactional email goes before place-in-line email, and a stale place-in-line email is deleted', async () => {

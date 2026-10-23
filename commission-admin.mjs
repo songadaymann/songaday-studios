@@ -543,10 +543,17 @@ async function act(request, env, url, ctx, identity, now, id) {
           delivered_at = COALESCE(delivered_at, ?) WHERE id = ? AND status IN ('requested', 'writing', 'delivered')`)
         .bind(title, lyrics, key, videoUrl || null, at, r.id)];
       if (form.get('email_them') === 'yes') {
-        // Keyed by the form, so a double click sends one email.
-        statements.push(queueEmail(env, first ? 'delivered' : 'updated', updated, { now, onceKey: `deliver:${r.id}:${formId}` }));
+        // Keyed by the form, so a double click sends one email; and only if the song really went
+        // out, not when the buyer cancelled in the meantime.
+        statements.push(queueEmail(env, first ? 'delivered' : 'updated', updated, {
+          now, onceKey: `deliver:${r.id}:${formId}`, when: "(SELECT status FROM requests WHERE id = ?) = 'delivered'", whenArgs: [r.id]
+        }));
       }
-      await db.batch(statements);
+      const [result] = await db.batch(statements);
+      if (!result.meta.changes) {
+        if (hasFile) await env.COMMISSION_FILES.delete(key);
+        return refuse('That request changed while you were delivering it (they may have cancelled). Look at it again.', 409);
+      }
       if (hasFile && r.audio_key && r.audio_key !== key) await env.COMMISSION_FILES.delete(r.audio_key);
       return done();
     }
@@ -624,9 +631,11 @@ async function sendEmail(request, env, url, ctx, identity, now, id) {
   if (form.get('action') !== 'send') return problemPage(request, identity, 'That isn’t something I can do.', 400);
   let target = email.id;
   if (email.sent_at || email.failed_at) {
-    // A resend is a new copy, so the record of the first one stays as it was.
+    // A resend is a new copy, so the record of the first one stays as it was. It carries no
+    // position: an old place in line sent again isn't news, and the daily run reads what
+    // someone was last told from the newest email with one.
     const copy = await db.prepare(`INSERT INTO outbox (request_id, kind, position, to_email, subject, text, html, unsubscribe_url, created_at)
-      SELECT request_id, kind, position, to_email, subject, text, html, unsubscribe_url, ? FROM outbox WHERE id = ?`)
+      SELECT request_id, kind, NULL, to_email, subject, text, html, unsubscribe_url, ? FROM outbox WHERE id = ?`)
       .bind(now.toISOString(), email.id).run();
     target = copy.meta.last_row_id;
   }

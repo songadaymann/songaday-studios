@@ -39,10 +39,17 @@ export const LIMITS = {
 
 // The one "your song is waiting" nudge, this many days after delivery.
 export const REMINDER_DAYS = 7;
-export const OUTBOX_BATCH = 500;
+// Emails one run sends at most. Each costs up to three D1 queries, and D1 allows about 1,000
+// per Worker invocation on Workers Paid; D1_QUERY_BUDGET leaves room for the rest of the run.
+export const OUTBOX_BATCH = 200;
+export const D1_QUERY_BUDGET = 900;
 export const OUTBOX_MAX_ATTEMPTS = 5;
-// Sent emails are purged after this many days: their bodies hold names and links.
+// Emails are purged after this many days, sent or not: their bodies hold names and links.
 export const OUTBOX_KEEP_DAYS = 180;
+// A voice memo is deleted this many days after its song is delivered or its request cancelled.
+export const MEMO_KEEP_DAYS = 30;
+// A request cancelled this long ago, with no payment, is deleted, its emails and files too.
+export const CANCELLED_KEEP_DAYS = 90;
 export const ADMIN_PAGE_SIZE = 20;
 
 // Every Stripe call and the webhook endpoint use this version, so payloads match the code.

@@ -382,3 +382,20 @@ test('the detail page offers only the moves that are allowed', async () => {
   assert.match(html, /value="archive"/);
   assert.doesNotMatch(html, /value="writing"|value="restore"/);
 });
+
+test('a delivery that loses a race with the buyer cancelling sends nothing and keeps no file', async () => {
+  const env = await commissionEnv();
+  const { id } = await makeRequest(env);
+  // The buyer cancels while the song uploads.
+  const put = env.COMMISSION_FILES.put.bind(env.COMMISSION_FILES);
+  env.COMMISSION_FILES.put = async (...args) => {
+    env.COMMISSIONS_DB.exec("UPDATE requests SET status = 'cancelled', cancelled_at = '2026-10-23T00:00:00Z', cancelled_by = 'buyer' WHERE id = ?", id);
+    return put(...args);
+  };
+  const response = await deliver(env, id);
+  assert.equal(response.status, 409);
+  assert.match(await response.text(), /changed while you were delivering it/);
+  assert.equal(env.COMMISSIONS_DB.one('SELECT status FROM requests WHERE id = ?', id).status, 'cancelled');
+  assert.equal(env.COMMISSIONS_DB.rows('outbox', "kind = 'delivered'").length, 0);
+  assert.equal(env.COMMISSION_FILES.objects.size, 0);
+});
