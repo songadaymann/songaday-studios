@@ -11,12 +11,12 @@
 import { serveMedia } from './media.mjs';
 import { isHuman } from './turnstile.mjs';
 import {
-  CANCELLED_KEEP_DAYS, D1_QUERY_BUDGET, FORM_MAX_BYTES, LIMITS, MAX_OPEN_PER_EMAIL, MEMO_KEEP_DAYS, MEMO_MAX_BYTES,
-  OUTBOX_KEEP_DAYS, PLAN_MONTHS, PRICES, REMINDER_DAYS, VIDEO_PRICE_CENTS
+  CANCELLED_KEEP_DAYS, D1_QUERY_BUDGET, FORM_MAX_BYTES, INTAKE_ALARM_PER_DAY, LIMITS, MAX_OPEN_PER_EMAIL, MEMO_KEEP_DAYS,
+  MEMO_MAX_BYTES, OUTBOX_KEEP_DAYS, PLAN_MONTHS, PRICES, REMINDER_DAYS, VIDEO_PRICE_CENTS
 } from './commission-config.mjs';
 import {
-  IN_LINE, TOKEN, cleanLine, cleanText, daysBetween, dollars, later, lineLength, loadByShareToken, loadByToken, newToken,
-  newYorkDate, parseDollars, placeInLine, readForm, sniffAudio, transitionProblem
+  IN_LINE, OPEN, TOKEN, cleanLine, cleanText, daysBetween, dollars, emailKey, later, lineLength, loadByShareToken,
+  loadByToken, newToken, newYorkDate, parseDollars, placeInLine, readForm, sniffAudio, transitionProblem, visitorKey
 } from './commission-core.mjs';
 import { claimLapsedBefore, emailParts, flushOutbox, queueEmail } from './commission-email.mjs';
 import {
@@ -27,6 +27,10 @@ import { BARE_PUBLIC_PAGE, BARE_SONG_SHELL, fillPublicPage, fillShell, messagePa
 
 export const COMMISSIONS_DATABASE = 'songaday-commissions';
 export const COMMISSION_BUCKET = 'songaday-commissions';
+
+// Where commissions were sold before this page, and where /commission still goes until
+// requests open here (COMMISSION_REQUESTS), so there's always a way to buy one.
+export const BEFORE_OPENING = 'https://jonathanmann.bandcamp.com/merch';
 
 const BUYER_PATH = /^\/commission\/s\/([0-9a-f]{32})(?:\/(pay|quiet|listen|download))?\/?$/;
 const SHARE_PATH = /^\/commission\/share\/([0-9a-f]{32})(?:\/(listen|download))?\/?$/;
@@ -43,6 +47,9 @@ const PUBLIC_HEADERS = {
   // The page's own CSP is a meta tag (build.mjs); frame-ancestors only works as a header.
   'Content-Security-Policy': "frame-ancestors 'none'"
 };
+
+// Only for the bare pages below, which have no CSP meta tag: no script at all.
+const BARE_CSP = "default-src 'none'; style-src 'unsafe-inline'; media-src 'self'; form-action 'self' https://checkout.stripe.com; base-uri 'none'; frame-ancestors 'none'";
 
 // A buyer's page is private: never cached, never indexed, and the token never leaves in a
 // Referer (including to Stripe).
@@ -70,20 +77,21 @@ const redirect = (location, headers = {}) =>
 
 // A built page through the assets binding (an internal fetch, which run_worker_first doesn't
 // send back through the Worker). /commission/ and /commission/song, not .../index.html or
-// song.html: under the default html_handling those answer 307s. Without a build, the bare page.
-async function builtPage(env, url, path, fallback) {
+// song.html: under the default html_handling those answer 307s. Without a build, the bare page,
+// whose headers then carry the CSP the built page has as a meta tag. Returns { html, headers }.
+async function builtPage(env, url, path, fallback, headers) {
   try {
     const response = await env.ASSETS?.fetch(new Request(new URL(path, url)));
-    if (response?.ok && response.headers.get('Content-Type')?.includes('text/html')) return await response.text();
+    if (response?.ok && response.headers.get('Content-Type')?.includes('text/html')) return { html: await response.text(), headers };
   } catch {
     // fall through to the bare page
   }
-  return fallback;
+  return { html: fallback, headers: { ...headers, 'Content-Security-Policy': BARE_CSP } };
 }
 
 async function shellPage(request, env, url, content, status = 200, headers = BUYER_HEADERS) {
-  const shell = await builtPage(env, url, '/commission/song', BARE_SONG_SHELL);
-  return respond(request, fillShell(shell, content), status, headers);
+  const shell = await builtPage(env, url, '/commission/song', BARE_SONG_SHELL, headers);
+  return respond(request, fillShell(shell.html, content), status, shell.headers);
 }
 
 const notFound = (request, env, url) => shellPage(request, env, url,
@@ -98,9 +106,13 @@ function closedReason(env) {
 }
 
 async function publicPage(request, env, url) {
-  const html = await builtPage(env, url, '/commission/', BARE_PUBLIC_PAGE);
+  if (env.COMMISSION_REQUESTS !== 'open') {
+    return new Response(null, { status: 302, headers: { Location: BEFORE_OPENING, 'Cache-Control': 'no-store' } });
+  }
+  const page = await builtPage(env, url, '/commission/', BARE_PUBLIC_PAGE, PUBLIC_HEADERS);
   const line = env.COMMISSIONS_DB ? (await lineLength(env.COMMISSIONS_DB)).total : null;
-  return respond(request, fillPublicPage(html, { line, closed: closedReason(env), siteKey: env.TURNSTILE_SITE_KEY }), 200, PUBLIC_HEADERS);
+  const filled = fillPublicPage(page.html, { line, closed: closedReason(env), siteKey: env.TURNSTILE_SITE_KEY, sent: url.searchParams.has('sent') });
+  return respond(request, filled, 200, page.headers);
 }
 
 // ---- Making a request -----------------------------------------------------------------------
@@ -144,7 +156,8 @@ export function requestProblem(answers, now = new Date()) {
     ?? tooLong(answers.leave_out, LIMITS.leave_out, 'what to leave out')
     ?? tooLong(answers.buyer_name, LIMITS.name, 'your name');
   if (problem) return problem;
-  if (answers.buyer_email.length > LIMITS.email || !EMAIL.test(answers.buyer_email) || /[\u0000-\u001f\u007f]/.test(answers.buyer_email)) {
+  // Printable ASCII only: no control or bidi characters, which would reorder the admin's text.
+  if (answers.buyer_email.length > LIMITS.email || !EMAIL.test(answers.buyer_email) || !/^[\x21-\x7e]+$/.test(answers.buyer_email)) {
     return 'That email address doesn’t look right. Give one address.';
   }
   if (answers.deadline) {
@@ -156,27 +169,42 @@ export function requestProblem(answers, now = new Date()) {
   return null;
 }
 
-// Makes a request and queues its "received" email in one batch. Returns { id, token, position }.
-// It's one function so the later monthly song plan can call it too. The new row's id is higher
-// than every other, so its place is everyone in line plus one. Two requests at once can both
-// count the line before either is in it, so the place is checked again once it's in, and the
-// email (not sent yet) corrected.
+// Makes a request and queues its "received" email in one batch. Returns { id, token, position,
+// held }. It's one function so the later monthly song plan can call it too. The new row's id is
+// higher than every other, so its place is everyone in line plus one. Two requests at once can
+// both count the line before either is in it, so the place is checked again once it's in, and
+// the email (not sent yet) corrected. Past INTAKE_ALARM_PER_DAY in 24 hours it's held instead:
+// out of line, with an email that repeats nothing they typed, and an alarm to Jonathan.
 export async function createRequest(env, answers, { memoKey = null, now = new Date() } = {}) {
   const db = env.COMMISSIONS_DB;
   const token = newToken();
   const floor = PRICES[answers.kind].floor + (answers.wants_video && VIDEO_PRICE_CENTS ? VIDEO_PRICE_CENTS : 0);
-  const position = (await lineLength(db)).total + 1;
+  const dayAgo = new Date(now.getTime() - 86_400_000).toISOString();
+  const [{ total }, today] = await Promise.all([
+    lineLength(db),
+    db.prepare('SELECT COUNT(*) AS count FROM requests WHERE requested_at > ?').bind(dayAgo).first('count')
+  ]);
+  const held = today >= INTAKE_ALARM_PER_DAY;
+  const position = total + 1;
   const row = {
-    token, share_token: newToken(), kind: answers.kind, floor_cents: floor, buyer_name: answers.buyer_name, buyer_email: answers.buyer_email,
+    token, share_token: newToken(), status: held ? 'held' : 'requested', kind: answers.kind, floor_cents: floor,
+    buyer_name: answers.buyer_name, buyer_email: answers.buyer_email, email_key: emailKey(answers.buyer_email),
     recipient: answers.recipient, relationship: answers.relationship, occasion: answers.occasion, names: answers.names,
     memo_key: memoKey, story: answers.story, leave_out: answers.leave_out, deadline: answers.deadline || null,
     may_publish: answers.may_publish === 'yes' ? 1 : 0, wants_video: answers.wants_video, requested_at: now.toISOString()
   };
   const columns = Object.keys(row);
-  await db.batch([
-    db.prepare(`INSERT INTO requests (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`).bind(...Object.values(row)),
-    queueEmail(env, 'received', row, { now, position, onceKey: `received:${token}` })
-  ]);
+  const insert = db.prepare(`INSERT INTO requests (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`).bind(...Object.values(row));
+  if (held) {
+    await db.batch([
+      insert,
+      queueEmail(env, 'held', row, { now, onceKey: `held:${token}` }),
+      queueEmail(env, 'alarm', null, { now, count: today + 1, onceKey: `alarm:${newYorkDate(now)}` })
+    ].filter(Boolean));
+    const id = await db.prepare('SELECT id FROM requests WHERE token = ?').bind(token).first('id');
+    return { id, token, position: null, held: true };
+  }
+  await db.batch([insert, queueEmail(env, 'received', row, { now, position, onceKey: `received:${token}` })]);
   const id = await db.prepare('SELECT id FROM requests WHERE token = ?').bind(token).first('id');
   const actual = await placeInLine(db, id);
   if (actual !== position) {
@@ -184,7 +212,7 @@ export async function createRequest(env, answers, { memoKey = null, now = new Da
     await db.prepare(`UPDATE outbox SET position = ?, subject = ?, text = ?, html = ? WHERE once_key = ?
       AND sent_at IS NULL AND claimed_at IS NULL`).bind(actual, subject, text, html, `received:${token}`).run();
   }
-  return { id, token, position: actual };
+  return { id, token, position: actual, held: false };
 }
 
 async function submit(request, env, url, ctx) {
@@ -202,7 +230,8 @@ async function submit(request, env, url, ctx) {
   if (closed) return reply(503, closed);
   // Cheapest checks first. Turnstile is never asked about a request that will be refused.
   const { form, status, error } = await readForm(request, FORM_MAX_BYTES);
-  if (!form) return reply(status, status === 413 ? 'That’s too big to send. The voice memo can be up to 10 MB.' : error);
+  const memoLimit = `The voice memo can be up to ${Math.round(MEMO_MAX_BYTES / 1024 / 1024)} MB.`;
+  if (!form) return reply(status, status === 413 ? `That’s too big to send. ${memoLimit}` : error);
   // Bots fill in every field, including this one people can't see.
   if (form.get('website')) return reply(200, null, '/commission');
 
@@ -213,31 +242,35 @@ async function submit(request, env, url, ctx) {
   const memo = form.get('memo');
   let sniffed = null;
   if (memo && typeof memo === 'object' && memo.size > 0) {
-    if (memo.size > MEMO_MAX_BYTES) return reply(413, 'The voice memo can be up to 10 MB.');
+    if (memo.size > MEMO_MAX_BYTES) return reply(413, memoLimit);
     sniffed = sniffAudio(new Uint8Array(await memo.slice(0, 12).arrayBuffer()));
     if (!sniffed) return reply(400, 'That voice memo doesn’t look like an audio file. MP3, M4A or WAV, please.');
     if (!env.COMMISSION_FILES) return reply(503, 'Voice memos can’t be sent right now. Leave it off, and spell the names out instead.');
   }
 
   if (env.COMMISSION_LIMIT) {
-    const { success } = await env.COMMISSION_LIMIT.limit({ key: request.headers.get('CF-Connecting-IP') ?? 'unknown' });
+    const { success } = await env.COMMISSION_LIMIT.limit({ key: visitorKey(request.headers.get('CF-Connecting-IP')) });
     if (!success) return reply(429, 'Too many at once. Try again in a minute.');
   }
   const db = env.COMMISSIONS_DB;
-  // A double click: the same email and story within ten minutes goes to the request already
-  // made. Checked before Turnstile, whose tokens work once, so the second click of a double
-  // click still lands on the page instead of a failed human check.
+  // A double click: the same email and story within ten minutes is the request already made.
+  // Checked before Turnstile, whose tokens work once, so the second click of a double click
+  // lands somewhere friendly instead of a failed human check. It doesn't give out that
+  // request's link, though: this check runs before Turnstile, and the link is in their email.
   const since = new Date(now.getTime() - DUPLICATE_MINUTES * 60_000).toISOString();
-  const duplicate = await db.prepare(`SELECT token FROM requests WHERE buyer_email = ? AND story = ? AND requested_at > ?
-    AND status != 'cancelled' ORDER BY id DESC LIMIT 1`).bind(answers.buyer_email, answers.story, since).first('token');
-  if (duplicate) return reply(200, null, `/commission/s/${duplicate}?new`);
+  const duplicate = await db.prepare(`SELECT 1 FROM requests WHERE buyer_email = ? AND story = ? AND requested_at > ?
+    AND status != 'cancelled' LIMIT 1`).bind(answers.buyer_email, answers.story, since).first();
+  if (duplicate) return reply(200, null, '/commission?sent#request');
 
   if (!(await isHuman(env, form.get('cf-turnstile-response'), 'commission'))) {
     return reply(403, 'The human check didn’t go through. Try again.');
   }
-  const open = await db.prepare(`SELECT COUNT(*) AS count FROM requests WHERE buyer_email = ?
-    AND (${IN_LINE} OR (status = 'delivered' AND paid_at IS NULL))`).bind(answers.buyer_email).first('count');
-  if (open >= MAX_OPEN_PER_EMAIL) return reply(429, `You have ${MAX_OPEN_PER_EMAIL} songs waiting with me already. Email me if you need another.`);
+  const open = await db.prepare(`SELECT COUNT(*) AS count FROM requests WHERE email_key = ? AND ${OPEN}`)
+    .bind(emailKey(answers.buyer_email)).first('count');
+  if (open >= MAX_OPEN_PER_EMAIL) {
+    const write = env.COMMISSION_REPLY_TO ? `, or write to ${env.COMMISSION_REPLY_TO},` : '';
+    return reply(429, `You have ${MAX_OPEN_PER_EMAIL} songs waiting with me already. Reply to one of my emails${write} if you need another.`);
+  }
 
   // The memo goes to R2 after every check passes, just before the insert.
   const memoKey = sniffed ? `memos/${newToken()}.${sniffed.ext}` : null;
@@ -249,8 +282,8 @@ async function submit(request, env, url, ctx) {
     if (memoKey) await env.COMMISSION_FILES.delete(memoKey);
     throw failure;
   }
-  console.log('commission request', created.id);
-  later(ctx, flushOutbox(env, { requestId: created.id }));
+  console.log('commission request', created.id, created.held ? 'held' : 'in line');
+  later(ctx, Promise.all([flushOutbox(env, { requestId: created.id }), created.held ? flushOutbox(env, { kind: 'alarm' }) : null]));
   return reply(200, null, `/commission/s/${created.token}?new`);
 }
 
@@ -308,7 +341,7 @@ async function buyerPost(request, env, url, r, ctx) {
     const at = new Date().toISOString();
     // The email goes in only if this batch's update did (cancelled_at is this moment).
     await db.batch([
-      db.prepare(`UPDATE requests SET status = 'cancelled', cancelled_at = ?, cancelled_by = 'buyer' WHERE id = ? AND status = 'requested'`).bind(at, r.id),
+      db.prepare(`UPDATE requests SET status = 'cancelled', cancelled_at = ?, cancelled_by = 'buyer' WHERE id = ? AND status IN ('held', 'requested')`).bind(at, r.id),
       queueEmail(env, 'cancelled', r, { by: 'buyer', when: 'EXISTS (SELECT 1 FROM requests WHERE id = ? AND cancelled_at = ?)', whenArgs: [r.id, at] })
     ]);
     later(ctx, flushOutbox(env, { requestId: r.id }));
@@ -585,7 +618,7 @@ async function dailySummary(env, now, today) {
   const weekOut = new Date(Date.parse(`${today}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
   const all = async (sql, ...args) => (await db.prepare(sql).bind(...args).all()).results;
   const hourAgo = new Date(now.getTime() - 3_600_000).toISOString();
-  const [fresh, deadlines, payments, ended, inLine, unpaid, stuck, failed, notDelivered, twice, unended, overpaid] = await Promise.all([
+  const [fresh, deadlines, payments, ended, inLine, unpaid, stuck, failed, notDelivered, twice, unended, overpaid, held] = await Promise.all([
     all('SELECT id, kind, occasion, deadline, buyer_name FROM requests WHERE requested_at > ? ORDER BY id', since),
     all(`SELECT id, deadline FROM requests WHERE ${IN_LINE} AND deadline IS NOT NULL AND deadline >= ? AND deadline <= ? ORDER BY deadline`, today, weekOut),
     all('SELECT amount_cents FROM payments WHERE paid_at > ?', since),
@@ -604,10 +637,11 @@ async function dailySummary(env, now, today) {
         OR EXISTS (SELECT 1 FROM plans WHERE request_id = r.id AND started_at > ?))`, since, since),
     // Plans that nothing will end, which the check above couldn't fix: these bill every month.
     all(`SELECT request_id AS id FROM plans WHERE status = 'active' AND schedule_id IS NULL AND started_at < ?`, hourAgo),
-    all(`SELECT p.request_id AS id FROM plans p WHERE (SELECT COUNT(*) FROM payments WHERE subscription_id = p.subscription_id) > p.months`)
+    all(`SELECT p.request_id AS id FROM plans p WHERE (SELECT COUNT(*) FROM payments WHERE subscription_id = p.subscription_id) > p.months`),
+    db.prepare("SELECT COUNT(*) AS count FROM requests WHERE status = 'held'").first('count')
   ]);
   const news = fresh.length + deadlines.length + payments.length + ended.length + stuck + failed + notDelivered.length
-    + twice.length + unended.length + overpaid.length;
+    + twice.length + unended.length + overpaid.length + held;
   if (!news) return null;
   const paidSum = payments.reduce((sum, payment) => sum + payment.amount_cents, 0);
   const finished = ended.filter((plan) => plan.status === 'finished').length;
@@ -615,6 +649,7 @@ async function dailySummary(env, now, today) {
     `New since the last summary: ${fresh.length}`,
     ...fresh.map((row) => `  #${row.id} · ${row.kind} · ${row.occasion || 'no occasion'}${row.deadline ? ` · deadline ${row.deadline}` : ''} · ${row.buyer_name}`),
     `In line: ${inLine.total} (${inLine.writing} being written)`,
+    ...(held ? [`Held, waiting for you to let them in: ${held}`] : []),
     `Deadlines in the next 7 days: ${deadlines.length ? deadlines.map((row) => `#${row.id} (${row.deadline})`).join(', ') : 'none'}`,
     `Delivered, not paid: ${unpaid}`,
     `Paid since the last summary: ${payments.length} payment${payments.length === 1 ? '' : 's'}, ${dollars(paidSum)}`,

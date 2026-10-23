@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { handleCommission, requestProblem, readAnswers } from '../commission.mjs';
-import { TRANSITIONS, sniffAudio, transitionProblem } from '../commission-core.mjs';
+import { TRANSITIONS, emailKey, sniffAudio, transitionProblem, visitorKey } from '../commission-core.mjs';
 import {
   ANSWERS, LOCAL, audio, call, commissionEnv, deliver, fakeFetch, form, makeRequest, turnstileRoute, urlencoded
 } from './fake-cloudflare.mjs';
@@ -45,9 +45,14 @@ test('the page says how many songs are in line, and shows the form only when req
   html = await (await call(env, '/commission/')).text();
   assert.match(html, /2 songs in line right now\./);
 
-  const closed = await (await call({ ...env, COMMISSION_REQUESTS: 'closed' }, '/commission')).text();
-  assert.match(closed, /<p class="commission-closed" id="request">Requests open soon\.<\/p>/);
-  assert.doesNotMatch(closed, /<form class="commission-form"|challenges\.cloudflare\.com\/turnstile\/v0\/api\.js/);
+  // Before requests open, the page goes to the Bandcamp listings commissions were sold through,
+  // so there's always a way to buy one; posting is refused.
+  const before = await call({ ...env, COMMISSION_REQUESTS: 'closed' }, '/commission');
+  assert.equal(before.status, 302);
+  assert.equal(before.headers.get('Location'), 'https://jonathanmann.bandcamp.com/merch');
+  const posted = await post({ ...env, COMMISSION_REQUESTS: 'closed' }, {});
+  assert.equal(posted.response.status, 503);
+  assert.match((await posted.response.json()).error, /Requests open soon/);
 });
 
 test('without the database or the Turnstile secret, the form is closed and posting is a 503', async () => {
@@ -164,6 +169,9 @@ test('requests with problems save nothing and never reach Turnstile', async () =
     [{ email: 'a@b.com, c@d.com' }, /email address doesn’t look right/],
     [{ email: '"x"@y.com' }, /email address doesn’t look right/],
     [{ email: 'pat@example.com\nbcc: x@y.com' }, /email address doesn’t look right/],
+    [{ email: 'pat‮@example.com' }, /email address doesn’t look right/],
+    [{ email: 'pat\u0085@example.com' }, /email address doesn’t look right/],
+    [{ email: 'påt@example.com' }, /email address doesn’t look right/],
     [{ email: 'pat@localhost' }, /email address doesn’t look right/],
     [{ email: `${'a'.repeat(250)}@b.com` }, /email address doesn’t look right/],
     [{ recipient: 'x'.repeat(201) }, /under 200 characters/],
@@ -229,12 +237,12 @@ test('a failed human check, the rate limit and the honeypot keep requests out', 
   assert.equal(result.turnstile.length, 0);
 });
 
-test('one email can have five songs waiting; paid and cancelled ones don’t count', async () => {
+test('one email can have five songs waiting, +tags included; paid and cancelled ones don’t count', async () => {
   const env = await commissionEnv();
-  for (let i = 0; i < 5; i++) await makeRequest(env, { story: `Story number ${i} about my friend who likes trains.` });
+  for (let i = 0; i < 5; i++) await makeRequest(env, { email: `pat+${i}@example.com`, story: `Story number ${i} about my friend who likes trains.` });
   let { response } = await post(env, { email: 'PAT@example.com', story: 'The sixth story, which is one too many for now.' });
   assert.equal(response.status, 429);
-  assert.match((await response.json()).error, /5 songs waiting with me already/);
+  assert.match((await response.json()).error, /5 songs waiting with me already\. Reply to one of my emails, or write to jonathan@songaday\.studio, if you need another\./);
 
   env.COMMISSIONS_DB.exec("UPDATE requests SET status = 'cancelled', cancelled_at = '2026-10-23T00:00:00Z' WHERE id = 1");
   env.COMMISSIONS_DB.exec("UPDATE requests SET status = 'delivered', paid_at = '2026-10-23T00:00:00Z' WHERE id = 2");
@@ -242,13 +250,17 @@ test('one email can have five songs waiting; paid and cancelled ones don’t cou
   assert.equal(response.status, 200);
 });
 
-test('a double submit within ten minutes goes to the same request', async () => {
+test('a double submit within ten minutes is one request, and the second doesn’t hand out its link', async () => {
   const env = await commissionEnv();
   const first = await (await post(env, {})).response.json();
-  const second = await post(env, { email: 'PAT@EXAMPLE.COM' });
-  assert.equal((await second.response.json()).url, first.url);
+  const second = await post(env, { email: 'PAT@EXAMPLE.COM', 'cf-turnstile-response': undefined });
+  const { url } = await second.response.json();
+  assert.equal(url, '/commission?sent#request');
+  assert.notEqual(url, first.url);
   assert.equal(second.turnstile.length, 0, 'the second click’s Turnstile token would already be spent');
   assert.equal(env.COMMISSIONS_DB.rows('requests').length, 1);
+  assert.match(await (await call(env, '/commission?sent')).text(), /Got it\. I’ve emailed you the link to your page\./);
+  assert.doesNotMatch(await (await call(env, '/commission')).text(), /I’ve emailed you the link/);
   env.COMMISSIONS_DB.exec("UPDATE requests SET requested_at = '2026-01-01T00:00:00Z'");
   await post(env, {});
   assert.equal(env.COMMISSIONS_DB.rows('requests').length, 2);
@@ -399,9 +411,15 @@ test('without a build, the pages fall back to bare documents and still work', as
   const env = await commissionEnv({ ASSETS: { fetch: async () => new Response('png', { headers: { 'Content-Type': 'image/png' } }) } });
   const page = await call(env, '/commission');
   assert.equal(page.status, 200);
+  // Their CSP is a header, since there's no built page to carry the meta tag.
+  const bare = "default-src 'none'; style-src 'unsafe-inline'; media-src 'self'; form-action 'self' https://checkout.stripe.com; base-uri 'none'; frame-ancestors 'none'";
+  assert.equal(page.headers.get('Content-Security-Policy'), bare);
   assert.match(await page.text(), /Nobody’s in line right now\./);
   const { token } = await makeRequest(env);
-  assert.match(await (await call(env, `/commission/s/${token}`)).text(), /You’re #1 in line\./);
+  const buyer = await call(env, `/commission/s/${token}`);
+  assert.equal(buyer.headers.get('Content-Security-Policy'), bare);
+  assert.equal(buyer.headers.get('Cache-Control'), 'no-store');
+  assert.match(await buyer.text(), /You’re #1 in line\./);
 });
 
 test('audio is recognized by its first bytes', () => {
@@ -421,6 +439,7 @@ test('audio is recognized by its first bytes', () => {
 test('every move a request can and can’t make', () => {
   const at = '2026-10-23T00:00:00Z';
   const states = {
+    held: { status: 'held' },
     requested: { status: 'requested' },
     writing: { status: 'writing' },
     delivered: { status: 'delivered', delivered_at: at },
@@ -431,11 +450,12 @@ test('every move a request can and can’t make', () => {
     'cancelled, archived': { status: 'cancelled', cancelled_at: at, archived_at: at }
   };
   const allowed = {
+    'let-in': ['held'],
     writing: ['requested'],
     deliver: ['requested', 'writing', 'delivered', 'delivered, paid', 'delivered, archived'],
     undeliver: ['delivered', 'delivered, archived'],
-    'buyer-cancel': ['requested'],
-    cancel: ['requested', 'writing', 'delivered', 'delivered, archived'],
+    'buyer-cancel': ['held', 'requested'],
+    cancel: ['held', 'requested', 'writing', 'delivered', 'delivered, archived'],
     restore: ['cancelled', 'cancelled, archived'],
     archive: ['delivered', 'delivered, paid', 'cancelled', 'cancelled after delivery'],
     unarchive: ['delivered, archived', 'cancelled, archived'],
@@ -473,6 +493,65 @@ test('the admin and buyer links are not reachable through the local admin by acc
   const env = await commissionEnv();
   assert.equal((await call(env, '/commission/admin', {}, null, LOCAL)).status, 200);
   assert.equal((await call(env, '/commission/admin')).status, 403);
+});
+
+test('rate limits count an IPv6 visitor by its /64, and the cap counts pat+x@ as pat@', async () => {
+  assert.equal(visitorKey('203.0.113.9'), '203.0.113.9');
+  assert.equal(visitorKey('2001:db8:aa:bb:1:2:3:4'), '2001:db8:aa:bb::/64');
+  assert.equal(visitorKey('2001:DB8:AA:BB::9'), '2001:db8:aa:bb::/64');
+  assert.equal(visitorKey('2001:db8::1'), '2001:db8:0:0::/64');
+  assert.equal(visitorKey('::ffff:203.0.113.9'), '203.0.113.9');
+  assert.equal(visitorKey(null), 'unknown');
+  const env = await commissionEnv();
+  await call(env, '/commission', await form({ ...ANSWERS, email: 'two@example.com', story: 'Another one, from a phone on the same network.' }, { json: true, headers: { 'CF-Connecting-IP': '2001:db8:aa:bb:ffff::1' } }), fakeFetch([turnstileRoute()]));
+  assert.equal(env.COMMISSION_LIMIT.calls.at(-1).key, '2001:db8:aa:bb::/64');
+  assert.equal(emailKey('pat+birthday@example.com'), 'pat@example.com');
+  assert.equal(emailKey('pat@example.com'), 'pat@example.com');
+});
+
+test('past the day’s alarm, new requests are held out of line, Jonathan hears once, and he can let them in', async () => {
+  const env = await commissionEnv();
+  const db = env.COMMISSIONS_DB;
+  const recent = new Date(Date.now() - 3_600_000).toISOString();
+  for (let i = 0; i < 30; i++) {
+    db.exec(`INSERT INTO requests (token, share_token, status, kind, floor_cents, buyer_name, buyer_email, email_key, recipient, story, may_publish, requested_at)
+      VALUES (?, ?, 'cancelled', 'personal', 20000, 'X', ?, ?, 'Y', 'A story long enough to count.', 1, ?)`,
+    `a${String(i).padStart(31, '0')}`, `b${String(i).padStart(31, '0')}`, `x${i}@example.com`, `x${i}@example.com`, recent);
+  }
+  const first = await makeRequest(env, { recipient: 'Your invoice is overdue, call 555-0100', name: 'Billing Dept' });
+  await makeRequest(env, { email: 'second@example.com', story: 'A second one during the flood.' });
+  assert.equal(db.rows('requests', "status = 'held'").length, 2);
+  const html = await (await call(env, `/commission/s/${first.token}`)).text();
+  assert.match(html, /<h1>Got it\.<\/h1>/);
+  assert.match(html, /reading each new one before it goes in line/);
+  assert.match(html, /Cancel my request/);
+  assert.match(await (await call(env, '/commission')).text(), /Nobody’s in line right now\./, 'held isn’t in line');
+
+  const [held] = db.rows('outbox', `kind = 'held' AND request_id = ${first.id}`);
+  assert.equal(held.subject, 'Got your song request');
+  assert.doesNotMatch(held.text + held.html, /invoice|555-0100|Billing/);
+  assert.match(held.text, /^Hi,\n/);
+  const alarms = db.rows('outbox', "kind = 'alarm'");
+  assert.equal(alarms.length, 1, 'once a day');
+  assert.equal(alarms[0].to_email, 'notify@songaday.studio');
+  assert.equal(alarms[0].subject, 'Commissions: 31 requests in 24 hours, so new ones are held');
+  assert.equal(db.rows('outbox', "kind = 'received'").length, 0);
+
+  const admin = await (await call(env, '/commission/admin?show=held', {}, null, LOCAL)).text();
+  assert.match(admin, /class="alert">Held 2<\/a>/);
+  assert.match(admin, /Let the oldest 50 in/);
+  const letIn = await call(env, `/commission/admin/${first.id}`, urlencoded({ action: 'let-in' }, { Origin: LOCAL }), null, LOCAL);
+  assert.equal(letIn.status, 303);
+  assert.equal(db.one('SELECT status FROM requests WHERE id = ?', first.id).status, 'requested');
+  const [received] = db.rows('outbox', `kind = 'received' AND request_id = ${first.id}`);
+  assert.equal(received.position, 1);
+  assert.match(await (await call(env, `/commission/s/${first.token}`)).text(), /You’re #1 in line\./);
+
+  const cancelAll = await call(env, '/commission/admin/held', urlencoded({ action: 'cancel-all', confirm: 'yes' }, { Origin: LOCAL }), null, LOCAL);
+  assert.equal(cancelAll.status, 303);
+  assert.equal(db.rows('requests', "status = 'held'").length, 0);
+  assert.equal(db.rows('outbox', "kind = 'cancelled'").length, 0, 'no email to strangers');
+  assert.doesNotMatch(await (await call(env, '/commission/admin', {}, null, LOCAL)).text(), />Held \d/, 'the tab goes when nothing is held');
 });
 
 test('the share link plays the song and shows the lyrics, and nothing the buyer told me', async () => {

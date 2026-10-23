@@ -4,7 +4,7 @@
 // domain not verified, the quota used up), the emails wait in the outbox, where the admin
 // shows them, and nothing is lost. wrangler dev simulates the binding and marks them sent.
 import { escapeHtml } from './fumble-page.mjs';
-import { D1_QUERY_BUDGET, OUTBOX_BATCH, OUTBOX_MAX_ATTEMPTS, PLAN_MONTHS } from './commission-config.mjs';
+import { D1_QUERY_BUDGET, INTAKE_ALARM_PER_DAY, OUTBOX_BATCH, OUTBOX_MAX_ATTEMPTS, PLAN_MONTHS } from './commission-config.mjs';
 import { dollars, pageUrl, shareUrl, siteOrigin } from './commission-core.mjs';
 
 // The form can mail any address, so the only words a buyer typed that reach an email are their
@@ -44,6 +44,18 @@ const TEMPLATES = {
       { lead: "Here's your page, with everything you told me:", url: d.page, label: 'Your page' },
       'Keep that link to yourself. Anyone who has it can see your page. Changed your mind? You can cancel there until I start writing.',
       'If you think of anything else, just reply to this email.',
+      SIGN
+    ]
+  }),
+  // Held past the day's alarm (createRequest): it might be a flood of fakes sent to strangers'
+  // addresses, so it repeats nothing anyone typed, not even a name.
+  held: (r, d) => ({
+    subject: 'Got your song request',
+    body: [
+      'Hi,',
+      "Thanks for asking me to write a song. I've had a lot more requests than usual today, so I'm reading each new one before it goes in line. I'll email you your place in line within a day or two.",
+      { lead: "Here's your page, with everything you told me:", url: d.page, label: 'Your page' },
+      "Keep that link to yourself. If you didn't ask me for a song, you can ignore this email.",
       SIGN
     ]
   }),
@@ -131,6 +143,15 @@ const TEMPLATES = {
       ? [greeting(r), `You cancelled your request for a song${forWhom(r)}. If that was a mistake, just reply and I'll put it back, in the same place in line.`, SIGN]
       : [greeting(r), `I've cancelled your request for a song${forWhom(r)}.`, ...(d.message ? [d.message] : []), SIGN]
   }),
+  // To Jonathan (COMMISSION_NOTIFY_TO), once a day at most, when requests start being held.
+  alarm: (r, d) => ({
+    subject: `Commissions: ${d.count} requests in 24 hours, so new ones are held`,
+    body: [
+      `${d.count} requests have come in over the last 24 hours, more than INTAKE_ALARM_PER_DAY (${INTAKE_ALARM_PER_DAY}) in commission-config.mjs. New ones are held: they aren't in line, and their buyers have only been told I'll email them their place.`,
+      "If they're real, let them in from the Held tab. If they're junk, cancel them all there: no email goes out, and they're deleted after 90 days.",
+      { lead: '', url: `${d.origin}/commission/admin?show=held`, label: 'Open the Held tab' }
+    ]
+  }),
   // To Jonathan (COMMISSION_NOTIFY_TO). d.lines and d.subject come from runCommissionDaily.
   summary: (r, d) => ({
     subject: d.subject,
@@ -184,7 +205,7 @@ export function queueEmail(env, kind, request, data = {}) {
 }
 
 // Emails to Jonathan rather than a buyer.
-const TO_JONATHAN = new Set(['summary']);
+const TO_JONATHAN = new Set(['summary', 'alarm']);
 
 // Sending again can't help these.
 const PERMANENT = new Set(['E_RECIPIENT_SUPPRESSED', 'E_RECIPIENT_NOT_ALLOWED', 'E_VALIDATION_ERROR', 'E_FIELD_MISSING']);
@@ -203,12 +224,12 @@ export const claimLapsedBefore = (now) => new Date(now.getTime() - CLAIM_MINUTES
 
 // Whether an email would only confuse them now, from its request as it is at send time.
 function outOfDate(kind, request) {
-  if (!request) return kind !== 'summary';
+  if (!request) return !TO_JONATHAN.has(kind);
   switch (kind) {
     // A place in line for someone no longer waiting (delivered, being written, cancelled), or
     // who turned the updates off.
     case 'moved': return request.status !== 'requested' || Boolean(request.quiet);
-    case 'received': return request.status === 'cancelled';
+    case 'received': case 'held': return request.status === 'cancelled';
     // A song pulled back with Undo delivery, or cancelled since.
     case 'delivered': case 'updated': return request.status !== 'delivered';
     case 'reminder': return request.status !== 'delivered' || Boolean(request.paid_at);
@@ -220,7 +241,7 @@ function outOfDate(kind, request) {
 // rest (the daily cron), transactional mail before place-in-line updates, oldest first. Each
 // email costs up to three D1 queries, and an invocation gets about 1,000 (D1's limit on Workers
 // Paid), so the run stops when `budget` would run out; the rest go next time.
-export async function flushOutbox(env, { requestId = null, ids = null, now = new Date(), limit = OUTBOX_BATCH, budget = D1_QUERY_BUDGET } = {}) {
+export async function flushOutbox(env, { requestId = null, ids = null, kind = null, now = new Date(), limit = OUTBOX_BATCH, budget = D1_QUERY_BUDGET } = {}) {
   const db = env.COMMISSIONS_DB;
   const result = { sent: 0, failed: 0, deleted: 0, stopped: false };
   // No binding or sender: everything waits, and no attempt is counted.
@@ -230,6 +251,7 @@ export async function flushOutbox(env, { requestId = null, ids = null, now = new
   const args = [lapsed];
   if (requestId !== null) { filters.push('AND request_id = ?'); args.push(requestId); }
   if (ids) { filters.push(`AND id IN (${ids.map(() => '?').join(', ') || 'NULL'})`); args.push(...ids); }
+  if (kind) { filters.push('AND kind = ?'); args.push(kind); }
   const { results } = await db.prepare(`SELECT * FROM outbox
     WHERE sent_at IS NULL AND failed_at IS NULL AND (claimed_at IS NULL OR claimed_at < ?) ${filters.join(' ')}
     ORDER BY (kind = 'moved'), id LIMIT ?`).bind(...args, limit).all();

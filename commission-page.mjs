@@ -59,9 +59,20 @@ function cancel(request) {
 </details>`;
 }
 
+// Held past the day's alarm: not in line yet, and no number to give.
+function held(request, { isNew }) {
+  return `${newNote(isNew)}<p class="commission-eyebrow">Your song${request.recipient ? ` for ${escapeHtml(request.recipient)}` : ''}</p>
+<h1>Got it.</h1>
+<p class="commission-lead">I’ve had a lot more requests than usual today, so I’m reading each new one before it goes in line. I’ll email you your place in line within a day or two.</p>
+${answers(request)}
+${cancel(request)}`;
+}
+
+const newNote = (isNew) => isNew ? `<p class="commission-note" role="status">Got it. I’ve emailed you a link to this page. Keep it to yourself: anyone who has it can see your page.</p>\n` : '';
+
 function inLine(request, { position, isNew }) {
   const writing = request.status === 'writing';
-  const note = isNew ? `<p class="commission-note" role="status">Got it. I’ve emailed you a link to this page. Keep it to yourself: anyone who has it can see your page.</p>\n` : '';
+  const note = newNote(isNew);
   const heading = writing
     ? `<h1>I’m writing your song now.</h1>
 <p class="commission-lead">It’s your turn. I’ll email you as soon as it’s done, and it’ll be right here.</p>`
@@ -194,6 +205,7 @@ export function renderSongPage(request, { payments = [], plans = [], position = 
   if (request.status === 'delivered') {
     return { title: `${request.title} · Song A Day Studio`, main: delivered(request, { payments, plans, stripeReady, error, pending }) };
   }
+  if (request.status === 'held') return { title: 'Your song · Song A Day Studio', main: held(request, { isNew }) };
   return { title: 'Your song · Song A Day Studio', main: inLine(request, { position, isNew }) };
 }
 
@@ -244,6 +256,7 @@ export const BARE_PUBLIC_PAGE = `<!doctype html>
 <main id="main">
 <h1>Get a song written for you</h1>
 <p><!--commission:line--></p>
+<!--commission:note-->
 <!--commission:form--><p>The request form is in the built page: run node build-production.mjs.</p><!--/commission:form-->
 </main>
 </body>
@@ -263,9 +276,11 @@ export function lineText(total) {
   return `${total.toLocaleString('en-US')} ${total === 1 ? 'song' : 'songs'} in line right now.`;
 }
 
-// The public page's two runtime slots: the line, and the form or a closed notice.
-export function fillPublicPage(html, { line, closed, siteKey }) {
-  let page = html.replace('<!--commission:line-->', () => escapeHtml(lineText(line)));
+// The public page's runtime slots: the line, a note after a repeated send (commission.mjs sends a
+// double click to /commission?sent), and the form or a closed notice.
+export function fillPublicPage(html, { line, closed, siteKey, sent = false }) {
+  let page = html.replace('<!--commission:line-->', () => escapeHtml(lineText(line)))
+    .replace('<!--commission:note-->', () => sent ? '<p class="commission-note" role="status">Got it. I’ve emailed you the link to your page. If it isn’t there in a few minutes, look in spam.</p>' : '');
   if (closed) {
     page = page.replace(/<!--commission:form-->[\s\S]*?<!--\/commission:form-->/,
       () => `<p class="commission-closed" id="request">${escapeHtml(closed)}</p>`);

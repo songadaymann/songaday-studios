@@ -22,7 +22,7 @@ async function withAccess(overrides = {}) {
 const asAdmin = (env, path, init = {}) => call(env, path, init, null, LOCAL);
 const post = (env, id, fields) => asAdmin(env, `/commission/admin/${id}`, urlencoded({ form_id: crypto.randomUUID().replaceAll('-', ''), ...fields }, { Origin: LOCAL }));
 
-test('without Access set up, the admin works only on localhost', async () => {
+test('without Access set up, the admin works only on localhost, and only with the dev-only var', async () => {
   const env = await commissionEnv();
   const remote = await call(env, '/commission/admin');
   assert.equal(remote.status, 403);
@@ -31,6 +31,18 @@ test('without Access set up, the admin works only on localhost', async () => {
   const local = await asAdmin(env, '/commission/admin');
   assert.equal(local.status, 200);
   assert.match(await local.text(), /Signed in as local \(wrangler dev\)/);
+  // wrangler dev shows every request as localhost, a phone on the Wi-Fi's included.
+  const { COMMISSION_ADMIN_LOCAL, ...exposed } = env;
+  assert.equal(COMMISSION_ADMIN_LOCAL, 'yes');
+  assert.equal((await asAdmin(exposed, '/commission/admin')).status, 403);
+  assert.equal((await asAdmin({ ...exposed, COMMISSION_ADMIN_LOCAL: 'true' }, '/commission/admin')).status, 403);
+});
+
+test('a team domain pasted without https:// still works', async () => {
+  const { env, team, certs, token } = await withAccess();
+  const bare = { ...env, ACCESS_TEAM_DOMAIN: team.replace('https://', '') };
+  const response = await call(bare, '/commission/admin', { headers: { 'Cf-Access-Jwt-Assertion': await token() } }, certs);
+  assert.equal(response.status, 200);
 });
 
 test('with Access, only a good token for this app, from an allowed email, gets in', async () => {

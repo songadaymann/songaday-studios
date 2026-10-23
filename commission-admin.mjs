@@ -1,10 +1,13 @@
 // songaday.studio/commission/admin: Jonathan's queue, behind Cloudflare Access. The Worker checks
 // the Access token itself (RS256 against the team's certs, with the application's audience) and
 // an ADMIN_EMAILS allowlist behind it, and fails closed: without Access set up, the admin works
-// only on localhost (wrangler dev). The pages render on the server and run no script at all.
+// only on localhost (wrangler dev) with COMMISSION_ADMIN_LOCAL=yes, a dev-only var. The pages
+// render on the server and run no script at all.
 import { escapeHtml } from './fumble-page.mjs';
 import { serveMedia } from './media.mjs';
-import { ADMIN_PAGE_SIZE, AMOUNT_MAX_CENTS, DELIVER_MAX_BYTES, LIMITS, SONG_MAX_BYTES } from './commission-config.mjs';
+import {
+  ADMIN_PAGE_SIZE, AMOUNT_MAX_CENTS, CANCELLED_KEEP_DAYS, DELIVER_MAX_BYTES, INTAKE_ALARM_PER_DAY, LIMITS, SONG_MAX_BYTES
+} from './commission-config.mjs';
 import {
   IN_LINE, LOCAL_HOSTS, cleanLine, cleanText, daysBetween, dollars, later, loadRequest, newYorkDate,
   pageUrl, parseDollars, parseMoney, placeInLine, randomHex, readForm, shortDate, sniffAudio, transitionProblem
@@ -84,10 +87,17 @@ export async function verifyAccessJwt(token, team, audience) {
 
 // Who is signed in, or null. The email must also be in ADMIN_EMAILS: an Access policy that's
 // wider than meant (an "Everyone" rule with one-time PINs) would pass every check above.
+// Without Access, localhost alone isn't enough: `wrangler dev --local-upstream localhost`
+// presents every request as localhost, whoever sent it (a phone on the Wi-Fi, a tunnel), so it
+// also takes COMMISSION_ADMIN_LOCAL=yes, which only .dev.vars sets.
 export async function accessIdentity(request, env, url) {
-  const team = String(env.ACCESS_TEAM_DOMAIN ?? '').trim().replace(/\/+$/, '');
+  let team = String(env.ACCESS_TEAM_DOMAIN ?? '').trim().replace(/\/+$/, '');
+  // Zero Trust's settings show the team domain without https://.
+  if (team && !/^https:\/\//i.test(team)) team = `https://${team.replace(/^[a-z]+:\/\//i, '')}`;
   const audience = String(env.ACCESS_AUD ?? '').trim();
-  if (!team || !audience) return url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname) ? 'local' : null;
+  if (!team || !audience) {
+    return env.COMMISSION_ADMIN_LOCAL === 'yes' && url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname) ? 'local' : null;
+  }
   const payload = await verifyAccessJwt(request.headers.get('Cf-Access-Jwt-Assertion'), team, audience);
   if (!payload) return null;
   const email = String(payload.email ?? '').trim().toLowerCase();
@@ -133,6 +143,8 @@ h3 { font-size: 18px; margin: 0 0 8px; }
 nav.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 20px; }
 nav.tabs a { padding: 6px 10px; border: 2px solid #111; color: #111; text-decoration: none; font-size: 15px; font-weight: 700; }
 nav.tabs a[aria-current] { background: #111; color: #fff; }
+nav.tabs a.alert { border-color: #b0102b; color: #b0102b; }
+nav.tabs a.alert[aria-current] { background: #b0102b; color: #fff; }
 .card { margin: 0 0 20px; padding: 16px; background: #fff; border: 2px solid #111; overflow-wrap: anywhere; }
 .meta { margin: 0 0 12px; font-size: 15px; }
 .tag { display: inline-block; padding: 0 6px; background: #111; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; }
@@ -216,7 +228,7 @@ function deadlineTag(request, today) {
   return ` · <span class="tag${soon}">DEADLINE ${escapeHtml(shortDate(request.deadline))} (${days === 0 ? 'today' : `${days} day${days === 1 ? '' : 's'}`})</span>`;
 }
 
-const STATUS_WORDS = { requested: 'in line', writing: 'being written', delivered: 'delivered', cancelled: 'cancelled' };
+const STATUS_WORDS = { held: 'held', requested: 'in line', writing: 'being written', delivered: 'delivered', cancelled: 'cancelled' };
 
 // Every answer, in full, so Jonathan can write from the card. Links in answers stay plain text.
 function card(request, { position = null, today, now, full = false }) {
@@ -246,6 +258,7 @@ function card(request, { position = null, today, now, full = false }) {
     ['My note', text(request.admin_note)]
   ].filter(([, value]) => value);
   const actions = full ? '' : `<div class="actions">
+    ${request.status === 'held' ? `<form method="post" action="/commission/admin/${request.id}"><input type="hidden" name="action" value="let-in"><button type="submit" class="quiet">Let in</button></form>` : ''}
     ${request.status === 'requested' ? `<form method="post" action="/commission/admin/${request.id}"><input type="hidden" name="action" value="writing"><button type="submit" class="quiet">Start writing</button></form>` : ''}
     <a class="button" href="/commission/admin/${request.id}">Open &amp; deliver →</a>
   </div>`;
@@ -258,12 +271,14 @@ ${rows.map(([label, value]) => `    <dt>${label}</dt><dd>${value}</dd>`).join('\
 </article>`;
 }
 
+// Held shows only while something is held (requests past the day's alarm).
 const TABS = [
-  ['line', 'In line'], ['delivered', 'Delivered'], ['paid', 'Paid'], ['plans', 'Monthly plans'],
+  ['held', 'Held'], ['line', 'In line'], ['delivered', 'Delivered'], ['paid', 'Paid'], ['plans', 'Monthly plans'],
   ['cancelled', 'Cancelled'], ['archived', 'Archived']
 ];
 
 const LISTS = {
+  held: { where: "status = 'held'", order: 'id' },
   line: { where: IN_LINE, order: 'id' },
   delivered: { where: "status = 'delivered' AND paid_at IS NULL AND archived_at IS NULL", order: 'delivered_at' },
   paid: { where: 'paid_at IS NOT NULL AND archived_at IS NULL', order: 'paid_at DESC' },
@@ -297,7 +312,8 @@ async function top(db, now, current) {
   <li${emails ? ' class="alert"' : ''}><a href="/commission/admin/emails">Emails waiting ${s.waiting}${s.failed ? `, failed ${s.failed}` : ''}</a></li>
 </ul>
 <nav class="tabs" aria-label="Lists">
-${TABS.map(([name, label], index) => `  <a href="/commission/admin${name === 'line' ? '' : `?show=${name}`}"${current === name ? ' aria-current="page"' : ''}>${label} ${counts[index]}</a>`).join('\n')}
+${TABS.map(([name, label], index) => name === 'held' && !counts[index] && current !== name ? ''
+    : `  <a href="/commission/admin${name === 'line' ? '' : `?show=${name}`}"${current === name ? ' aria-current="page"' : ''}${name === 'held' ? ' class="alert"' : ''}>${label} ${counts[index]}</a>`).filter(Boolean).join('\n')}
   <a href="/commission/admin/emails"${current === 'emails' ? ' aria-current="page"' : ''}>Emails</a>
 </nav>`;
 }
@@ -339,12 +355,24 @@ async function queuePage(request, env, url, identity, now) {
       return extra + card(row, { position: show === 'line' ? offset + index + 1 : null, today, now });
     }).join('\n') || `<p>${show === 'line' ? 'Nobody’s in line.' : 'Nothing here.'}</p>`;
   }
+  const bulk = show === 'held' && list.includes('<article') ? `<p>These came in past ${INTAKE_ALARM_PER_DAY} requests in 24 hours, so they’re not in line yet and their buyers haven’t been told a place.</p>
+<div class="actions">
+  <form method="post" action="/commission/admin/held">${hidden('action', 'let-in-all')}<button type="submit">Let the oldest ${HELD_BATCH} in</button></form>
+</div>
+<details><summary>Cancel every held request</summary>
+<form class="panel" method="post" action="/commission/admin/held">
+  ${hidden('action', 'cancel-all')}
+  <p>For a flood of fakes. No email goes out, and they’re deleted after ${CANCELLED_KEEP_DAYS} days.</p>
+  <label class="check"><input type="checkbox" name="confirm" value="yes" required> Yes, cancel them all</label>
+  <button type="submit" class="danger">Cancel them all</button>
+</form></details>` : '';
   const pager = `<p class="pager">${pageNumber > 1 ? `<a href="?show=${show}&amp;page=${pageNumber - 1}">← Earlier</a>` : '<span></span>'}${more ? `<a href="?show=${show}&amp;page=${pageNumber + 1}">Later →</a>` : ''}</p>`;
   const label = TABS.find(([name]) => name === show)[1];
   const done = DONE[url.searchParams.get('done')];
   return html(request, layout(label, identity, `${await top(db, now, show)}
 ${done ? `<p class="done" role="status">${escapeHtml(done)}</p>` : ''}
 <h1>${label}</h1>
+${bulk}
 ${list}
 ${pager}`));
 }
@@ -352,7 +380,9 @@ ${pager}`));
 const DONE = {
   writing: 'Marked as being written.', deliver: 'Delivered.', undeliver: 'Delivery undone. It’s back in line, being written.',
   paid: 'Payment recorded.', cancel: 'Cancelled.', restore: 'Back in line, in its old place.', archive: 'Archived.',
-  unarchive: 'Unarchived.', edit: 'Saved.', send: 'Sent, or queued to send.', delete: 'Deleted for good.'
+  unarchive: 'Unarchived.', edit: 'Saved.', send: 'Sent, or queued to send.', delete: 'Deleted for good.',
+  'let-in': 'Let in. They’ve been emailed their place.', 'let-in-all': 'Let in, and emailed their places.',
+  'cancel-all': 'Every held request is cancelled.'
 };
 
 function timeline(request, now) {
@@ -421,6 +451,7 @@ ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song
 </form>`;
 
   const moves = [
+    allowed('let-in') ? button('let-in', 'Let in', 'quiet') : '',
     allowed('writing') ? button('writing', 'Start writing', 'quiet') : '',
     allowed('restore') ? button('restore', 'Put back in line', 'quiet', hidden('form_id', randomHex(16))) : '',
     allowed('archive') ? button('archive', 'Archive', 'quiet') : '',
@@ -524,6 +555,10 @@ async function act(request, env, url, ctx, identity, now, id) {
   };
 
   switch (action) {
+    case 'let-in':
+      await letIn(env, r, now);
+      return done();
+
     case 'writing':
       await db.prepare("UPDATE requests SET status = 'writing', writing_at = ? WHERE id = ? AND status = 'requested'").bind(at, r.id).run();
       return done();
@@ -659,6 +694,40 @@ async function act(request, env, url, ctx, identity, now, id) {
   return refuse('That isn’t something I can do.');
 }
 
+// A held request goes in line, in its own place (its id), and hears its number.
+async function letIn(env, r, now) {
+  const db = env.COMMISSIONS_DB;
+  const position = await placeInLine(db, r.id);
+  await db.batch([
+    db.prepare("UPDATE requests SET status = 'requested' WHERE id = ? AND status = 'held'").bind(r.id),
+    queueEmail(env, 'received', r, { now, position, onceKey: `received:${r.token}`,
+      when: "(SELECT status FROM requests WHERE id = ?) = 'requested'", whenArgs: [r.id] })
+  ]);
+}
+
+const HELD_BATCH = 50;
+
+// The Held tab's two buttons: let the oldest in, or cancel them all with no email (a flood of
+// fakes would otherwise mail every stranger whose address was used).
+async function heldAction(request, env, ctx, identity, now) {
+  const db = env.COMMISSIONS_DB;
+  const { form, status, error } = await readForm(request, 16 * 1024);
+  if (!form) return problemPage(request, identity, error, status);
+  const action = form.get('action');
+  if (action === 'let-in-all') {
+    const { results } = await db.prepare("SELECT * FROM requests WHERE status = 'held' ORDER BY id LIMIT ?").bind(HELD_BATCH).all();
+    for (const r of results) await letIn(env, r, now);
+    later(ctx, flushOutbox(env, { now }));
+  } else if (action === 'cancel-all') {
+    if (form.get('confirm') !== 'yes') return problemPage(request, identity, 'Tick the box to say you mean it, then try again.', 400);
+    await db.prepare("UPDATE requests SET status = 'cancelled', cancelled_at = ?, cancelled_by = 'jonathan' WHERE status = 'held'")
+      .bind(now.toISOString()).run();
+  } else {
+    return problemPage(request, identity, 'That isn’t something I can do.', 400);
+  }
+  return back(`/commission/admin?show=held&done=${action}`);
+}
+
 async function sendEmail(request, env, url, ctx, identity, now, id) {
   const db = env.COMMISSIONS_DB;
   const email = await db.prepare('SELECT * FROM outbox WHERE id = ?').bind(id).first();
@@ -698,6 +767,8 @@ export async function handleAdmin(request, env, url, ctx) {
     if (read) return queuePage(request, env, url, identity, now);
   } else if (path === '/commission/admin/emails') {
     if (read) return emailsPage(request, env, url, identity, now);
+  } else if (path === '/commission/admin/held') {
+    if (method === 'POST') return heldAction(request, env, ctx, identity, now);
   } else {
     const email = /^\/commission\/admin\/emails\/([1-9]\d{0,9})$/.exec(path);
     const one = /^\/commission\/admin\/([1-9]\d{0,9})(?:\/(memo|audio))?$/.exec(path);

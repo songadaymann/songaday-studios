@@ -222,6 +222,7 @@ export async function commissionEnv(overrides = {}) {
     TURNSTILE_SITE_KEY: 'site-key',
     TURNSTILE_SECRET_KEY: 'turnstile-secret',
     COMMISSION_REQUESTS: 'open',
+    COMMISSION_ADMIN_LOCAL: 'yes',
     SITE_ORIGIN: SITE,
     COMMISSION_FROM_EMAIL: 'songs@songaday.studio',
     COMMISSION_FROM_NAME: 'Jonathan Mann',

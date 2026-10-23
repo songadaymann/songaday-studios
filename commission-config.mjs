@@ -22,6 +22,10 @@ export const AMOUNT_MAX_CENTS = 5_000_000;
 
 // Requested, being written, or delivered and not paid yet, per email address.
 export const MAX_OPEN_PER_EMAIL = 5;
+// More requests than this in 24 hours is a flood, not a busy day (the busiest months on record
+// had about 25 in the month). Past it, new requests are held, not refused: they wait out of
+// line until Jonathan lets them in, and he gets an email.
+export const INTAKE_ALARM_PER_DAY = 30;
 
 export const MEMO_MAX_BYTES = 10 * 1024 * 1024;
 export const SONG_MAX_BYTES = 30 * 1024 * 1024;

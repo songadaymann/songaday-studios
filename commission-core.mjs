@@ -4,8 +4,31 @@
 import { cleanStory } from './fumble.mjs';
 
 export const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
-// A request is in line while it waits or while Jonathan writes it.
+// A request is in line while it waits or while Jonathan writes it. A held one isn't yet.
 export const IN_LINE = "status IN ('requested', 'writing')";
+// Not finished with: held, in line, or delivered and not paid yet.
+export const OPEN = "(status IN ('held', 'requested', 'writing') OR (status = 'delivered' AND paid_at IS NULL))";
+
+// An address as the per-address cap counts it: pat+1@ and pat+2@ are one inbox.
+export function emailKey(address) {
+  const at = address.lastIndexOf('@');
+  return at < 0 ? address : address.slice(0, at).split('+')[0] + address.slice(at);
+}
+
+// What the rate limit counts by: the visitor's IP, or for IPv6 its /64, since one connection
+// gets a whole /64 and can rotate through it.
+export function visitorKey(ip) {
+  const address = String(ip ?? '').trim().toLowerCase();
+  if (!address) return 'unknown';
+  if (!address.includes(':')) return address;
+  const mapped = /(\d{1,3}(?:\.\d{1,3}){3})$/.exec(address);
+  if (mapped) return mapped[1];
+  const [head, tail] = address.split('::');
+  const left = head ? head.split(':') : [];
+  const right = tail ? tail.split(':') : [];
+  const groups = tail === undefined ? left : [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right];
+  return groups.slice(0, 4).map((group) => group.replace(/^0+(?=.)/, '')).join(':') + '::/64';
+}
 
 export const randomHex = (bytes) =>
   [...crypto.getRandomValues(new Uint8Array(bytes))].map((byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -83,11 +106,12 @@ export function sniffAudio(bytes) {
 // Every move a request can make, and who can make it (section 3 of the design). Every route
 // asks transitionProblem first, so the tests can check each allowed and refused move here.
 export const TRANSITIONS = {
+  'let-in': { from: ['held'] },                              // Jonathan: Let in (a request held past the day's alarm)
   writing: { from: ['requested'] },                          // Jonathan: Start writing
   deliver: { from: ['requested', 'writing', 'delivered'] },  // Jonathan: Deliver, or Redeliver once delivered
   undeliver: { from: ['delivered'], unpaid: true },          // Jonathan: Undo delivery
-  'buyer-cancel': { from: ['requested'] },                   // the buyer, from their page
-  cancel: { from: ['requested', 'writing', 'delivered'], unpaid: true },  // Jonathan
+  'buyer-cancel': { from: ['held', 'requested'] },           // the buyer, from their page
+  cancel: { from: ['held', 'requested', 'writing', 'delivered'], unpaid: true },  // Jonathan
   restore: { from: ['cancelled'], neverDelivered: true },    // Jonathan: Put back in line
   archive: { from: ['delivered', 'cancelled'], archived: false },
   unarchive: { archived: true },
@@ -97,6 +121,7 @@ export const TRANSITIONS = {
 };
 
 const WHERE_IT_IS = {
+  held: 'That request is held, waiting to be let in.',
   requested: 'That request is still in line.',
   writing: 'That song is being written.',
   delivered: 'That request is already delivered.',

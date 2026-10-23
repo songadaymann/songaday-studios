@@ -303,9 +303,9 @@ test('a long line’s daily run stays inside D1’s query limit; what doesn’t 
   const db = env.COMMISSIONS_DB;
   const n = 400;
   for (let i = 1; i <= n; i++) {
-    db.exec(`INSERT INTO requests (token, share_token, kind, floor_cents, buyer_name, buyer_email, recipient, story, may_publish, requested_at)
-      VALUES (?, ?, 'personal', 20000, 'Pat', ?, 'Sam', 'A story long enough to count.', 1, ?)`,
-    i.toString(16).padStart(32, '0'), `e${i.toString(16).padStart(31, '0')}`, `b${i}@example.com`, EARLIER);
+    db.exec(`INSERT INTO requests (token, share_token, kind, floor_cents, buyer_name, buyer_email, email_key, recipient, story, may_publish, requested_at)
+      VALUES (?, ?, 'personal', 20000, 'Pat', ?, ?, 'Sam', 'A story long enough to count.', 1, ?)`,
+    i.toString(16).padStart(32, '0'), `e${i.toString(16).padStart(31, '0')}`, `b${i}@example.com`, `b${i}@example.com`, EARLIER);
     db.exec(`INSERT INTO outbox (request_id, kind, position, to_email, subject, text, html, created_at, sent_at)
       VALUES (?, 'received', ?, ?, 's', 't', 'h', ?, ?)`, i, i, `b${i}@example.com`, EARLIER, EARLIER);
   }

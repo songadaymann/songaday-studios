@@ -6,14 +6,15 @@ CREATE TABLE requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,  -- order received: the line is ordered by this
   token TEXT NOT NULL UNIQUE,            -- 32 hex characters (128 random bits): the buyer's private page
   share_token TEXT NOT NULL UNIQUE,      -- the same, for the page they can pass on: the song and lyrics only
-  status TEXT NOT NULL DEFAULT 'requested'
-    CHECK (status IN ('requested', 'writing', 'delivered', 'cancelled')),
+  status TEXT NOT NULL DEFAULT 'requested'      -- held: came in past the day's alarm, waiting to be let in
+    CHECK (status IN ('held', 'requested', 'writing', 'delivered', 'cancelled')),
   kind TEXT NOT NULL CHECK (kind IN ('personal', 'business')),
   floor_cents INTEGER NOT NULL,          -- the least they can pay; set from kind, Jonathan can change it
 
   -- What the buyer told us, cleaned (cleanText) and length-limited.
   buyer_name TEXT NOT NULL,
   buyer_email TEXT NOT NULL,             -- trimmed and lowercased
+  email_key TEXT NOT NULL,               -- the same without a +tag, for the per-address cap
   recipient TEXT NOT NULL,               -- who or what the song is for
   relationship TEXT NOT NULL DEFAULT '', -- what they are to the buyer
   occasion TEXT NOT NULL DEFAULT '',
@@ -46,7 +47,8 @@ CREATE TABLE requests (
 );
 
 CREATE INDEX requests_by_status ON requests (status, id);
-CREATE INDEX requests_by_email ON requests (buyer_email, status);
+CREATE INDEX requests_by_email ON requests (email_key, status);
+CREATE INDEX requests_by_time ON requests (requested_at);
 
 -- Money in. One row per payment, so one-off payments, monthly payments, extras and payments
 -- Jonathan marks by hand all add up the same way.
@@ -86,7 +88,7 @@ CREATE TABLE outbox (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   request_id INTEGER REFERENCES requests (id),  -- null for Jonathan's daily summary
   kind TEXT NOT NULL,                    -- received, moved, delivered, updated, paid, plan-finished,
-                                         -- extra-thanks, plan-stopped, reminder, cancelled, summary
+                                         -- extra-thanks, plan-stopped, reminder, cancelled, held, alarm, summary
   once_key TEXT UNIQUE,                  -- 'received:12', 'moved:12:2026-11-03', 'paid:cs_...' and so on;
                                          -- written with ON CONFLICT DO NOTHING, so a repeat is skipped
   position INTEGER,                      -- received and moved only: the place in line this email states
