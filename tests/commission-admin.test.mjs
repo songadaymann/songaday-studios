@@ -443,7 +443,9 @@ test('Delete for good removes a request with no payments, and blanks one with pa
   const row = env.COMMISSIONS_DB.one('SELECT * FROM requests WHERE id = ?', paid.id);
   assert.ok(row.deleted_at);
   assert.equal(row.status, 'cancelled');
-  assert.deepEqual([row.buyer_name, row.buyer_email, row.recipient, row.story, row.title, row.audio_key], ['', '', '', '', null, null]);
+  assert.deepEqual([row.buyer_name, row.buyer_email, row.email_key, row.recipient, row.story, row.title, row.audio_key], ['', '', '', '', '', null, null]);
+  // Every column that could name them is blank: nothing in the row still says paid@.
+  assert.doesNotMatch(JSON.stringify(row), /paid@|Paid for, then/);
   assert.notEqual(row.token, paid.token);
   assert.equal((await call(env, `/commission/s/${paid.token}`)).status, 404);
   const [payment] = env.COMMISSIONS_DB.rows('payments');

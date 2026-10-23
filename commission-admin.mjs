@@ -180,7 +180,7 @@ summary { cursor: pointer; font-weight: 700; }
 .pager { display: flex; justify-content: space-between; margin-top: 16px; }
 form.search { display: flex; gap: 8px; align-items: flex-end; margin: 0 0 16px; }
 form.search label { flex: 1; margin: 0; }
-.watch { margin: 0 0 20px; padding: 12px 16px; background: #fff; border: 2px solid #ff2445; }
+.watch { margin: 0 0 20px; padding: 12px 16px; background: #fff; border: 2px solid #ff2445; overflow-wrap: anywhere; }
 .watch h2 { margin: 0 0 8px; font-size: 18px; }
 .watch ul { margin: 0; padding-left: 20px; }
 @media (max-width: 560px) {
@@ -713,7 +713,7 @@ async function act(request, env, url, ctx, identity, now, id) {
         // Payments are money records, so they and the request's number stay, with nothing about
         // the buyer. New tokens nobody has, so the old links are dead.
         statements.push(db.prepare(`UPDATE requests SET token = ?, share_token = ?, status = 'cancelled',
-            buyer_name = '', buyer_email = '', recipient = '', relationship = '', occasion = '', names = '', story = '',
+            buyer_name = '', buyer_email = '', email_key = '', recipient = '', relationship = '', occasion = '', names = '', story = '',
             leave_out = '', deadline = NULL, title = NULL, lyrics = NULL, memo_key = NULL, audio_key = NULL, video_url = NULL,
             admin_note = '', cancelled_at = COALESCE(cancelled_at, ?), cancelled_by = COALESCE(cancelled_by, 'jonathan'),
             archived_at = COALESCE(archived_at, ?), deleted_at = ? WHERE id = ?`).bind(randomHex(16), randomHex(16), at, at, at, r.id),
