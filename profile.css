@@ -375,6 +375,33 @@ body.video-modal-open { overflow: hidden; }
 .now-list li::before { content: ""; position: absolute; top: .5em; left: 0; width: .55rem; height: .55rem; border-radius: 50%; background: var(--red); }
 .now-list a { font-weight: 700; text-decoration-thickness: 2px; }
 .now-updated { margin: clamp(2rem, 4vw, 3rem) 0 0; color: var(--white-muted); font-size: .875rem; }
+/* /press: featured pieces as cards, then every piece by year, with the kind filters. Nothing
+   here sets display on an li or a section, so the wallet gate and [hidden] both work on them. */
+.press-featured, .press-list { margin-top: clamp(2.25rem, 4.5vw, 3.25rem); }
+.press h2 { padding-bottom: .6rem; border-bottom: 4px solid var(--red); font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.25rem); letter-spacing: -.04em; line-height: 1; }
+.press-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: .75rem; margin: 1.25rem 0 0; padding: 0; list-style: none; }
+.press-card { display: grid; align-content: start; gap: .35rem; height: 100%; padding: .8rem 1rem .9rem; border: 2px solid var(--hairline); text-decoration: none; }
+.press-card-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .6rem; }
+.press-card:hover { border-color: var(--red); }
+.press-card-title { font-size: 1.0625rem; line-height: 1.3; text-decoration: underline 2px; text-underline-offset: .2em; overflow-wrap: anywhere; }
+.press-card:hover .press-card-title { text-decoration-color: var(--red); }
+.press-outlet { color: var(--red); font-size: var(--type-meta); font-weight: 700; letter-spacing: .08em; line-height: 1.4; text-transform: uppercase; overflow-wrap: anywhere; }
+.press-date, .press-meta { color: var(--white-muted); font-size: .8125rem; }
+.press-filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.25rem; }
+.press-filters a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; border: 2px solid var(--white-muted); font-size: .875rem; font-weight: 700; text-decoration: none; }
+.press-filters a:hover { border-color: var(--red); }
+.press-filters a[aria-current] { border-color: var(--white); background: var(--white); color: var(--ink); }
+.press-status { margin: .9rem 0 0; color: var(--white-muted); font-size: .875rem; }
+.press-year { max-width: 52rem; margin-top: clamp(1.75rem, 3.5vw, 2.5rem); }
+.press-year h3 { padding-bottom: .5rem; border-bottom: 2px solid var(--white); font-size: clamp(1.25rem, 1.1rem + .6vw, 1.6rem); letter-spacing: -.03em; line-height: 1; }
+.press-year ul { margin: 0; padding: 0; list-style: none; }
+.press-row { padding: .75rem 0 .85rem; border-bottom: 1px solid var(--hairline); }
+.press-source { display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem .6rem; margin: 0; }
+.press-format { padding: 0 .4rem; border: 1px solid var(--hairline); color: var(--white-muted); font-size: .75rem; line-height: 1.5; }
+/* The title is the row's link: a full-width block at least 44px tall. */
+.press-title { display: block; min-height: 44px; padding: .55rem 0; font-size: 1.0625rem; font-weight: 700; line-height: 1.3; text-decoration-thickness: 2px; overflow-wrap: anywhere; }
+.press-title:hover { text-decoration-color: var(--red); }
+.press-meta { margin: 0; }
 @media (max-width: 760px) {
   .everything-row { grid-template-columns: minmax(0, 1fr); }
 }
