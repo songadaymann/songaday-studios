@@ -9,6 +9,10 @@ outside the Fridays at The Park app.
 - `profile.css` — editable styles
 - `profile.js` — editable page behavior and catalog stats
 - `assets/` — icons, video, and other page assets
+- `captions/welcome-to-song-a-day.vtt` — English captions for the home page film (WebVTT),
+  transcribed with Whisper (`medium.en`) and cut into short phrases. To fix a word, edit the
+  text and leave the timings alone. `profile.js` draws the captions above the player's controls;
+  the CC button turns them off.
 - `index.html`, `films/index.html`, `everything/index.html`, `now/index.html` — generated pages
 - `build.mjs` — builds those pages from the editable files, and bakes in a snapshot of the Films
   playlist and of today's song (needs network; without it those link to YouTube until the

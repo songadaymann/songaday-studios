@@ -156,9 +156,17 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .hero-video video { display: block; width: 100%; aspect-ratio: 16 / 9; background: var(--ink); object-fit: cover; cursor: pointer; }
 .hero-video-sound, .hero-video-pause { position: absolute; top: .75rem; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 2px solid var(--white); background: rgba(0, 0, 0, .72); color: var(--white); cursor: pointer; }
 .hero-video-sound { left: .75rem; gap: .45rem; padding: .5rem .95rem .5rem .75rem; border-radius: 999px; font: 700 .875rem / 1 var(--font); letter-spacing: .01em; }
-.hero-video-pause { right: .75rem; width: 44px; padding: 0; border-radius: 50%; }
+.hero-video-pause { right: calc(.75rem + 44px + .5rem); width: 44px; padding: 0; border-radius: 50%; }
 .hero-video-pause[hidden] { display: none; }
 .hero-video-sound:hover, .hero-video-sound:focus-visible, .hero-video-pause:hover, .hero-video-pause:focus-visible { background: var(--white); color: var(--ink); }
+/* Captions are on by default, because the preview plays muted. They're drawn here, above the
+   controls, rather than by the browser, so they look the same everywhere. */
+.hero-video-cc { position: absolute; top: .75rem; right: .75rem; min-width: 44px; min-height: 44px; padding: 0 .55rem; border: 2px solid var(--white); border-radius: 8px; background: rgba(0, 0, 0, .72); color: var(--white); font: 700 .875rem / 1 var(--font); letter-spacing: .04em; cursor: pointer; }
+.hero-video-cc[aria-pressed="true"], .hero-video-cc:hover, .hero-video-cc:focus-visible { background: var(--white); color: var(--ink); }
+.hero-video-captions { position: absolute; right: 0; bottom: .9rem; left: 0; display: flex; justify-content: center; padding: 0 .75rem; pointer-events: none; transition: bottom .2s ease; }
+.hero-video-player.is-watching .hero-video-captions, .hero-video-player.is-started:hover .hero-video-captions, .hero-video-player.is-started:focus-within .hero-video-captions { bottom: 3.4rem; }
+.hero-video-captions[hidden] { display: none; }
+.hero-video-captions span { max-width: 36em; padding: .2em .5em; border-radius: 4px; background: rgba(0, 0, 0, .8); color: var(--white); font: 600 clamp(.875rem, .75rem + .6vw, 1.15rem) / 1.35 var(--font); text-align: center; white-space: pre-line; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .hero-video-icon { flex: none; width: 20px; height: 20px; }
 .hero-video-sound .icon-sound-on, .hero-video-sound.is-sound-on .icon-sound-off { display: none; }
 .hero-video-sound.is-sound-on .icon-sound-on { display: inline; }

@@ -44,7 +44,10 @@
               poster="assets/video/welcome-to-song-a-day-poster.webp"
               aria-label="Welcome to Song A Day, a three-minute film">
               <source src="assets/video/welcome-to-song-a-day.mp4" type="video/mp4">
+              <track kind="captions" src="/captions/welcome-to-song-a-day.vtt" srclang="en" label="English" default>
             </video>
+            <div class="hero-video-captions" id="hero-video-captions" aria-hidden="true" hidden></div>
+            <button class="hero-video-cc" id="hero-video-cc" type="button" aria-pressed="true" aria-label="Captions">CC</button>
             <button class="hero-video-sound" id="hero-sound-toggle" type="button">
               <svg class="hero-video-icon" id="hero-sound-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path class="icon-sound-off" d="M16.5 9.5l5 5m0-5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/><path class="icon-sound-on" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
               <span id="hero-sound-label">Watch with sound</span><span class="hero-video-length" id="hero-video-length"> · 2:52</span>

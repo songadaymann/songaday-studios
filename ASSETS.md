@@ -11,6 +11,9 @@ Credit "Jonathan Mann (Song A Day)". This does not license third-party content
 appearing in videos, screenshots, game art, or branding. The mixed site bundle
 has not been audited for redistribution, so it is not included in the repository.
 
+The captions for the home page film (`captions/welcome-to-song-a-day.vtt`) are a transcript of
+Jonathan's own words in it, CC BY 4.0.
+
 ## 2. Free third-party assets included under their own licenses
 
 None are bundled in the public source. Remote media references do not grant
