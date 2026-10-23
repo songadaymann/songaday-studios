@@ -22,6 +22,35 @@ export const PRESS_KINDS = [
 const KIND_BY_LABEL = new Map(PRESS_KINDS.map((kind) => [kind.label.toLowerCase(), kind]));
 export const pressKind = (slug) => PRESS_KINDS.find((kind) => kind.slug === slug)?.slug ?? null;
 
+// The project filter's groups (/press/?project=sec). The sheet's project column is free text, so
+// each group lists the values that belong to it, in any case. A value no group lists goes under
+// Other, which shows only when it has rows: when one turns up (update-press.mjs names it), add it
+// to a group here, or add a group. Everyone sees these labels, so none may use crypto words.
+export const PRESS_PROJECTS = [
+  { slug: 'song-a-day', label: 'Song A Day', projects: ['Song A Day', 'Song A Day / Hugh Mann', 'Career overview',
+    'Selling Song A Day NFTs', 'Crypto Tax Nightmare / Song A Day 6000'] },
+  { slug: 'sec', label: 'The SEC lawsuit', projects: ['Suing the SEC'] },
+  { slug: 'gamejew', label: 'GameJew', projects: ['GameJew'] },
+  { slug: 'coldplay', label: 'Coldplay Canoodle', projects: ['Coldplay Canoodle'] },
+  { slug: 'mario-opera', label: 'The Mario Opera', projects: ['The Mario Opera'] },
+  { slug: 'wamp', label: 'WAMP', projects: ['WAMP', 'WAMP / AI-built projects'] },
+  { slug: 'x-play', label: 'X-Play: The Musical', projects: ['X-Play: The Musical'] }
+];
+export const PRESS_OTHER = { slug: 'other', label: 'Other' };
+const PROJECT_GROUPS = [...PRESS_PROJECTS, PRESS_OTHER];
+const GROUP_BY_PROJECT = new Map(PRESS_PROJECTS.flatMap((group) => group.projects.map((project) => [project.toLowerCase(), group])));
+export const pressProjectGroup = (project) => GROUP_BY_PROJECT.get(String(project ?? '').trim().toLowerCase()) ?? PRESS_OTHER;
+export const pressProject = (slug) => PROJECT_GROUPS.find((group) => group.slug === slug)?.slug ?? null;
+
+// The filters in the page's address (/press/?kind=podcasts&project=sec&year=2024), in that order.
+// Each is null when it's missing or isn't one of the page's own, so a made-up address shows the
+// whole list. renderPress checks the project and year against the rows too.
+const FILTERS = ['kind', 'project', 'year'];
+export function pressFilters(params) {
+  const year = params.get('year') ?? '';
+  return { kind: pressKind(params.get('kind')), project: pressProject(params.get('project')), year: /^\d{4}$/.test(year) ? year : null };
+}
+
 // The Worker re-reads the sheet at most every 15 minutes per Cloudflare location, and waits
 // this long for it before the page keeps the snapshot. A failed read is remembered for a minute,
 // so a slow or broken sheet costs one wait a minute, not one per view.
@@ -269,9 +298,18 @@ const time = (item) => `<time datetime="${escapeHtml(item.date)}">${formatDate(i
 const crypto = (item) => item.wallet_only ? ' data-crypto' : '';
 // A group whose every row is wallet-only is itself hidden without a wallet, so no empty heading shows.
 const groupCrypto = (items) => items.every((item) => item.wallet_only) ? ' data-crypto' : '';
+const hidden = (hide) => hide ? ' hidden' : '';
 const kindSlug = (item) => KIND_BY_LABEL.get(item.kind.toLowerCase())?.slug ?? PRESS_KINDS[0].slug;
+// What a row is filed under, for each filter.
+const filedUnder = (item) => ({ kind: kindSlug(item), project: pressProjectGroup(item.project).slug, year: item.date.slice(0, 4) });
 const link = (item, className, body) =>
   `<a class="${className}" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${body}</a>`;
+// The address of a set of filters, as the Worker reads it: /press/?kind=tv&year=2010#press-list.
+// The values are the page's own slugs and years, so nothing needs escaping but the &.
+const filterHref = (filters) => {
+  const query = FILTERS.filter((name) => filters[name]).map((name) => `${name}=${filters[name]}`).join('&amp;');
+  return `/press/${query && `?${query}`}#press-list`;
+};
 
 // A count the page script updates once the wallet gate decides: wallet-only rows count only for
 // browsers that show them.
@@ -298,7 +336,7 @@ function featuredCard(item) {
 // isn't three phone screens down.
 const FEATURED_SHOWN = 8;
 
-function renderFeatured(featured) {
+function renderFeatured(featured, hide) {
   if (!featured.length) return '';
   const more = featured.slice(FEATURED_SHOWN);
   const moreHtml = more.length ? `
@@ -308,7 +346,7 @@ function renderFeatured(featured) {
 ${more.map(featuredCard).join('\n')}
     </ul>
   </details>` : '';
-  return `<section class="press-featured"${groupCrypto(featured)} aria-labelledby="press-featured-title">
+  return `<section class="press-featured"${groupCrypto(featured)}${hidden(hide)} aria-labelledby="press-featured-title">
   <h2 id="press-featured-title">Featured</h2>
   <ul class="press-cards">
 ${featured.slice(0, FEATURED_SHOWN).map(featuredCard).join('\n')}
@@ -320,11 +358,10 @@ ${featured.slice(0, FEATURED_SHOWN).map(featuredCard).join('\n')}
 // Filtered-out rows stay in the page, marked hidden, so the page script can show them again
 // without a reload. The layout is on an inner element: the wallet gate's display: revert would
 // undo it on the li.
-function listItem(item, kind) {
-  const hidden = kind && kindSlug(item) !== kind ? ' hidden' : '';
+function listItem(item, filed, hide) {
   const format = item.format ? `<span class="press-format">${escapeHtml(item.format)}</span>` : '';
   const byline = item.byline ? ` · ${escapeHtml(item.byline)}` : '';
-  return `      <li class="press-item" data-kind="${kindSlug(item)}"${crypto(item)}${hidden}><div class="press-row">
+  return `      <li class="press-item" data-kind="${filed.kind}" data-project="${filed.project}" data-year="${filed.year}"${crypto(item)}${hidden(hide)}><div class="press-row">
         <p class="press-source"><span class="press-outlet">${escapeHtml(item.outlet)}</span>${format}</p>
         ${link(item, 'press-title', `${escapeHtml(item.title)}${OUT}`)}
         <p class="press-meta">${time(item)}${byline}</p>
@@ -332,50 +369,84 @@ function listItem(item, kind) {
 }
 
 // The page under the opening line: a link down to the list, the featured pieces, then every row
-// by year with the kind filters. The filters are links (/press/?kind=podcasts), which the Worker
-// answers with the other kinds hidden, so they work without JavaScript; press-page.js filters in
-// place.
-export function renderPress(items, { kind = null } = {}) {
-  const selected = pressKind(kind);
-  const matches = (item) => !selected || kindSlug(item) === selected;
+// by year with the filters: kind links, and project and year menus. Together they're an address
+// (/press/?kind=podcasts&project=sec&year=2024) that the Worker answers with the other rows
+// hidden, so they work without JavaScript (the menus' Show button sends them); press-page.js
+// filters in place. Any filter hides the featured pieces, and the link down past them.
+export function renderPress(items, filters = {}) {
+  const rows = items.map((item) => ({ item, filed: filedUnder(item) }));
+  const years = [];
+  for (const row of rows) {
+    if (years.at(-1)?.year !== row.filed.year) years.push({ year: row.filed.year, rows: [] });
+    years.at(-1).rows.push(row);
+  }
+  // A project or year is a filter only when some row is filed under it.
+  const chosen = { kind: pressKind(filters.kind) };
+  for (const name of ['project', 'year']) chosen[name] = rows.some(({ filed }) => filed[name] === filters[name]) ? filters[name] : null;
+  const on = FILTERS.some((name) => chosen[name]);
+  // Whether a row passes every filter that's on, or every one but `except`.
+  const matches = ({ filed }, except) => FILTERS.every((name) => name === except || !chosen[name] || filed[name] === chosen[name]);
   const featured = items.filter((item) => item.featured);
-  const everyone = forEveryone(items);
+  const everyone = rows.filter(({ item }) => !item.wallet_only);
   const jump = featured.length
-    ? `<p class="press-jump"><a href="#press-list">All ${count(everyone.length)}, newest first <span aria-hidden="true">↓</span></a></p>\n`
+    ? `<p class="press-jump"${hidden(on)}><a href="#press-list">All ${count(everyone.length)}, newest first <span aria-hidden="true">↓</span></a></p>\n`
     : '';
 
-  const years = [];
-  for (const item of items) {
-    const year = item.date.slice(0, 4);
-    if (years.at(-1)?.year !== year) years.push({ year, items: [] });
-    years.at(-1).items.push(item);
-  }
-  const filters = [{ slug: '', label: 'All' }, ...PRESS_KINDS].map(({ slug, label }) => {
-    const current = (slug || null) === selected ? ' aria-current="page"' : '';
-    const href = slug ? `/press/?kind=${slug}#press-list` : '/press/#press-list';
-    return `    <a href="${href}" data-kind="${slug}"${current}>${escapeHtml(label)}</a>`;
+  const kinds = [{ slug: '', label: 'All' }, ...PRESS_KINDS].map(({ slug, label }) => {
+    const current = (slug || null) === chosen.kind ? ' aria-current="page"' : '';
+    return `    <a href="${filterHref({ ...chosen, kind: slug })}" data-kind="${slug}"${current}>${escapeHtml(label)}</a>`;
   }).join('\n');
-  // Only a chosen kind gets a count (the opening line has the total). Counted as a visitor
-  // without a wallet sees it; the page script recounts for wallets.
-  const status = selected
-    ? `Showing ${everyone.filter(matches).length.toLocaleString('en-US')} of ${everyone.length.toLocaleString('en-US')}.`
+  // Each menu choice counts the rows it would show with the other filters as they are, as a
+  // visitor without a wallet sees them (the page script recounts for wallets). One at 0 can still
+  // be picked, so going from one project or year to another never takes two steps. A choice no row
+  // is filed under isn't there, and one whose rows are all wallet-only is a crypto part, which
+  // can't be picked without a wallet either (some phones show a hidden option anyway).
+  const menu = (name, label, all, choices) => {
+    const options = choices.map((choice) => {
+      const own = rows.filter(({ filed }) => filed[name] === choice.slug);
+      if (!own.length) return '';
+      const n = own.filter((row) => !row.item.wallet_only && matches(row, name)).length;
+      const walletOnly = groupCrypto(own.map(({ item }) => item));
+      const state = `${walletOnly}${walletOnly && ' disabled'}${choice.slug === chosen[name] ? ' selected' : ''}`;
+      return `\n        <option value="${choice.slug}"${state}>${escapeHtml(choice.label)} (${n.toLocaleString('en-US')})</option>`;
+    }).join('');
+    return `    <label class="press-pick-${name}"><span>${label}</span>
+      <select name="${name}">
+        <option value="">${all}</option>${options}
+      </select>
+    </label>`;
+  };
+  // The menus send the kind along with them.
+  const keepKind = chosen.kind ? `\n    <input type="hidden" name="kind" value="${chosen.kind}">` : '';
+  // Counted as a visitor without a wallet sees it; the page script recounts for wallets. With no
+  // filter on there's no count line (the opening line has the total) and nothing to clear.
+  const status = on
+    ? `Showing ${everyone.filter((row) => matches(row)).length.toLocaleString('en-US')} of ${everyone.length.toLocaleString('en-US')}.`
     : '';
-  const yearsHtml = years.map(({ year, items: rows }) => {
-    const hidden = rows.some((item) => matches(item) && !item.wallet_only) ? '' : ' hidden';
-    return `  <section class="press-year"${groupCrypto(rows)}${hidden} aria-labelledby="press-${year}">
+  const yearsHtml = years.map(({ year, rows: inYear }) => {
+    const empty = !inYear.some((row) => matches(row) && !row.item.wallet_only);
+    return `  <section class="press-year"${groupCrypto(inYear.map(({ item }) => item))}${hidden(empty)} aria-labelledby="press-${year}">
     <h3 id="press-${year}">${year}</h3>
     <ul>
-${rows.map((item) => listItem(item, selected)).join('\n')}
+${inYear.map((row) => listItem(row.item, row.filed, !matches(row))).join('\n')}
     </ul>
   </section>`;
   }).join('\n');
 
-  return `${jump}${renderFeatured(featured)}<section class="press-list" id="press-list" aria-labelledby="press-list-title">
+  return `${jump}${renderFeatured(featured, on)}<section class="press-list" id="press-list" aria-labelledby="press-list-title">
   <h2 id="press-list-title">All of it, newest first</h2>
   <nav class="press-filters" aria-label="Show">
-${filters}
+${kinds}
   </nav>
-  <p class="press-status" role="status">${status}</p>
+  <form class="press-pick" action="/press/#press-list" method="get">${keepKind}
+${menu('project', 'Project', 'All projects', PROJECT_GROUPS)}
+${menu('year', 'Year', 'All years', years.map(({ year }) => ({ slug: year, label: year })))}
+    <button type="submit">Show</button>
+  </form>
+  <div class="press-status-row">
+    <p class="press-status" role="status">${status}</p>
+    <a class="press-clear" href="/press/#press-list"${hidden(!on)}>Clear filters</a>
+  </div>
 ${yearsHtml}
 </section>`;
 }
