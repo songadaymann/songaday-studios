@@ -146,8 +146,8 @@ picks up the change within five minutes; the home page and /everything with the 
 
 `bar/v1/bar.js` is a 36px strip that links the Song A Day sites to each other: "Song A Day
 #6,503 · by Jonathan Mann" (to songaday.studio), the `inBar` projects (Listen · See all · Play
-· Get a song), and a Support pill to `https://songaday.studio/?from=<this site's hostname>#donate`.
-On phones it folds into "#6,503 ☰ Support" with a small menu. It's for the other Song A Day
+· Get a song), and a Donate pill to `https://songaday.studio/?from=<this site's hostname>#donate`.
+On phones it folds into "#6,503 ☰ Donate" with a small menu. It's for the other Song A Day
 sites: songaday.studio's own pages don't show it, since their header already links to
 everything the bar does (the data lab, which has no header, links home from its eyebrow).
 
