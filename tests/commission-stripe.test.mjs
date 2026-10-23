@@ -136,13 +136,19 @@ test('the pay form refuses amounts below the floor, odd plans and early extras, 
     const { stub } = fakeStripe();
     const response = await pay(env, which, fields, stub);
     assert.equal(response.status, 400, JSON.stringify(fields));
-    assert.match(await response.text(), message, JSON.stringify(fields));
+    const html = await response.text();
+    assert.match(html, message, JSON.stringify(fields));
+    // At the top, where the reloaded page opens, not below the lyrics.
+    assert.ok(html.indexOf('role="alert"') < html.indexOf('<audio'), JSON.stringify(fields));
     assert.equal(stub.calls.length, 0, JSON.stringify(fields));
   }
-  // Not delivered yet: nothing to pay for.
+  // Not delivered yet (or pulled back with Undo delivery while their tab was open): nothing to
+  // pay for, and the page says why.
   const waiting = await makeRequest(env, { email: 'w@example.com', story: 'Still waiting in line for a song about frogs.' });
   const { stub } = fakeStripe();
-  assert.equal((await pay(env, waiting.token, { plan: 'once', amount: '300' }, stub)).status, 400);
+  const early = await pay(env, waiting.token, { plan: 'once', amount: '300' }, stub);
+  assert.equal(early.status, 400);
+  assert.match(await early.text(), /role="alert">Your song isn’t ready to pay for yet\./);
   assert.equal(stub.calls.length, 0);
   // No Stripe key: the page says so.
   const off = await pay({ ...env, STRIPE_SECRET_KEY: '' }, token, { plan: 'once', amount: '300' }, stub);

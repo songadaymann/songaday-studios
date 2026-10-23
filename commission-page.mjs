@@ -109,7 +109,7 @@ function amountChoices(request, choice) {
     + `\n        <label class="commission-choice commission-other"><input type="radio" name="amount" value="other"${picked === 'other' ? ' checked' : ''}> Other: <span class="commission-dollar">$<input type="text" name="other" inputmode="numeric" autocomplete="off" aria-label="Other amount in dollars" placeholder="${request.floor_cents / 100} or more" data-floor="${request.floor_cents}"${picked === 'other' && typed ? ` value="${typed / 100}"` : ''}></span></label>`;
 }
 
-function payForm(request, { stripeReady, error, pending, choice }) {
+function payForm(request, { stripeReady, pending, choice }) {
   const heading = '<h2 id="pay-title">Pay for your song</h2>';
   if (pending) {
     return `<section class="commission-box" id="pay" aria-labelledby="pay-title">
@@ -128,7 +128,6 @@ function payForm(request, { stripeReady, error, pending, choice }) {
   return `<section class="commission-box" id="pay" aria-labelledby="pay-title">
   ${heading}
   <p>Pay what you want, from ${dollars(request.floor_cents)}. Then you can download it.</p>
-  ${error ? `<p class="commission-error" role="alert">${escapeHtml(error)}</p>` : ''}
   <form class="commission-pay" method="post" action="${pagePath(request)}/pay" data-pay data-floor="${request.floor_cents}">
     <fieldset>
       <legend>How much?</legend>
@@ -159,7 +158,7 @@ function planLine(plan, paidCount) {
   return `<p>${paidCount} of ${plan.months} monthly payments of ${dollars(monthly)} made. The rest come out once a month and stop by themselves after the last one.</p>`;
 }
 
-function paidSection(request, { payments, plans, stripeReady, error }) {
+function paidSection(request, { payments, plans, stripeReady }) {
   const total = payments.reduce((sum, payment) => sum + payment.amount_cents, 0);
   const paidOn = (plan) => payments.filter((payment) => payment.subscription_id === plan.subscription_id).length;
   const active = plans.find((plan) => plan.status === 'active' && paidOn(plan) < plan.months);
@@ -172,7 +171,6 @@ function paidSection(request, { payments, plans, stripeReady, error }) {
   const extra = stripeReady ? `<section class="commission-box" id="extra" aria-labelledby="extra-title">
   <h2 id="extra-title">Pay what it was worth</h2>
   <p>Did the song mean more than you paid? You can add any amount.</p>
-  ${error ? `<p class="commission-error" role="alert">${escapeHtml(error)}</p>` : ''}
   <form class="commission-extra" method="post" action="${pagePath(request)}/pay">
     <input type="hidden" name="plan" value="extra">
     <label class="commission-dollar">$<input type="text" name="amount" inputmode="numeric" autocomplete="off" aria-label="Amount in dollars" required></label>
@@ -208,9 +206,19 @@ ${lyrics}
 ${request.paid_at ? paidSection(request, options) : payForm(request, options)}`;
 }
 
+// Why the last thing they tried didn't work, at the top of the page: a refused form re-renders the
+// page, and the browser shows its top, above the lyrics. Every state shows it, so a Pay pressed
+// in a tab left open since Undo delivery still says why.
+const problemNote = (error) => error ? `<p class="commission-error" role="alert">${escapeHtml(error)}</p>\n` : '';
+
 // { title, main } for the buyer's page in its current state (design section 6's table).
-export function renderSongPage(request, { payments = [], plans = [], position = null, isNew = false,
-  pending = false, error = '', stripeReady = false, choice = null, today = newYorkDate(new Date()) } = {}) {
+export function renderSongPage(request, options = {}) {
+  const page = songPageParts(request, options);
+  return { ...page, main: problemNote(options.error) + page.main };
+}
+
+function songPageParts(request, { payments = [], plans = [], position = null, isNew = false,
+  pending = false, stripeReady = false, choice = null, today = newYorkDate(new Date()) }) {
   if (request.status === 'cancelled') {
     return {
       title: 'Cancelled · Song A Day Studio',
@@ -220,7 +228,7 @@ export function renderSongPage(request, { payments = [], plans = [], position = 
     };
   }
   if (request.status === 'delivered') {
-    return { title: `${request.title} · Song A Day Studio`, main: delivered(request, { payments, plans, stripeReady, error, pending, choice }) };
+    return { title: `${request.title} · Song A Day Studio`, main: delivered(request, { payments, plans, stripeReady, pending, choice }) };
   }
   if (request.status === 'held') return { title: 'Your song · Song A Day Studio', main: held(request, { isNew }) };
   return { title: 'Your song · Song A Day Studio', main: inLine(request, { position, isNew, today }) };

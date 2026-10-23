@@ -551,7 +551,8 @@ try it on a phone, or a tunnel): `--local-upstream localhost` makes every reques
 localhost, so they'd be in the admin too. Wrangler simulates the email binding: it prints each
 email's From, To and Subject, saves the text and HTML under `.wrangler/tmp/email/`, and marks
 them sent; the admin's Emails tab shows them. (An older wrangler that rejects the compatibility
-date needs `--compatibility-date` set to one it supports, as above.)
+date, like 4.111, needs `--compatibility-date` set to the newest one its error message names,
+for example `--compatibility-date 2026-07-17`.)
 
 The local database is kept under `.wrangler/state/`, per database id. After setup step 1 changes
 the id, or if `/commission` says "no such table" or "no such column", run `wrangler d1
@@ -559,7 +560,10 @@ migrations apply songaday-commissions --local` again; a local database made from
 schema can be deleted first (`rm -r .wrangler/state/v3/d1`).
 
 To run the daily step now: `curl "http://localhost:8787/cdn-cgi/local/scheduled"` (an older
-wrangler uses `wrangler dev --test-scheduled` and `/__scheduled`).
+wrangler uses `wrangler dev --test-scheduled` and `/__scheduled`). Nobody gets a place-in-line
+email on the day they asked, since they got their number that day, so to see one, run it as of
+tomorrow morning: add `&time=` and a time in milliseconds, for example
+`/__scheduled?cron=0+14+*+*+*&time=1792850400000` for 14:00 UTC on October 24, 2026.
 
 To pay locally, put a Stripe test-mode key in `.dev.vars` and forward webhooks with the Stripe
 CLI:
