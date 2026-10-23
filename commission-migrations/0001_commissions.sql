@@ -5,6 +5,7 @@
 CREATE TABLE requests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,  -- order received: the line is ordered by this
   token TEXT NOT NULL UNIQUE,            -- 32 hex characters (128 random bits): the buyer's private page
+  share_token TEXT NOT NULL UNIQUE,      -- the same, for the page they can pass on: the song and lyrics only
   status TEXT NOT NULL DEFAULT 'requested'
     CHECK (status IN ('requested', 'writing', 'delivered', 'cancelled')),
   kind TEXT NOT NULL CHECK (kind IN ('personal', 'business')),
@@ -40,7 +41,8 @@ CREATE TABLE requests (
   reminded_at TEXT,                      -- the one "your song is waiting" nudge
   cancelled_at TEXT,
   cancelled_by TEXT CHECK (cancelled_by IN ('buyer', 'jonathan')),
-  archived_at TEXT                       -- off Jonathan's working lists; changes nothing for the buyer
+  archived_at TEXT,                      -- off Jonathan's working lists; changes nothing for the buyer
+  deleted_at TEXT                        -- Delete for good: the answers are blanked, the links changed
 );
 
 CREATE INDEX requests_by_status ON requests (status, id);
@@ -84,7 +86,7 @@ CREATE TABLE outbox (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   request_id INTEGER REFERENCES requests (id),  -- null for Jonathan's daily summary
   kind TEXT NOT NULL,                    -- received, moved, delivered, updated, paid, plan-finished,
-                                         -- extra-thanks, reminder, cancelled, summary
+                                         -- extra-thanks, plan-stopped, reminder, cancelled, summary
   once_key TEXT UNIQUE,                  -- 'received:12', 'moved:12:2026-11-03', 'paid:cs_...' and so on;
                                          -- written with ON CONFLICT DO NOTHING, so a repeat is skipped
   position INTEGER,                      -- received and moved only: the place in line this email states

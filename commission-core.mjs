@@ -22,6 +22,9 @@ export function later(ctx, promise) {
 export const siteOrigin = (env) => (env.SITE_ORIGIN || 'https://songaday.studio').replace(/\/+$/, '');
 export const pagePath = (request) => `/commission/s/${request.token}`;
 export const pageUrl = (env, request) => siteOrigin(env) + pagePath(request);
+// The page a buyer can pass on: the song and its lyrics, nothing they told me, no money, no buttons.
+export const sharePath = (request) => `/commission/share/${request.share_token}`;
+export const shareUrl = (env, request) => siteOrigin(env) + sharePath(request);
 
 // YYYY-MM-DD in New York, where Jonathan is.
 const NEW_YORK = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -89,7 +92,8 @@ export const TRANSITIONS = {
   archive: { from: ['delivered', 'cancelled'], archived: false },
   unarchive: { archived: true },
   paid: { from: ['delivered'] },                             // Jonathan: Mark paid
-  edit: {}
+  edit: {},
+  delete: {}                                                 // Jonathan: Delete for good
 };
 
 const WHERE_IT_IS = {
@@ -103,6 +107,7 @@ const WHERE_IT_IS = {
 export function transitionProblem(request, action) {
   const rule = TRANSITIONS[action];
   if (!rule) return 'That isn’t something I can do.';
+  if (request.deleted_at) return 'That request was deleted.';
   if (action === 'buyer-cancel' && request.status === 'writing') return 'I’ve already started writing your song. Email me instead.';
   if (rule.from && !rule.from.includes(request.status)) return WHERE_IT_IS[request.status];
   if (rule.unpaid && request.paid_at) return 'That song is paid for. Refunds happen in Stripe.';
@@ -126,6 +131,7 @@ export async function lineLength(db) {
 
 export const loadRequest = (db, id) => db.prepare('SELECT * FROM requests WHERE id = ?').bind(id).first();
 export const loadByToken = (db, token) => db.prepare('SELECT * FROM requests WHERE token = ?').bind(token).first();
+export const loadByShareToken = (db, token) => db.prepare('SELECT * FROM requests WHERE share_token = ?').bind(token).first();
 
 // A POST body as form data, refusing anything without a length (a chunked body could slip past
 // the size check) or over the limit. Returns { form } or { status, error }.

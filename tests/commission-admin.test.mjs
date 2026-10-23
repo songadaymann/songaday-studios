@@ -399,3 +399,43 @@ test('a delivery that loses a race with the buyer cancelling sends nothing and k
   assert.equal(env.COMMISSIONS_DB.rows('outbox', "kind = 'delivered'").length, 0);
   assert.equal(env.COMMISSION_FILES.objects.size, 0);
 });
+
+test('Delete for good removes a request with no payments, and blanks one with payments', async () => {
+  const env = await commissionEnv();
+  const { id, token } = await makeRequest(env, { memo: [audio.m4a(), 'names.m4a', 'audio/mp4'] });
+  await deliver(env, id);
+  assert.equal(env.COMMISSION_FILES.objects.size, 2);
+  let response = await post(env, id, { action: 'delete' });
+  assert.equal(response.status, 400, 'the box must be ticked');
+  assert.ok(env.COMMISSIONS_DB.one('SELECT id FROM requests WHERE id = ?', id));
+  response = await post(env, id, { action: 'delete', confirm: 'yes' });
+  assert.equal(response.status, 303);
+  assert.equal(response.headers.get('Location'), '/commission/admin?done=delete');
+  assert.match(await (await asAdmin(env, '/commission/admin?done=delete')).text(), /Deleted for good\./);
+  assert.equal(env.COMMISSIONS_DB.one('SELECT id FROM requests WHERE id = ?', id), undefined);
+  assert.equal(env.COMMISSIONS_DB.rows('outbox').length, 0);
+  assert.equal(env.COMMISSION_FILES.objects.size, 0);
+  assert.equal((await call(env, `/commission/s/${token}`)).status, 404);
+
+  const paid = await makeRequest(env, { email: 'paid@example.com', story: 'Paid for, then asked to be forgotten.' });
+  await deliver(env, paid.id);
+  await post(env, paid.id, { action: 'paid', amount: '300', method: 'venmo', note: 'Venmo @paid-person' });
+  await post(env, paid.id, { action: 'delete', confirm: 'yes' });
+  const row = env.COMMISSIONS_DB.one('SELECT * FROM requests WHERE id = ?', paid.id);
+  assert.ok(row.deleted_at);
+  assert.equal(row.status, 'cancelled');
+  assert.deepEqual([row.buyer_name, row.buyer_email, row.recipient, row.story, row.title, row.audio_key], ['', '', '', '', null, null]);
+  assert.notEqual(row.token, paid.token);
+  assert.equal((await call(env, `/commission/s/${paid.token}`)).status, 404);
+  const [payment] = env.COMMISSIONS_DB.rows('payments');
+  assert.deepEqual([payment.amount_cents, payment.note], [30000, '']);
+  assert.equal(env.COMMISSIONS_DB.rows('outbox', `request_id = ${paid.id}`).length, 0);
+  assert.equal((await post(env, paid.id, { action: 'restore' })).status, 409, 'nothing more can happen to it');
+
+  const planned = await makeRequest(env, { email: 'plan@example.com', story: 'Paying monthly, still going.' });
+  await deliver(env, planned.id);
+  env.COMMISSIONS_DB.exec(`INSERT INTO plans (subscription_id, request_id, months, monthly_cents, started_at) VALUES ('sub_x', ?, 3, 10000, '2026-10-23T00:00:00Z')`, planned.id);
+  response = await post(env, planned.id, { action: 'delete', confirm: 'yes' });
+  assert.equal(response.status, 409);
+  assert.match(await response.text(), /monthly payments are still going/);
+});

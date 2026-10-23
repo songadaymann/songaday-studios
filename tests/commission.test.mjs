@@ -440,7 +440,8 @@ test('every move a request can and can’t make', () => {
     archive: ['delivered', 'delivered, paid', 'cancelled', 'cancelled after delivery'],
     unarchive: ['delivered, archived', 'cancelled, archived'],
     paid: ['delivered', 'delivered, paid', 'delivered, archived'],
-    edit: Object.keys(states)
+    edit: Object.keys(states),
+    delete: Object.keys(states)
   };
   assert.deepEqual(Object.keys(allowed).sort(), Object.keys(TRANSITIONS).sort());
   for (const [action, yes] of Object.entries(allowed)) {
@@ -452,6 +453,9 @@ test('every move a request can and can’t make', () => {
   assert.equal(transitionProblem(states.delivered, 'writing'), 'That request is already delivered.');
   assert.equal(transitionProblem(states['delivered, paid'], 'cancel'), 'That song is paid for. Refunds happen in Stripe.');
   assert.match(transitionProblem(states['cancelled after delivery'], 'restore'), /can’t go back in line/);
+  for (const action of Object.keys(TRANSITIONS)) {
+    assert.equal(transitionProblem({ ...states.cancelled, deleted_at: at }, action), 'That request was deleted.', action);
+  }
 });
 
 test('answers are read and checked the same way the form describes', () => {
@@ -469,4 +473,39 @@ test('the admin and buyer links are not reachable through the local admin by acc
   const env = await commissionEnv();
   assert.equal((await call(env, '/commission/admin', {}, null, LOCAL)).status, 200);
   assert.equal((await call(env, '/commission/admin')).status, 403);
+});
+
+test('the share link plays the song and shows the lyrics, and nothing the buyer told me', async () => {
+  const env = await commissionEnv({ STRIPE_SECRET_KEY: 'rk_test_x' });
+  const { id, token } = await makeRequest(env, { story: 'A private story about her surgery and the long recovery.' });
+  const { share_token: share } = env.COMMISSIONS_DB.one('SELECT share_token FROM requests WHERE id = ?', id);
+  assert.match(share, /^[0-9a-f]{32}$/);
+  assert.notEqual(share, token);
+  assert.equal((await call(env, `/commission/share/${share}`)).status, 404, 'not delivered yet');
+
+  await deliver(env, id);
+  const email = env.COMMISSIONS_DB.one("SELECT text FROM outbox WHERE kind = 'delivered'").text;
+  assert.ok(email.includes(`https://songaday.studio/commission/share/${share}`));
+  assert.ok(email.includes(`https://songaday.studio/commission/s/${token}`));
+  assert.match(email, /Keep that link to yourself/);
+
+  const response = await call(env, `/commission/share/${share}`);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.equal(response.headers.get('X-Robots-Tag'), 'noindex, nofollow');
+  const html = (await response.text()).match(/<main[\s\S]*<\/main>/)[0];
+  assert.match(html, /<h1>“Siobhan at Forty”<\/h1>/);
+  assert.match(html, /<p>Line one<br>Line two<\/p>/);
+  assert.match(html, new RegExp(`src="/commission/share/${share}/listen"`));
+  assert.doesNotMatch(html, /surgery|Siobhan, my sister|pat@example\.com|Pat Doe|\$200|Pay |<form|Download the song/);
+  assert.equal((await call(env, `/commission/share/${share}/listen`, { headers: { Range: 'bytes=0-9' } })).status, 206);
+  const locked = await call(env, `/commission/share/${share}/download`);
+  assert.equal(locked.status, 303);
+  assert.equal(locked.headers.get('Location'), `/commission/share/${share}`);
+  assert.equal((await call(env, `/commission/share/${share}`, urlencoded({ action: 'cancel' }))).status, 405);
+
+  env.COMMISSIONS_DB.exec("UPDATE requests SET paid_at = '2026-10-23T15:00:00Z' WHERE id = ?", id);
+  assert.match(await (await call(env, `/commission/share/${share}`)).text(), /Download the song/);
+  assert.equal((await call(env, `/commission/share/${share}/download`)).status, 200);
+  assert.equal((await call(env, `/commission/share/${'0'.repeat(32)}`)).status, 404);
 });

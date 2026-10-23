@@ -15,7 +15,7 @@ import {
   OUTBOX_KEEP_DAYS, PLAN_MONTHS, PRICES, REMINDER_DAYS, VIDEO_PRICE_CENTS
 } from './commission-config.mjs';
 import {
-  IN_LINE, TOKEN, cleanLine, cleanText, daysBetween, dollars, later, lineLength, loadByToken, newToken,
+  IN_LINE, TOKEN, cleanLine, cleanText, daysBetween, dollars, later, lineLength, loadByShareToken, loadByToken, newToken,
   newYorkDate, parseDollars, placeInLine, readForm, sniffAudio, transitionProblem
 } from './commission-core.mjs';
 import { claimLapsedBefore, emailParts, flushOutbox, queueEmail } from './commission-email.mjs';
@@ -23,12 +23,13 @@ import {
   SESSION_ID, StripeError, createCheckout, ensurePlanSchedule, handleStripeWebhook, paymentProblem, settleCheckoutSession, stopPlan, stripe
 } from './commission-stripe.mjs';
 import { handleAdmin } from './commission-admin.mjs';
-import { BARE_PUBLIC_PAGE, BARE_SONG_SHELL, fillPublicPage, fillShell, messagePage, renderSongPage } from './commission-page.mjs';
+import { BARE_PUBLIC_PAGE, BARE_SONG_SHELL, fillPublicPage, fillShell, messagePage, renderSharePage, renderSongPage } from './commission-page.mjs';
 
 export const COMMISSIONS_DATABASE = 'songaday-commissions';
 export const COMMISSION_BUCKET = 'songaday-commissions';
 
 const BUYER_PATH = /^\/commission\/s\/([0-9a-f]{32})(?:\/(pay|quiet|listen|download))?\/?$/;
+const SHARE_PATH = /^\/commission\/share\/([0-9a-f]{32})(?:\/(listen|download))?\/?$/;
 const SMALL_FORM = 16 * 1024;
 const DUPLICATE_MINUTES = 10;
 
@@ -166,7 +167,7 @@ export async function createRequest(env, answers, { memoKey = null, now = new Da
   const floor = PRICES[answers.kind].floor + (answers.wants_video && VIDEO_PRICE_CENTS ? VIDEO_PRICE_CENTS : 0);
   const position = (await lineLength(db)).total + 1;
   const row = {
-    token, kind: answers.kind, floor_cents: floor, buyer_name: answers.buyer_name, buyer_email: answers.buyer_email,
+    token, share_token: newToken(), kind: answers.kind, floor_cents: floor, buyer_name: answers.buyer_name, buyer_email: answers.buyer_email,
     recipient: answers.recipient, relationship: answers.relationship, occasion: answers.occasion, names: answers.names,
     memo_key: memoKey, story: answers.story, leave_out: answers.leave_out, deadline: answers.deadline || null,
     may_publish: answers.may_publish === 'yes' ? 1 : 0, wants_video: answers.wants_video, requested_at: now.toISOString()
@@ -321,11 +322,18 @@ async function buyerPost(request, env, url, r, ctx) {
     const plan = await db.prepare("SELECT * FROM plans WHERE request_id = ? AND status = 'active' ORDER BY started_at DESC LIMIT 1").bind(r.id).first();
     if (plan) {
       if (!stripeReady(env)) return songPage(request, env, url, r, { status: 503, error: 'Payments aren’t set up right now. Reply to any of my emails and I’ll stop them.' });
+      let outcome;
       try {
-        await stopPlan(env, plan);
+        outcome = await stopPlan(env, plan);
       } catch (failure) {
         console.log('commission stop-plan', failure instanceof StripeError ? failure.status : failure?.name);
         return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again, or reply to any of my emails.' });
+      }
+      if (outcome === 'stopped') {
+        // Anyone with this link can press it, so the buyer always hears about it.
+        const paid = await db.prepare('SELECT COUNT(*) AS count FROM payments WHERE subscription_id = ?').bind(plan.subscription_id).first('count');
+        await queueEmail(env, 'plan-stopped', r, { paid, months: plan.months, onceKey: `plan-stopped:${plan.subscription_id}` }).run();
+        later(ctx, flushOutbox(env, { requestId: r.id }));
       }
     }
     return redirect(`${path}#paid`);
@@ -409,6 +417,22 @@ async function buyerRoute(request, env, url, ctx, token, sub) {
   return new Response(null, { status: 405, headers: { Allow: allow, 'Cache-Control': 'no-store' } });
 }
 
+// The page a buyer passes on: only once delivered, and the download only once paid.
+async function shareRoute(request, env, url, token, sub) {
+  const read = request.method === 'GET' || request.method === 'HEAD';
+  if (!read) return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD', 'Cache-Control': 'no-store' } });
+  const r = env.COMMISSIONS_DB ? await loadByShareToken(env.COMMISSIONS_DB, token) : null;
+  if (!r || r.status !== 'delivered') return notFound(request, env, url);
+  if (!sub) return shellPage(request, env, url, renderSharePage(r));
+  if (!r.audio_key || !env.COMMISSION_FILES) return notFound(request, env, url);
+  if (sub === 'download' && !r.paid_at) return redirect(`/commission/share/${token}`);
+  const media = await serveMedia(request, env.COMMISSION_FILES, r.audio_key, {
+    ...BUYER_MEDIA,
+    disposition: sub === 'download' ? downloadName(r) : 'inline'
+  });
+  return media ?? notFound(request, env, url);
+}
+
 // ---- Routing --------------------------------------------------------------------------------
 
 // Answers everything under /commission, or returns null for other paths.
@@ -435,6 +459,8 @@ export async function handleCommission(request, env, url, ctx) {
   }
   const buyer = BUYER_PATH.exec(pathname);
   if (buyer) return buyerRoute(request, env, url, ctx, buyer[1], buyer[2]);
+  const shared = SHARE_PATH.exec(pathname);
+  if (shared) return shareRoute(request, env, url, shared[1], shared[2]);
   return notFound(request, env, url);
 }
 

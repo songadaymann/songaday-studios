@@ -5,7 +5,7 @@
 // shows them, and nothing is lost. wrangler dev simulates the binding and marks them sent.
 import { escapeHtml } from './fumble-page.mjs';
 import { D1_QUERY_BUDGET, OUTBOX_BATCH, OUTBOX_MAX_ATTEMPTS, PLAN_MONTHS } from './commission-config.mjs';
-import { dollars, pageUrl, siteOrigin } from './commission-core.mjs';
+import { dollars, pageUrl, shareUrl, siteOrigin } from './commission-core.mjs';
 
 // The form can mail any address, so the only words a buyer typed that reach an email are their
 // first name and who the song is for, and each is left out when it looks like a link or an
@@ -27,8 +27,13 @@ function forWhom(request) {
 const SIGN = 'Jonathan';
 const others = PLAN_MONTHS.slice(0, -1).join(', ') + ' or ' + PLAN_MONTHS.at(-1);
 
-// Each template gives a subject and a body: paragraphs (strings), and at most one link
-// ({ lead, url, label }), which the HTML part shows as a button.
+// The emails a buyer is most likely to forward, to the person the song is for, carry two links:
+// their own page, and one that only plays the song.
+const PRIVATE = 'Keep that link to yourself: anyone who has it can see everything you told me, and pay or stop payments.';
+const share = (d) => ({ lead: 'To share the song, send this link instead. It plays the song and shows the lyrics, and nothing else:', url: d.share, label: 'Link to share' });
+
+// Each template gives a subject and a body: paragraphs (strings), and links ({ lead, url,
+// label }), which the HTML part shows as buttons.
 const TEMPLATES = {
   received: (r, d) => ({
     subject: `Got it. You're #${d.position} in line`,
@@ -57,8 +62,10 @@ const TEMPLATES = {
     body: [
       greeting(r),
       `I finished your song${forWhom(r)}. It's called "${r.title}".`,
-      { lead: 'Listen to it and read the lyrics here:', url: d.page, label: 'Listen to your song' },
+      { lead: 'Listen to it and read the lyrics on your page:', url: d.page, label: 'Listen to your song' },
       `When you're ready, pay what you want, from ${dollars(r.floor_cents)}. You can pay all at once or spread it over ${others} months. Paying unlocks the download.`,
+      PRIVATE,
+      share(d),
       "If something isn't right, reply and tell me.",
       SIGN
     ]
@@ -82,6 +89,8 @@ const TEMPLATES = {
         url: d.page,
         label: 'Download your song'
       },
+      PRIVATE,
+      share(d),
       SIGN
     ]
   }),
@@ -90,6 +99,15 @@ const TEMPLATES = {
     body: [
       greeting(r),
       `That was the last of your ${d.months} payments for "${r.title}". Nothing more will be charged. Thank you.`,
+      SIGN
+    ]
+  }),
+  'plan-stopped': (r, d) => ({
+    subject: 'Your monthly payments are stopped',
+    body: [
+      greeting(r),
+      `Your monthly payments for "${r.title}" are stopped, from your page: ${d.paid} of ${d.months} went through. Nothing more will be charged. The song is still yours, and the download stays unlocked.`,
+      "If you didn't stop them, reply and tell me.",
       SIGN
     ]
   }),
@@ -103,6 +121,7 @@ const TEMPLATES = {
       greeting(r),
       { lead: `Just a reminder that "${r.title}" is ready on your page:`, url: d.page, label: 'Your page' },
       `Pay what you want, from ${dollars(r.floor_cents)}, whenever you're ready, and the download unlocks.`,
+      PRIVATE,
       SIGN
     ]
   }),
@@ -138,8 +157,12 @@ ${body.map((part) => typeof part === 'string' ? paragraph(part)
 }
 
 // One email's subject, text and HTML, with the links filled in for this site.
-export const emailParts = (env, kind, request, data = {}) =>
-  renderEmail(kind, request, { ...data, page: request ? pageUrl(env, request) : null, origin: siteOrigin(env) });
+export const emailParts = (env, kind, request, data = {}) => renderEmail(kind, request, {
+  ...data,
+  page: request ? pageUrl(env, request) : null,
+  share: request?.share_token ? shareUrl(env, request) : null,
+  origin: siteOrigin(env)
+});
 
 // The INSERT for one email, for the caller's own db.batch, so an email exists if and only if the
 // fact it announces does. With once_key it's ON CONFLICT DO NOTHING, so it exists once. `when`

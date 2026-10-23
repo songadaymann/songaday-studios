@@ -229,7 +229,7 @@ function card(request, { position = null, today, now, full = false }) {
     request.wants_video ? '<span class="tag">VIDEO WANTED</span>' : '',
     request.status === 'writing' ? '<span class="tag">WRITING</span>' : '',
     request.paid_at ? '<span class="tag">PAID</span>' : '',
-    request.archived_at ? 'archived' : ''
+    request.deleted_at ? '<span class="tag">DELETED</span>' : request.archived_at ? 'archived' : ''
   ].filter(Boolean).join(' · ') + deadlineTag(request, today);
   const memo = request.memo_key
     ? `<p>Voice memo:</p><audio controls preload="none" src="/commission/admin/${request.id}/memo"></audio>` : '';
@@ -341,7 +341,9 @@ async function queuePage(request, env, url, identity, now) {
   }
   const pager = `<p class="pager">${pageNumber > 1 ? `<a href="?show=${show}&amp;page=${pageNumber - 1}">← Earlier</a>` : '<span></span>'}${more ? `<a href="?show=${show}&amp;page=${pageNumber + 1}">Later →</a>` : ''}</p>`;
   const label = TABS.find(([name]) => name === show)[1];
+  const done = DONE[url.searchParams.get('done')];
   return html(request, layout(label, identity, `${await top(db, now, show)}
+${done ? `<p class="done" role="status">${escapeHtml(done)}</p>` : ''}
 <h1>${label}</h1>
 ${list}
 ${pager}`));
@@ -350,7 +352,7 @@ ${pager}`));
 const DONE = {
   writing: 'Marked as being written.', deliver: 'Delivered.', undeliver: 'Delivery undone. It’s back in line, being written.',
   paid: 'Payment recorded.', cancel: 'Cancelled.', restore: 'Back in line, in its old place.', archive: 'Archived.',
-  unarchive: 'Unarchived.', edit: 'Saved.', send: 'Sent, or queued to send.'
+  unarchive: 'Unarchived.', edit: 'Saved.', send: 'Sent, or queued to send.', delete: 'Deleted for good.'
 };
 
 function timeline(request, now) {
@@ -424,6 +426,13 @@ ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song
     allowed('archive') ? button('archive', 'Archive', 'quiet') : '',
     allowed('unarchive') ? button('unarchive', 'Unarchive', 'quiet') : ''
   ].filter(Boolean).join('\n');
+  const forget = allowed('delete') ? `<details><summary>Delete for good</summary>
+<form class="panel" method="post" action="?">
+  ${hidden('action', 'delete')}
+  <p>For someone who asks to be forgotten. This deletes everything they told me, the voice memo, the song file and every email, and their links stop working. Payments stay as money records, with no name or note. It can’t be undone.</p>
+  <label class="check"><input type="checkbox" name="confirm" value="yes" required> Yes, delete everything about this request</label>
+  <button type="submit" class="danger">Delete for good</button>
+</form></details>` : '';
   const cancel = allowed('cancel') ? `<details><summary>Cancel this request</summary>
 <form class="panel" method="post" action="?">
   ${hidden('action', 'cancel')}
@@ -446,7 +455,8 @@ ${timeline(r, now)}
 <p class="link">${escapeHtml(pageUrl(env, r))}</p>
 ${moves ? `<div class="actions">${moves}</div>` : ''}
 ${cancel}
-${edit}
+${r.deleted_at ? '' : edit}
+${forget}
 <h2>Emails</h2>
 ${emailRows ? `<div class="table"><table><thead><tr><th>Kind</th><th>Subject</th><th>Status</th><th></th><th></th></tr></thead><tbody>${emailRows}</tbody></table></div>` : '<p>None yet.</p>'}`));
 }
@@ -609,6 +619,33 @@ async function act(request, env, url, ctx, identity, now, id) {
     case 'unarchive':
       await db.prepare('UPDATE requests SET archived_at = NULL WHERE id = ?').bind(r.id).run();
       return done();
+
+    case 'delete': {
+      if (form.get('confirm') !== 'yes') return refuse('Tick the box to say you mean it, then try again.');
+      if (await db.prepare("SELECT 1 FROM plans WHERE request_id = ? AND status = 'active'").bind(r.id).first()) {
+        return refuse('Their monthly payments are still going. Stop them first (in Stripe, or from their page), then delete.', 409);
+      }
+      const keys = [r.memo_key, r.audio_key].filter(Boolean);
+      if (keys.length && env.COMMISSION_FILES) await env.COMMISSION_FILES.delete(keys);
+      const money = await db.prepare(`SELECT (SELECT COUNT(*) FROM payments WHERE request_id = ?)
+        + (SELECT COUNT(*) FROM plans WHERE request_id = ?) AS count`).bind(r.id, r.id).first('count');
+      const statements = [db.prepare('DELETE FROM outbox WHERE request_id = ?').bind(r.id)];
+      if (money) {
+        // Payments are money records, so they and the request's number stay, with nothing about
+        // the buyer. New tokens nobody has, so the old links are dead.
+        statements.push(db.prepare(`UPDATE requests SET token = ?, share_token = ?, status = 'cancelled',
+            buyer_name = '', buyer_email = '', recipient = '', relationship = '', occasion = '', names = '', story = '',
+            leave_out = '', deadline = NULL, title = NULL, lyrics = NULL, memo_key = NULL, audio_key = NULL, video_url = NULL,
+            admin_note = '', cancelled_at = COALESCE(cancelled_at, ?), cancelled_by = COALESCE(cancelled_by, 'jonathan'),
+            archived_at = COALESCE(archived_at, ?), deleted_at = ? WHERE id = ?`).bind(randomHex(16), randomHex(16), at, at, at, r.id),
+          db.prepare("UPDATE payments SET note = '' WHERE request_id = ?").bind(r.id));
+      } else {
+        statements.push(db.prepare('DELETE FROM requests WHERE id = ?').bind(r.id));
+      }
+      await db.batch(statements);
+      console.log('commission deleted', r.id);
+      return back('/commission/admin?done=delete');
+    }
 
     case 'edit': {
       const floor = parseDollars(form.get('floor'));

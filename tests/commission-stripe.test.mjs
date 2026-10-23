@@ -669,3 +669,19 @@ test('a webhook body is counted as it arrives: a chunked one past 1 MB is refuse
   const declared = await call(env, '/commission/stripe', { method: 'POST', body: '{}', headers: { 'Content-Length': String(2 * 1024 * 1024) } });
   assert.equal(declared.status, 413);
 });
+
+test('stopping a plan from the page emails the buyer, since anyone with the link can press it', async () => {
+  const { env, token } = await planWithInvoices(async ({ env, stub, plan, invoices }) => {
+    await webhook(env, 'checkout.session.completed', plan, stub);
+    await webhook(env, 'invoice.paid', invoices[1], stub);
+  });
+  const { stub } = fakeStripe();
+  await call(env, `/commission/s/${token}`, urlencoded({ action: 'stop-plan' }), stub);
+  const [stopped] = emails(env, 'plan-stopped');
+  assert.equal(stopped.subject, 'Your monthly payments are stopped');
+  assert.match(stopped.text, /2 of 6 went through\. Nothing more will be charged\./);
+  assert.match(stopped.text, /If you didn't stop them, reply and tell me\./);
+  const [paid] = emails(env, 'paid');
+  assert.match(paid.text, /Keep that link to yourself/);
+  assert.match(paid.text, /\/commission\/share\/[0-9a-f]{32}/);
+});

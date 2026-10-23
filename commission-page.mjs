@@ -3,7 +3,7 @@
 // is renderSongPage inside the song.html shell. Everything a buyer or Jonathan typed is escaped.
 import { escapeHtml } from './fumble-page.mjs';
 import { PLAN_MONTHS, PRICES } from './commission-config.mjs';
-import { dollars, pagePath } from './commission-core.mjs';
+import { dollars, pagePath, sharePath } from './commission-core.mjs';
 
 const paragraphs = (text) => String(text ?? '').split(/\n{2,}/).filter(Boolean)
   .map((part) => `<p>${escapeHtml(part).replaceAll('\n', '<br>')}</p>`).join('\n');
@@ -161,12 +161,16 @@ function paidSection(request, { payments, plans, stripeReady, error }) {
 ${extra}`;
 }
 
-function delivered(request, options) {
-  const video = request.video_url ? `<p><a class="commission-video" href="${escapeHtml(request.video_url)}" rel="noreferrer">Watch the video</a></p>` : '';
-  const lyrics = request.lyrics ? `<section class="commission-lyrics" aria-labelledby="lyrics-title">
+const videoLink = (request) => request.video_url
+  ? `<p><a class="commission-video" href="${escapeHtml(request.video_url)}" rel="noreferrer">Watch the video</a></p>` : '';
+const lyricsSection = (request) => request.lyrics ? `<section class="commission-lyrics" aria-labelledby="lyrics-title">
   <h2 id="lyrics-title">Lyrics</h2>
   ${paragraphs(request.lyrics)}
 </section>` : '';
+
+function delivered(request, options) {
+  const video = videoLink(request);
+  const lyrics = lyricsSection(request);
   return `<p class="commission-eyebrow">Your song${request.recipient ? ` for ${escapeHtml(request.recipient)}` : ''}</p>
 <h1>“${escapeHtml(request.title)}”</h1>
 <p class="commission-lead">By Jonathan Mann.</p>
@@ -191,6 +195,21 @@ export function renderSongPage(request, { payments = [], plans = [], position = 
     return { title: `${request.title} · Song A Day Studio`, main: delivered(request, { payments, plans, stripeReady, error, pending }) };
   }
   return { title: 'Your song · Song A Day Studio', main: inLine(request, { position, isNew }) };
+}
+
+// The page a buyer can pass on (sharePath): the song, any video and the lyrics, and the download
+// once it's paid for. Nothing they told me (not even who it's for), no amounts, no buttons.
+export function renderSharePage(request) {
+  return {
+    title: `${request.title} · Song A Day Studio`,
+    main: `<p class="commission-eyebrow">A song by Jonathan Mann</p>
+<h1>“${escapeHtml(request.title)}”</h1>
+<audio class="commission-player" controls controlslist="nodownload" preload="metadata" src="${sharePath(request)}/listen"></audio>
+${videoLink(request)}
+${request.paid_at ? `<p><a class="commission-button" href="${sharePath(request)}/download">Download the song</a></p>` : ''}
+${lyricsSection(request)}
+<p class="commission-fine">I’ve written a song every day since January 1, 2009. <a href="/commission">Get one written for you</a>.</p>`
+  };
 }
 
 // A short page in the same shell: not found, a problem with no JavaScript, and the like.
