@@ -215,6 +215,10 @@ test('a song that isn’t audio, or is over 30 MB, or has no title, is refused',
   assert.match(await response.text(), /video link must be an https address/);
   assert.equal(env.COMMISSIONS_DB.one('SELECT status FROM requests').status, 'requested');
   assert.equal(env.COMMISSION_FILES.objects.size, 0);
+
+  // With a video link, the email says there's a video too.
+  await asAdmin(env, `/commission/admin/${id}`, await form({ action: 'deliver', form_id: 'b'.repeat(32), title: 'Forty', video_url: 'https://youtu.be/abc', email_them: 'yes', song: [audio.mp3(), 's.mp3'] }, { headers: { Origin: LOCAL } }));
+  assert.match(env.COMMISSIONS_DB.one("SELECT text FROM outbox WHERE kind = 'delivered'").text, /It's called "Forty"\. There's a video too\./);
 });
 
 test('marking paid by hand records one payment per form and emails only when ticked', async () => {
@@ -278,7 +282,7 @@ test('every move goes through the transition rules, and a refused one is a 409',
   assert.equal(status().status, 'requested');
   assert.equal(status().archived_at, null);
   assert.equal(status().cancelled_at, null);
-  assert.match(await (await call(env, `/commission/s/${token}`)).text(), /You’re #1 in line\./);
+  assert.match(await (await call(env, `/commission/s/${token}`)).text(), /<h1>You’re next\.<\/h1>/);
   assert.match(await (await call(env, `/commission/s/${behind.token}`)).text(), /You’re #2 in line\./);
 
   // Paid requests can't be cancelled or undone.
@@ -293,6 +297,8 @@ test('every move goes through the transition rules, and a refused one is a 409',
   const late = await makeRequest(env, { email: 'late@example.com' });
   await deliver(env, late.id);
   await post(env, late.id, { action: 'cancel' });
+  assert.match(env.COMMISSIONS_DB.one("SELECT text FROM outbox WHERE kind = 'cancelled' AND request_id = ?", late.id).text,
+    /I've cancelled your request for a song for Siobhan, my sister\.\n\nIf you have questions, just reply\./);
   assert.equal((await post(env, late.id, { action: 'restore' })).status, 409);
   assert.equal((await call(env, `/commission/s/${late.token}/listen`)).status, 404);
 });

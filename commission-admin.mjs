@@ -641,7 +641,7 @@ async function act(request, env, url, ctx, identity, now, id) {
       await db.batch([
         db.prepare(`UPDATE requests SET status = 'requested', cancelled_at = NULL, cancelled_by = NULL, archived_at = NULL
           WHERE id = ? AND status = 'cancelled' AND delivered_at IS NULL`).bind(r.id),
-        queueEmail(env, 'received', r, { now, position, onceKey: `restored:${r.id}:${formId}`,
+        queueEmail(env, 'restored', r, { now, position, onceKey: `restored:${r.id}:${formId}`,
           when: "(SELECT status FROM requests WHERE id = ?) = 'requested'", whenArgs: [r.id] })
       ]);
       return done();

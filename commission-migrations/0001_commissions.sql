@@ -87,11 +87,11 @@ CREATE INDEX plans_by_request ON plans (request_id);
 CREATE TABLE outbox (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   request_id INTEGER REFERENCES requests (id),  -- null for Jonathan's daily summary
-  kind TEXT NOT NULL,                    -- received, moved, delivered, updated, paid, plan-finished,
+  kind TEXT NOT NULL,                    -- received, restored, moved, delivered, updated, paid, plan-finished,
                                          -- extra-thanks, plan-stopped, reminder, cancelled, held, alarm, summary
   once_key TEXT UNIQUE,                  -- 'received:12', 'moved:12:2026-11-03', 'paid:cs_...' and so on;
                                          -- written with ON CONFLICT DO NOTHING, so a repeat is skipped
-  position INTEGER,                      -- received and moved only: the place in line this email states
+  position INTEGER,                      -- received, restored and moved only: the place in line this email states
   to_email TEXT NOT NULL,
   subject TEXT NOT NULL,
   text TEXT NOT NULL,

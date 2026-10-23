@@ -1,7 +1,8 @@
 // The parts of songaday.studio/commission that the routes, the admin, Stripe and the emails all
 // use: cleaning text, sniffing audio, the request states, the line, and money formatting.
-// It imports nothing from the other commission files, so they can all import it.
+// It imports nothing from the other commission files but the config, so they can all import it.
 import { cleanStory } from './fumble.mjs';
+import { WRITES_PER_DAY } from './commission-config.mjs';
 
 export const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 // A request is in line while it waits or while Jonathan writes it. A held one isn't yet.
@@ -147,6 +148,19 @@ export async function placeInLine(db, id) {
   const before = await db.prepare(`SELECT COUNT(*) AS count FROM requests WHERE ${IN_LINE} AND id < ?`).bind(id).first('count');
   return before + 1;
 }
+
+// About how many days until the song at this place in line is written.
+export const daysAway = (position) => Math.ceil(position / WRITES_PER_DAY);
+
+// How far past its deadline a song at this place would land, at WRITES_PER_DAY: 0 when it
+// should make it, or there's no deadline.
+export function lateBy(request, position, today) {
+  if (!request?.deadline || !position) return 0;
+  return Math.max(0, daysAway(position) - daysBetween(today, request.deadline));
+}
+
+// "a day" or "about 4 days".
+export const aboutDays = (days) => days <= 1 ? 'about a day' : `about ${days} days`;
 
 export async function lineLength(db) {
   const row = await db.prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(status = 'writing'), 0) AS writing

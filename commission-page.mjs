@@ -3,7 +3,7 @@
 // is renderSongPage inside the song.html shell. Everything a buyer or Jonathan typed is escaped.
 import { escapeHtml } from './fumble-page.mjs';
 import { PLAN_MONTHS, PRICES } from './commission-config.mjs';
-import { dollars, pagePath, sharePath } from './commission-core.mjs';
+import { aboutDays, daysAway, dollars, lateBy, newYorkDate, pagePath, sharePath, shortDate } from './commission-core.mjs';
 
 const paragraphs = (text) => String(text ?? '').split(/\n{2,}/).filter(Boolean)
   .map((part) => `<p>${escapeHtml(part).replaceAll('\n', '<br>')}</p>`).join('\n');
@@ -37,9 +37,10 @@ ${rows.map(([label, value]) => `    <dt>${label}</dt>\n    <dd>${paragraphs(valu
 </section>`;
 }
 
+// Every button here is a small one: the page's one big red button is paying.
 const action = (request, name, value, label, extra = '') => `<form method="post" action="${pagePath(request)}"${extra}>
       <input type="hidden" name="action" value="${name}">${value === null ? '' : `\n      <input type="hidden" name="value" value="${value}">`}
-      <button type="submit">${label}</button>
+      <button type="submit" class="commission-quiet">${label}</button>
     </form>`;
 
 function updates(request) {
@@ -68,32 +69,47 @@ ${answers(request)}
 ${cancel(request)}`;
 }
 
-const newNote = (isNew) => isNew ? `<p class="commission-note" role="status">Got it. I’ve emailed you a link to this page. Keep it to yourself: anyone who has it can see your page.</p>\n` : '';
+// The email with this page's link may wait in the outbox, or land in spam, and this page is the
+// buyer's only way back. The browser script takes ?new off the address, so a bookmark made now
+// doesn't show this every time.
+const newNote = (isNew) => isNew ? `<p class="commission-note" role="status">Got it. Bookmark this page: it’s your way back to your request. I’m emailing you the link too (look in spam if it doesn’t come). Keep it to yourself: anyone who has it can see your page.</p>\n` : '';
 
-function inLine(request, { position, isNew }) {
+function inLine(request, { position, isNew, today }) {
   const writing = request.status === 'writing';
   const note = newNote(isNew);
+  const then = `When your song is done, it’ll be right here, and you’ll pay what you want, from ${dollars(request.floor_cents)}.`;
   const heading = writing
     ? `<h1>I’m writing your song now.</h1>
 <p class="commission-lead">It’s your turn. I’ll email you as soon as it’s done, and it’ll be right here.</p>`
-    : `<h1>You’re #${position} in line.</h1>
-<p class="commission-lead">I write songs in the order they come in. I’ll email you when you move up, once a day at most. When your song is done, it’ll be right here, and you’ll pay what you want, from ${dollars(request.floor_cents)}.</p>`;
+    : position === 1
+      ? `<h1>You’re next.</h1>
+<p class="commission-lead">I write songs in the order they come in, and yours is next. ${then}</p>`
+      : `<h1>You’re #${position} in line.</h1>
+<p class="commission-lead">I write songs in the order they come in. I’ll email you when you move up, once a day at most. ${then}</p>`;
+  const late = !writing && lateBy(request, position, today)
+    ? `<p class="commission-note">At #${position} your song is ${aboutDays(daysAway(position))} away, after your deadline (${escapeHtml(shortDate(request.deadline))}). You can cancel for free below, or keep your place and I’ll do my best.</p>` : '';
   return `${note}<p class="commission-eyebrow">Your song${request.recipient ? ` for ${escapeHtml(request.recipient)}` : ''}</p>
 ${heading}
-${writing ? '' : updates(request)}
+${late}
+${writing || position === 1 ? '' : updates(request)}
 ${answers(request)}
 ${request.status === 'requested' ? cancel(request) : ''}`;
 }
 
-function amountChoices(request) {
+// The suggestions at or above this request's floor, the last one "or more", and Other. After a
+// refused payment, the buyer's own choice comes back checked (`choice`), not the first one.
+function amountChoices(request, choice) {
   const prices = PRICES[request.kind] ?? PRICES.personal;
   const suggested = prices.suggested.filter((cents) => cents >= request.floor_cents);
   const choices = suggested.length ? suggested : [request.floor_cents];
-  return choices.map((cents, index) => `<label class="commission-choice"><input type="radio" name="amount" value="${cents / 100}"${index === 0 ? ' checked' : ''}> ${dollars(cents)}</label>`).join('\n        ')
-    + `\n        <label class="commission-choice commission-other"><input type="radio" name="amount" value="other"> Other: <span class="commission-dollar">$<input type="text" name="other" inputmode="numeric" autocomplete="off" aria-label="Other amount in dollars" data-floor="${request.floor_cents}"></span></label>`;
+  const typed = choice?.amount ?? null;
+  const picked = typed === null ? choices[0] : choices.includes(typed) ? typed : 'other';
+  const more = (index) => choices.length > 1 && index === choices.length - 1 ? ' or more' : '';
+  return choices.map((cents, index) => `<label class="commission-choice"><input type="radio" name="amount" value="${cents / 100}"${picked === cents ? ' checked' : ''}> ${dollars(cents)}${more(index)}</label>`).join('\n        ')
+    + `\n        <label class="commission-choice commission-other"><input type="radio" name="amount" value="other"${picked === 'other' ? ' checked' : ''}> Other: <span class="commission-dollar">$<input type="text" name="other" inputmode="numeric" autocomplete="off" aria-label="Other amount in dollars" placeholder="${request.floor_cents / 100} or more" data-floor="${request.floor_cents}"${picked === 'other' && typed ? ` value="${typed / 100}"` : ''}></span></label>`;
 }
 
-function payForm(request, { stripeReady, error, pending }) {
+function payForm(request, { stripeReady, error, pending, choice }) {
   const heading = '<h2 id="pay-title">Pay for your song</h2>';
   if (pending) {
     return `<section class="commission-box" id="pay" aria-labelledby="pay-title">
@@ -107,28 +123,29 @@ function payForm(request, { stripeReady, error, pending }) {
   <p>Payments aren’t set up yet. I’ll email you when they are.</p>
 </section>`;
   }
-  const plans = PLAN_MONTHS.map((months) => `<label class="commission-choice"><input type="radio" name="plan" value="${months}"> Over ${months} months</label>`).join('\n        ');
+  const plan = PLAN_MONTHS.map(String).includes(choice?.plan) ? choice.plan : 'once';
+  const plans = PLAN_MONTHS.map((months) => `<label class="commission-choice"><input type="radio" name="plan" value="${months}"${plan === String(months) ? ' checked' : ''}> Over ${months} months</label>`).join('\n        ');
   return `<section class="commission-box" id="pay" aria-labelledby="pay-title">
   ${heading}
   <p>Pay what you want, from ${dollars(request.floor_cents)}. Then you can download it.</p>
   ${error ? `<p class="commission-error" role="alert">${escapeHtml(error)}</p>` : ''}
-  <form class="commission-pay" method="post" action="${pagePath(request)}/pay" data-pay>
+  <form class="commission-pay" method="post" action="${pagePath(request)}/pay" data-pay data-floor="${request.floor_cents}">
     <fieldset>
       <legend>How much?</legend>
       <div class="commission-choices">
-        ${amountChoices(request)}
+        ${amountChoices(request, choice)}
       </div>
     </fieldset>
     <fieldset>
       <legend>How do you want to pay?</legend>
       <div class="commission-choices">
-        <label class="commission-choice"><input type="radio" name="plan" value="once" checked> All at once</label>
+        <label class="commission-choice"><input type="radio" name="plan" value="once"${plan === 'once' ? ' checked' : ''}> All at once</label>
         ${plans}
       </div>
       <p class="commission-plan-note" data-plan-note aria-live="polite"></p>
     </fieldset>
     <button type="submit">Continue to payment</button>
-    <p class="commission-fine">Spread out, the download unlocks after the first payment, and the payments stop by themselves after the last one. It’s on the honor system.</p>
+    <p class="commission-fine">If you spread it out, the download unlocks after the first payment, and the payments stop by themselves after the last one. If you stop them early, the song is still yours.</p>
   </form>
 </section>`;
 }
@@ -185,15 +202,15 @@ function delivered(request, options) {
   return `<p class="commission-eyebrow">Your song${request.recipient ? ` for ${escapeHtml(request.recipient)}` : ''}</p>
 <h1>“${escapeHtml(request.title)}”</h1>
 <p class="commission-lead">By Jonathan Mann.</p>
-<audio class="commission-player" controls preload="metadata" src="${pagePath(request)}/listen"></audio>
+<audio class="commission-player" controls controlslist="nodownload" preload="metadata" src="${pagePath(request)}/listen"></audio>
 ${video}
-${request.paid_at ? paidSection(request, options) : payForm(request, options)}
-${lyrics}`;
+${lyrics}
+${request.paid_at ? paidSection(request, options) : payForm(request, options)}`;
 }
 
 // { title, main } for the buyer's page in its current state (design section 6's table).
 export function renderSongPage(request, { payments = [], plans = [], position = null, isNew = false,
-  pending = false, error = '', stripeReady = false } = {}) {
+  pending = false, error = '', stripeReady = false, choice = null, today = newYorkDate(new Date()) } = {}) {
   if (request.status === 'cancelled') {
     return {
       title: 'Cancelled · Song A Day Studio',
@@ -203,10 +220,10 @@ export function renderSongPage(request, { payments = [], plans = [], position = 
     };
   }
   if (request.status === 'delivered') {
-    return { title: `${request.title} · Song A Day Studio`, main: delivered(request, { payments, plans, stripeReady, error, pending }) };
+    return { title: `${request.title} · Song A Day Studio`, main: delivered(request, { payments, plans, stripeReady, error, pending, choice }) };
   }
   if (request.status === 'held') return { title: 'Your song · Song A Day Studio', main: held(request, { isNew }) };
-  return { title: 'Your song · Song A Day Studio', main: inLine(request, { position, isNew }) };
+  return { title: 'Your song · Song A Day Studio', main: inLine(request, { position, isNew, today }) };
 }
 
 // The page a buyer can pass on (sharePath): the song, any video and the lyrics, and the download

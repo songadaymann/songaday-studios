@@ -291,7 +291,7 @@ async function submit(request, env, url, ctx) {
 
 const stripeReady = (env) => Boolean(env.STRIPE_SECRET_KEY);
 
-async function songPage(request, env, url, r, { status = 200, error = '' } = {}) {
+async function songPage(request, env, url, r, { status = 200, error = '', choice = null } = {}) {
   const db = env.COMMISSIONS_DB;
   const [{ results: payments }, { results: plans }] = await Promise.all([
     db.prepare('SELECT * FROM payments WHERE request_id = ? ORDER BY id').bind(r.id).all(),
@@ -299,7 +299,7 @@ async function songPage(request, env, url, r, { status = 200, error = '' } = {})
   ]);
   const position = ['requested', 'writing'].includes(r.status) ? await placeInLine(db, r.id) : null;
   const content = renderSongPage(r, {
-    payments, plans, position, error, stripeReady: stripeReady(env),
+    payments, plans, position, error, choice, stripeReady: stripeReady(env),
     isNew: url.searchParams.has('new'),
     pending: url.searchParams.has('pending') && !r.paid_at
   });
@@ -386,7 +386,8 @@ async function buyerPay(request, env, url, r) {
   }
   const activePlan = await env.COMMISSIONS_DB.prepare("SELECT 1 FROM plans WHERE request_id = ? AND status = 'active'").bind(r.id).first();
   const problem = amount === null ? 'Type an amount in whole dollars.' : paymentProblem(r, { plan, amount }, { activePlan: Boolean(activePlan) });
-  if (problem) return songPage(request, env, url, r, { status: 400, error: problem });
+  // The page comes back with what they picked, so a quick second try isn't a different payment.
+  if (problem) return songPage(request, env, url, r, { status: 400, error: problem, choice: { plan, amount } });
   if (env.COMMISSION_LIMIT) {
     const { success } = await env.COMMISSION_LIMIT.limit({ key: `pay:${r.token}` });
     if (!success) return songPage(request, env, url, r, { status: 429, error: 'Too many at once. Try again in a minute.' });
@@ -396,10 +397,10 @@ async function buyerPay(request, env, url, r) {
     session = await createCheckout(env, r, { plan, amount });
   } catch (failure) {
     console.log('commission checkout', failure instanceof StripeError ? failure.status : failure?.name);
-    return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again in a minute.' });
+    return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again in a minute.', choice: { plan, amount } });
   }
   if (typeof session.url !== 'string' || !session.url.startsWith('https://')) {
-    return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again in a minute.' });
+    return songPage(request, env, url, r, { status: 502, error: 'That didn’t go through. Try again in a minute.', choice: { plan, amount } });
   }
   return redirect(session.url);
 }
@@ -571,7 +572,8 @@ const RETENTION_BATCH = 100;
 // What's kept, and for how long (README, "Where things live"): voice memos until MEMO_KEEP_DAYS
 // after their song is delivered or the request cancelled; requests cancelled with no payment,
 // with their emails and files, for CANCELLED_KEEP_DAYS; emails, sent or not, for
-// OUTBOX_KEEP_DAYS, except the place-in-line email someone still in line was last told.
+// OUTBOX_KEEP_DAYS, except the emails with a place in line for someone still in it, the newest of
+// which is what they were last told.
 // Returns how many requests and memos it removed.
 async function forget(env, now) {
   const db = env.COMMISSIONS_DB;
@@ -603,7 +605,7 @@ async function forget(env, now) {
 
   const keepAfter = daysAgo(OUTBOX_KEEP_DAYS);
   await db.prepare(`DELETE FROM outbox WHERE (sent_at < ? OR failed_at < ? OR (sent_at IS NULL AND created_at < ?))
-    AND NOT (sent_at IS NOT NULL AND kind IN ('received', 'moved') AND request_id IN (SELECT id FROM requests WHERE ${IN_LINE}))`)
+    AND NOT (sent_at IS NOT NULL AND position IS NOT NULL AND request_id IN (SELECT id FROM requests WHERE ${IN_LINE}))`)
     .bind(keepAfter, keepAfter, keepAfter).run();
   return memos.length + gone.length;
 }

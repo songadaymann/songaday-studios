@@ -39,6 +39,17 @@ test('the page says how many songs are in line, and shows the form only when req
   assert.match(html, /spread it over 3, 6 or 12 months/);
   assert.match(html, /A music video: tick the box and I’ll be in touch about it\./);
   assert.doesNotMatch(html, /\{\{|commission-site-key/);
+  // Theme songs are business songs; going public can come before the occasion; how long the line is.
+  assert.match(html, /or a theme song for a podcast, show or channel: from \$1,500, pay what you can\./);
+  assert.match(html, /value="personal" required> A person \(from \$200\)/);
+  assert.match(html, /value="business"> A company, brand, event or organization, or a theme song for a podcast, show or channel \(from \$1,500\)/);
+  assert.match(html, /If yes, it may go up the day I write it, which can be before your occasion\. If it’s a surprise, choose private \(it’s free\)\./);
+  assert.match(html, /I take every request, with no cap, and write them in the order they come in\. I can write about 10 a day, so #30 is about three days away\./);
+  assert.match(html, /placeholder="Siobhan" autocomplete/);
+  assert.match(html, /For a business: what you do, who’ll hear it, and where it’ll play\./);
+  assert.match(html, /data-error-callback="commissionError"/);
+  assert.match(html, /<noscript><p class="commission-status">This form needs JavaScript/);
+  assert.match(html, /The human check didn’t load\./);
 
   await makeRequest(env);
   await makeRequest(env, { email: 'two@example.com', story: 'A different story about a different person who is great.' });
@@ -149,7 +160,7 @@ test('without JavaScript, success goes to the buyer page, which says their place
   const page = await call(env, location);
   const html = await page.text();
   assert.match(html, /<h1>You’re #2 in line\.<\/h1>/);
-  assert.match(html, /Got it\. I’ve emailed you a link to this page\./);
+  assert.match(html, /Got it\. Bookmark this page: it’s your way back to your request\./);
 
   const problem = await post(env, { story: 'short' }, { json: false });
   assert.equal(problem.response.status, 400);
@@ -291,7 +302,7 @@ test('the buyer page is private, escaped, and its place moves when earlier songs
   assert.doesNotMatch(visible(html), FORBIDDEN);
 
   await deliver(env, first.id);
-  assert.match(await (await call(env, `/commission/s/${mine.token}`)).text(), /You’re #1 in line\./);
+  assert.match(await (await call(env, `/commission/s/${mine.token}`)).text(), /<h1>You’re next\.<\/h1>/);
 });
 
 test('a return from Stripe with anything but a Checkout Session id makes no Stripe call', async () => {
@@ -331,7 +342,11 @@ test('the buyer can cancel while in line, but not once writing has started', asy
 
 test('place-in-line emails turn off from the page or with one click from the email', async () => {
   const env = await commissionEnv();
+  const ahead = await makeRequest(env, { email: 'ahead@example.com' });
+  // #1 has nowhere to move, so its page doesn't offer them.
+  assert.doesNotMatch(await (await call(env, `/commission/s/${ahead.token}`)).text(), /Place-in-line emails/);
   const { token, id } = await makeRequest(env);
+  assert.match(await (await call(env, `/commission/s/${token}`)).text(), /<h1>You’re #2 in line\.<\/h1>[\s\S]*Place-in-line emails[\s\S]*class="commission-quiet">Turn them off/);
   let response = await call(env, `/commission/s/${token}`, urlencoded({ action: 'updates', value: 'off' }));
   assert.equal(response.headers.get('Location'), `/commission/s/${token}#updates`);
   assert.equal(env.COMMISSIONS_DB.one('SELECT quiet FROM requests WHERE id = ?', id).quiet, 1);
@@ -366,7 +381,7 @@ test('the song streams once delivered, and downloads only once paid', async () =
   assert.equal(locked.headers.get('Location'), `/commission/s/${token}#pay`);
   const html = await (await call(env, `/commission/s/${token}`)).text();
   assert.match(html, /<h1>“Siobhan at Forty”<\/h1>/);
-  assert.match(html, new RegExp(`<audio class="commission-player" controls preload="metadata" src="/commission/s/${token}/listen">`));
+  assert.match(html, new RegExp(`<audio class="commission-player" controls controlslist="nodownload" preload="metadata" src="/commission/s/${token}/listen">`));
   assert.match(html, /<p>Line one<br>Line two<\/p>/);
   assert.match(html, /Payments aren’t set up yet\./);
   assert.doesNotMatch(html, /Download the song/);
@@ -419,7 +434,7 @@ test('without a build, the pages fall back to bare documents and still work', as
   const buyer = await call(env, `/commission/s/${token}`);
   assert.equal(buyer.headers.get('Content-Security-Policy'), bare);
   assert.equal(buyer.headers.get('Cache-Control'), 'no-store');
-  assert.match(await buyer.text(), /You’re #1 in line\./);
+  assert.match(await buyer.text(), /<h1>You’re next\.<\/h1>/);
 });
 
 test('audio is recognized by its first bytes', () => {
@@ -545,7 +560,7 @@ test('past the day’s alarm, new requests are held out of line, Jonathan hears 
   assert.equal(db.one('SELECT status FROM requests WHERE id = ?', first.id).status, 'requested');
   const [received] = db.rows('outbox', `kind = 'received' AND request_id = ${first.id}`);
   assert.equal(received.position, 1);
-  assert.match(await (await call(env, `/commission/s/${first.token}`)).text(), /You’re #1 in line\./);
+  assert.match(await (await call(env, `/commission/s/${first.token}`)).text(), /<h1>You’re next\.<\/h1>/);
 
   const cancelAll = await call(env, '/commission/admin/held', urlencoded({ action: 'cancel-all', confirm: 'yes' }, { Origin: LOCAL }), null, LOCAL);
   assert.equal(cancelAll.status, 303);
@@ -587,4 +602,25 @@ test('the share link plays the song and shows the lyrics, and nothing the buyer 
   assert.match(await (await call(env, `/commission/share/${share}`)).text(), /Download the song/);
   assert.equal((await call(env, `/commission/share/${share}/download`)).status, 200);
   assert.equal((await call(env, `/commission/share/${'0'.repeat(32)}`)).status, 404);
+});
+
+
+test('a buyer whose place in line is after their deadline hears so straight away, on the page and by email', async () => {
+  const env = await commissionEnv();
+  const db = env.COMMISSIONS_DB;
+  for (let i = 0; i < 24; i++) {
+    db.exec(`INSERT INTO requests (token, share_token, kind, floor_cents, buyer_name, buyer_email, email_key, recipient, story, may_publish, requested_at)
+      VALUES (?, ?, 'personal', 20000, 'X', ?, ?, 'Y', 'A story long enough to count.', 1, '2026-10-01T00:00:00Z')`,
+    `c${String(i).padStart(31, '0')}`, `d${String(i).padStart(31, '0')}`, `q${i}@example.com`, `q${i}@example.com`);
+  }
+  const tomorrow = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(Date.now() + 86_400_000));
+  const late = await makeRequest(env, { deadline: tomorrow, video: 'yes' });
+  const email = db.one("SELECT text FROM outbox WHERE kind = 'received' AND request_id = ?", late.id).text;
+  assert.match(email, /At #25 your song is about 3 days away, after your deadline \([A-Z][a-z]{2} \d+\)\. You can cancel for free from your page, or keep your place and I'll do my best\./);
+  assert.match(email, /You asked about a music video too\. I'll email you about it\./);
+  assert.match(await (await call(env, `/commission/s/${late.token}`)).text(), /At #25 your song is about 3 days away, after your deadline/);
+
+  const fine = await makeRequest(env, { email: 'fine@example.com', story: 'No rush on this one at all.', deadline: '2027-06-01' });
+  assert.doesNotMatch(db.one("SELECT text FROM outbox WHERE kind = 'received' AND request_id = ?", fine.id).text, /after your deadline|music video/);
+  assert.doesNotMatch(await (await call(env, `/commission/s/${fine.token}`)).text(), /after your deadline/);
 });

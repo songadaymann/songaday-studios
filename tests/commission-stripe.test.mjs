@@ -685,3 +685,29 @@ test('stopping a plan from the page emails the buyer, since anyone with the link
   assert.match(paid.text, /Keep that link to yourself/);
   assert.match(paid.text, /\/commission\/share\/[0-9a-f]{32}/);
 });
+
+
+test('a refused payment comes back with the buyer’s own choice, and the choices say "or more"', async () => {
+  const { env, token } = await delivered();
+  const { stub } = fakeStripe();
+  let html = await (await call(env, `/commission/s/${token}`)).text();
+  assert.match(html, /value="1000"> \$1,000 or more<\/label>/);
+  assert.match(html, /placeholder="200 or more"/);
+  assert.match(html, /value="300" checked/);
+  assert.match(html, /value="once" checked/);
+  // The lyrics come before the pay box, so a phone shows them under the player.
+  assert.ok(html.indexOf('id="lyrics-title"') < html.indexOf('id="pay-title"'));
+  assert.match(html, /If you spread it out, the download unlocks after the first payment/);
+
+  const response = await pay(env, token, { plan: '6', amount: 'other', other: '150' }, stub);
+  assert.equal(response.status, 400);
+  html = await response.text();
+  assert.match(html, /The least you can pay is \$200\./);
+  assert.match(html, /value="6" checked/);
+  assert.doesNotMatch(html, /value="once" checked|value="300" checked/);
+  assert.match(html, /value="other" checked/);
+  assert.match(html, /name="other"[^>]*value="150"/);
+  const kept = await (await pay(env, token, { plan: '3', amount: '500' }, (() => { const f = fakeStripe(); f.state.fail = () => true; return f.stub; })())).text();
+  assert.match(kept, /value="3" checked/);
+  assert.match(kept, /value="500" checked/);
+});

@@ -114,12 +114,13 @@ test('putting a request back in line, or undoing a delivery, moves people back w
   await runCommissionDaily(env, DAY1);
   assert.deepEqual(moved(env.COMMISSIONS_DB).map(({ id, position }) => [id, position]), [[3, 2], [4, 3]]);
 
-  // Put back in line: it's #2 again and gets a received email with its place; #3 and #4 go
-  // back to #3 and #4 with no email.
+  // Put back in line: it's #2 again and gets an email with its place; #3 and #4 go back to #3
+  // and #4 with no email.
   await admin(env, made[1].id, { action: 'restore' });
-  const restored = env.COMMISSIONS_DB.one("SELECT * FROM outbox WHERE kind = 'received' AND request_id = 2 ORDER BY id DESC LIMIT 1");
+  const restored = env.COMMISSIONS_DB.one("SELECT * FROM outbox WHERE kind = 'restored' AND request_id = 2");
   assert.equal(restored.position, 2);
-  assert.match(restored.text, /You're #2 in line\./);
+  assert.equal(restored.subject, "You're back in line: #2");
+  assert.match(restored.text, /I've put your request for a song for Siobhan, my sister back in line, in its old place\. You're #2\./);
   assert.equal(env.COMMISSIONS_DB.one('SELECT status FROM requests WHERE id = 2').status, 'requested');
   await runCommissionDaily(env, DAY2);
   assert.equal(moved(env.COMMISSIONS_DB).length, 2);

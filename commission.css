@@ -41,6 +41,9 @@
 }
 .commission-page button:hover, .commission-page button:focus-visible, .commission-button:hover, .commission-button:focus-visible { background: var(--white); color: var(--ink); }
 .commission-page button:disabled { background: var(--hairline); cursor: wait; }
+/* Secondary actions on the buyer's page (place-in-line emails, cancelling, stopping payments). */
+.commission-page button.commission-quiet { margin-top: .75rem; padding: .6rem .9rem; border: 2px solid var(--hairline); background: transparent; color: var(--white); font-size: .9rem; letter-spacing: .02em; text-transform: none; }
+.commission-page button.commission-quiet:hover, .commission-page button.commission-quiet:focus-visible { border-color: var(--white); background: transparent; color: var(--white); }
 .commission-fine { margin: .5rem 0 0; color: var(--white-muted); font-size: .95rem !important; }
 .commission-status { margin: .5rem 0 0; font-weight: 700; }
 .commission-status:empty { display: none; }

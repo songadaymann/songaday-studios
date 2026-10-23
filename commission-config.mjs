@@ -13,6 +13,10 @@ export const PRICES = {
 // requests that want a video.
 export const VIDEO_PRICE_CENTS = null;
 
+// About how many songs Jonathan writes in a day. The page uses it to say how long the line is,
+// and a buyer whose place in line is after their deadline is told so when they ask.
+export const WRITES_PER_DAY = 10;
+
 // Paying over time: the total split into this many monthly payments.
 export const PLAN_MONTHS = [3, 6, 12];
 // "Pay what it was worth", after paying.

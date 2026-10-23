@@ -5,7 +5,7 @@
 // shows them, and nothing is lost. wrangler dev simulates the binding and marks them sent.
 import { escapeHtml } from './fumble-page.mjs';
 import { D1_QUERY_BUDGET, INTAKE_ALARM_PER_DAY, OUTBOX_BATCH, OUTBOX_MAX_ATTEMPTS, PLAN_MONTHS } from './commission-config.mjs';
-import { dollars, pageUrl, shareUrl, siteOrigin } from './commission-core.mjs';
+import { aboutDays, daysAway, dollars, lateBy, newYorkDate, pageUrl, shareUrl, shortDate, siteOrigin } from './commission-core.mjs';
 
 // The form can mail any address, so the only words a buyer typed that reach an email are their
 // first name and who the song is for, and each is left out when it looks like a link or an
@@ -32,6 +32,11 @@ const others = PLAN_MONTHS.slice(0, -1).join(', ') + ' or ' + PLAN_MONTHS.at(-1)
 const PRIVATE = 'Keep that link to yourself: anyone who has it can see everything you told me, and pay or stop payments.';
 const share = (d) => ({ lead: 'To share the song, send this link instead. It plays the song and shows the lyrics, and nothing else:', url: d.share, label: 'Link to share' });
 
+// When their place in line is after their deadline, they hear it straight away, and can choose.
+const late = (r, d) => lateBy(r, d.position, d.today) ? [
+  `At #${d.position} your song is ${aboutDays(daysAway(d.position))} away, after your deadline (${shortDate(r.deadline)}). You can cancel for free from your page, or keep your place and I'll do my best.`
+] : [];
+
 // Each template gives a subject and a body: paragraphs (strings), and links ({ lead, url,
 // label }), which the HTML part shows as buttons.
 const TEMPLATES = {
@@ -40,10 +45,23 @@ const TEMPLATES = {
     body: [
       greeting(r),
       `Thanks for asking me to write a song${forWhom(r)}. You're #${d.position} in line.`,
+      ...late(r, d),
       `I write songs in the order they come in, and I'll email you when you move up (once a day at most). When your song is done, you'll get a private page where you can listen to it and read the lyrics. You pay then, whatever you want from ${dollars(r.floor_cents)}, and that unlocks the download.`,
+      ...(r.wants_video ? ["You asked about a music video too. I'll email you about it."] : []),
       { lead: "Here's your page, with everything you told me:", url: d.page, label: 'Your page' },
       'Keep that link to yourself. Anyone who has it can see your page. Changed your mind? You can cancel there until I start writing.',
       'If you think of anything else, just reply to this email.',
+      SIGN
+    ]
+  }),
+  // Jonathan put a cancelled request back (the admin's Put back in line).
+  restored: (r, d) => ({
+    subject: `You're back in line: #${d.position}`,
+    body: [
+      greeting(r),
+      `I've put your request for a song${forWhom(r)} back in line, in its old place. You're #${d.position}.`,
+      ...late(r, d),
+      { lead: 'Your page:', url: d.page, label: 'Your page' },
       SIGN
     ]
   }),
@@ -73,7 +91,7 @@ const TEMPLATES = {
     subject: 'Your song is ready',
     body: [
       greeting(r),
-      `I finished your song${forWhom(r)}. It's called "${r.title}".`,
+      `I finished your song${forWhom(r)}. It's called "${r.title}".${r.video_url ? " There's a video too." : ''}`,
       { lead: 'Listen to it and read the lyrics on your page:', url: d.page, label: 'Listen to your song' },
       `When you're ready, pay what you want, from ${dollars(r.floor_cents)}. You can pay all at once or spread it over ${others} months. Paying unlocks the download.`,
       PRIVATE,
@@ -141,7 +159,7 @@ const TEMPLATES = {
     subject: 'Your song request is cancelled',
     body: d.by === 'buyer'
       ? [greeting(r), `You cancelled your request for a song${forWhom(r)}. If that was a mistake, just reply and I'll put it back, in the same place in line.`, SIGN]
-      : [greeting(r), `I've cancelled your request for a song${forWhom(r)}.`, ...(d.message ? [d.message] : []), SIGN]
+      : [greeting(r), `I've cancelled your request for a song${forWhom(r)}.`, ...(d.message ? [d.message] : []), 'If you have questions, just reply.', SIGN]
   }),
   // To Jonathan (COMMISSION_NOTIFY_TO), once a day at most, when requests start being held.
   alarm: (r, d) => ({
@@ -179,6 +197,7 @@ ${body.map((part) => typeof part === 'string' ? paragraph(part)
 
 // One email's subject, text and HTML, with the links filled in for this site.
 export const emailParts = (env, kind, request, data = {}) => renderEmail(kind, request, {
+  today: newYorkDate(data.now ?? new Date()),
   ...data,
   page: request ? pageUrl(env, request) : null,
   share: request?.share_token ? shareUrl(env, request) : null,
@@ -229,7 +248,7 @@ function outOfDate(kind, request) {
     // A place in line for someone no longer waiting (delivered, being written, cancelled), or
     // who turned the updates off.
     case 'moved': return request.status !== 'requested' || Boolean(request.quiet);
-    case 'received': case 'held': return request.status === 'cancelled';
+    case 'received': case 'restored': case 'held': return request.status === 'cancelled';
     // A song pulled back with Undo delivery, or cancelled since.
     case 'delivered': case 'updated': return request.status !== 'delivered';
     case 'reminder': return request.status !== 'delivered' || Boolean(request.paid_at);

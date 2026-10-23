@@ -7,7 +7,7 @@ import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFi
 import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
-import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS } from "./commission-config.mjs";
+import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
 // `node build.mjs --out <folder>` writes the pages there instead of next to the sources, and
@@ -197,6 +197,8 @@ const commissionTokens = {
   VIDEO_LINE: VIDEO_PRICE_CENTS ? `A music video adds ${money(VIDEO_PRICE_CENTS)}.` : "A music video: tick the box and I’ll be in touch about it.",
   MEMO_MAX_BYTES: String(MEMO_MAX_BYTES),
   MEMO_MB: String(Math.round(MEMO_MAX_BYTES / 1024 / 1024)),
+  WRITES_PER_DAY: String(WRITES_PER_DAY),
+  LINE_EXAMPLE: `#${WRITES_PER_DAY * 3} is about three days away`,
   ...Object.fromEntries(Object.entries(LIMITS).map(([name, value]) => [`LIMIT_${name}`, String(value)])),
 };
 const commissionBody = withChrome(commissionSource, { purchase: true })

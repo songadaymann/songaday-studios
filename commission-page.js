@@ -2,7 +2,8 @@
   "use strict";
   // The request form (songaday.studio/commission) sends with fetch, so a problem doesn't lose
   // the answers. It checks the memo's size first, and waits for Turnstile, which usually passes
-  // without showing anything. Without this script the form still posts normally.
+  // without showing anything. Turnstile needs JavaScript too, so without it the form can't
+  // pass the human check, and a <noscript> line on the page says so.
   const form = document.querySelector("[data-request]");
   if (form) {
     const status = document.getElementById("commission-status");
@@ -39,8 +40,14 @@
       window.turnstile?.reset();
     }
 
-    window.commissionChecked = () => { if (waiting) send(); };
+    // A blocker, or a network that can't reach Cloudflare, can stop Turnstile from loading at
+    // all. Then it never calls back, so the wait has a limit.
+    const NO_CHECK = "The human check didn’t load. Turn off blockers for this page, or try another browser. Your answers are still here.";
+    let timer = null;
+    const stopWaiting = () => { waiting = false; clearTimeout(timer); };
+    window.commissionChecked = () => { if (waiting) { stopWaiting(); send(); } };
     window.commissionExpired = () => window.turnstile?.reset();
+    window.commissionError = () => { if (waiting) { stopWaiting(); say(NO_CHECK); } };
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       if (!form.reportValidity()) return;
@@ -52,10 +59,19 @@
       if (token()) return send();
       waiting = true;
       say("Checking you’re human…");
+      clearTimeout(timer);
+      timer = setTimeout(() => { if (waiting) { waiting = false; say(NO_CHECK); } }, 20000);
     });
   }
 
-  // The buyer's pay form: what a monthly plan comes to, worked out the way the server does it.
+  // The buyer's page, just after a request: ?new shows a one-time note, and a bookmark of the
+  // address shouldn't keep it.
+  if (/^\/commission\/s\//.test(location.pathname) && new URLSearchParams(location.search).has("new")) {
+    history.replaceState(null, "", location.pathname + location.hash);
+  }
+
+  // The buyer's pay form: what a monthly plan comes to, worked out the way the server does it,
+  // and the floor checked before Checkout (the server checks it again).
   const pay = document.querySelector("[data-pay]");
   if (pay) {
     const note = pay.querySelector("[data-plan-note]");
@@ -74,6 +90,13 @@
       const monthly = Math.ceil(cents / months);
       note.textContent = `${months} payments of ${money(monthly)}, once a month (${money(monthly * months)} in all)`;
     };
+    const floor = Number(pay.dataset.floor);
+    pay.addEventListener("submit", (event) => {
+      const months = Number(pay.querySelector('input[name="plan"]:checked')?.value) || 1;
+      const cents = amount();
+      if (cents === null) { event.preventDefault(); note.textContent = "Type an amount in whole dollars."; return; }
+      if (Math.ceil(cents / months) * months < floor) { event.preventDefault(); note.textContent = `The least you can pay is ${money(floor)}.`; }
+    });
     other?.addEventListener("focus", () => { pay.querySelector('input[name="amount"][value="other"]').checked = true; update(); });
     pay.addEventListener("input", update);
     pay.addEventListener("change", update);
