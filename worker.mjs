@@ -4,6 +4,7 @@ import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 import { handleFumble } from './fumble.mjs';
 import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from './today-song.mjs';
 import { songDate } from './calendar.mjs';
+import { livePress, pressKind, pressSnapshot, renderPress, renderPressSummary } from './press.mjs';
 
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
@@ -26,11 +27,15 @@ const SECTION_REDIRECTS = {
   '/me': 'https://www.jonathanmann.net/',
   '/motba': 'https://motba.art/',
   '/mini-docs': '/films/',
+  // Other words for the press page that people might say or type.
+  '/podcasts': '/press/',
+  '/interviews': '/press/',
+  '/media': '/press/',
   '/donate': '/#donate'
 };
 
 // Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
-const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data']);
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data', '/press']);
 
 // The universe bar and projects.json load on other Song A Day sites too, and module scripts and
 // cross-origin fetches need CORS. The bar is pinned by version folder (bar/v1/), so it can be
@@ -157,6 +162,7 @@ export default {
     // Fetch the live feeds alongside the page, so the top of the page streams without waiting on YouTube.
     const filmsPromise = path === '/films' && request.method === 'GET' ? liveFilms() : null;
     const songPromise = (path === '/' || path === '/links') && request.method === 'GET' ? liveLatestSong() : null;
+    const pressPromise = path === '/press' && request.method === 'GET' ? livePress(env.PRESS_CSV_URL, { origin: url.origin }) : null;
     const response = await env.ASSETS.fetch(request);
     if (!response.headers.get('Content-Type')?.includes('text/html')) return response;
 
@@ -185,6 +191,22 @@ export default {
           const song = await songPromise;
           const render = path === '/links' ? renderTodaySongLink : renderTodaySong;
           if (song) element.setInnerContent(render(song, number), { html: true });
+        }
+      });
+    }
+    if (pressPromise) {
+      // The live press sheet, or the built-in snapshot again when ?kind= asks for a filter
+      // (the other kinds come back hidden, so the filter links work without JavaScript).
+      const kind = pressKind(url.searchParams.get('kind'));
+      rewriter.on('#press-summary', {
+        async element(element) {
+          const live = await pressPromise;
+          if (live) element.setInnerContent(renderPressSummary(live), { html: true });
+        }
+      }).on('#press', {
+        async element(element) {
+          const live = await pressPromise;
+          if (live || kind) element.setInnerContent(renderPress(live ?? pressSnapshot().items, { kind }), { html: true });
         }
       });
     }

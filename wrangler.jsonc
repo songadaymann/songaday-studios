@@ -36,7 +36,10 @@
   ],
   // Public Turnstile site key. The secret is a Worker secret: `wrangler secret put TURNSTILE_SECRET_KEY`.
   "vars": {
-    "TURNSTILE_SITE_KEY": "0x4AAAAAAFdspSacH0xXspAj"
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFdspSacH0xXspAj",
+    // songaday.studio/press/ (press.mjs): the press sheet's Public tab, published to the web as
+    // CSV. Empty keeps the snapshot in press/press.json (README, "Press").
+    "PRESS_CSV_URL": ""
   },
   "routes": [
     {
