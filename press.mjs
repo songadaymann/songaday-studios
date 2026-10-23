@@ -294,7 +294,7 @@ function featuredCard(item) {
     `)}</li>`;
 }
 
-// The newest featured pieces show; the rest wait behind "14 more featured", so the full list
+// The newest featured pieces show; the rest wait behind "13 more featured", so the full list
 // isn't three phone screens down.
 const FEATURED_SHOWN = 8;
 

@@ -32,7 +32,7 @@
       else link.removeAttribute("aria-current");
     }
     // Only a chosen kind gets a count line; the totals (the opening line, the link down to the
-    // list, "14 more featured") count the rows this browser shows.
+    // list, "13 more featured") count the rows this browser shows.
     const status = press.querySelector(".press-status");
     if (status) status.textContent = kind ? `Showing ${shown.toLocaleString("en-US")} of ${total.toLocaleString("en-US")}.` : "";
     for (const count of document.querySelectorAll("[data-press-count]")) count.textContent = total.toLocaleString("en-US");
