@@ -54,6 +54,23 @@ outside the Fridays at The Park app.
 - `upload-media.mjs` — uploads `assets/video/` to the R2 bucket
 - `fumble.mjs`, `fumble-page.mjs`, `fumble-approve.mjs`, `migrations/` — the Fumble page
   (songaday.studio/fumble); see below
+- `turnstile.mjs` — the Turnstile check that Fumble and commissions share
+- Song commissions (songaday.studio/commission); see "Commissions" below:
+  - `commission.html`, `commission.css`, `commission-page.js` — the public page and request
+    form, and the browser script for it and the buyer's page. `build.mjs` builds them into
+    `commission/index.html` and `commission/song.html` (the shell for each buyer's page).
+  - `commission-config.mjs` — prices, payment plans and limits, used by the build and the Worker
+  - `commission.mjs` — every route under `/commission`, making a request, the buyer's page, and
+    the daily cron step
+  - `commission-core.mjs` — what the others share: cleaning text, recognizing audio, the
+    request states, the place in line, money formatting
+  - `commission-admin.mjs` — Jonathan's admin at `/commission/admin`, behind Cloudflare Access
+  - `commission-stripe.mjs` — Stripe Checkout, the webhook, and monthly plans
+  - `commission-email.mjs` — the emails and the outbox they go through
+  - `commission-page.mjs` — the buyer's page
+  - `commission-migrations/` — the schema of the `songaday-commissions` D1 database
+  - `tests/fake-cloudflare.mjs` — fake D1, R2, email and rate-limit bindings and fake Stripe,
+    Turnstile and Access for the commission tests
 
 ## Sections
 
@@ -72,7 +89,8 @@ real page, later:
 | `/year/2014` | `/#year-2014`, that year on the home page calendar (2009 to this year) |
 | `/games` | https://mann.cool/ |
 | `/wamp` | https://wamp.land/ |
-| `/commission`, `/commissions` | https://jonathanmann.bandcamp.com/merch (the commission listings), until jonathanmann.net has a commissions page |
+| `/commission` | Song commissions: the page and request form (`commission.mjs`; see "Commissions") |
+| `/commissions` | `/commission` |
 | `/albums` | https://jonathanmann.bandcamp.com/music |
 | `/discord` | https://discord.gg/rGTQH7mFNS |
 | `/me` | https://www.jonathanmann.net/ |
@@ -289,6 +307,208 @@ Setting it up on a new Cloudflare account: `wrangler d1 create songaday-fumble` 
 songaday-fumble --remote`, create a Turnstile widget for the domain (`wrangler turnstile widget
 create`) and put its site key in `wrangler.jsonc`, then `wrangler secret put TURNSTILE_SECRET_KEY`.
 
+## Commissions
+
+**Before the next `wrangler deploy`, do setup steps 1 and 2 below.** `wrangler.jsonc` names a
+D1 database and an R2 bucket that don't exist yet (the database id is a placeholder), and
+wrangler won't deploy the site until they do. Requests stay closed until step 8.
+
+https://songaday.studio/commission is where people ask Jonathan for a song. It's a purchase
+from Jonathan, on his own Stripe account: nothing on these pages or in these emails says donate,
+gift, tax-deductible or patron, and nothing links to Patreon. The commission pages leave out the
+header's Donate button and the footer's sponsor line for that reason.
+
+### How it works
+
+1. **Asking.** The buyer fills in the form: who the song is for and what they are to them, the
+   occasion, names and how to say them (or a voice memo), the story ("the more information the
+   better"), anything to leave out, a deadline if there is one, personal or business, whether
+   it can be that day's Song A Day, whether they'd like a video, and their name and email.
+   There's no style question. The form needs a Turnstile check, is limited to 3 a minute per
+   visitor, and one email address can have at most 5 songs waiting.
+2. **The line.** Requests are written in the order they came in, with no limit. The buyer is
+   told their place (#N) right away, by email and on their private page
+   (`/commission/s/<token>`, a 128-bit link). Each morning a cron emails anyone whose number
+   went down since the last email they actually got, at most once a day, so #30 hears "You're
+   now #20" the morning after Jonathan finishes 10. They can turn these emails off, and cancel,
+   until he starts writing.
+3. **Writing.** Jonathan reads the requests in order at `/commission/admin`: every answer in
+   full, one card each, with the voice memo playable. "Start writing" is optional.
+4. **Delivering.** On a request's admin page he uploads the song (MP3, M4A or WAV, up to 30 MB),
+   pastes the lyrics, adds a video link if there is one, and clicks Deliver. The buyer gets an
+   email; their page now plays the song and shows the lyrics. "Undo delivery" pulls a song sent
+   to the wrong request.
+5. **Paying.** Payment is on delivery, pay what you want: personal songs from $200 (suggested
+   $300, $500, $1,000 or more), business and theme songs from $1,500. They pay at once, or
+   spread it over 3, 6 or 12 monthly payments that stop by themselves (honor system: the
+   download unlocks after the first). After paying they can add an extra ("pay what it was
+   worth"). Paying unlocks the download. Unpaid songs get one reminder a week after delivery.
+   Venmo, PayPal or invoice payments are marked by hand in the admin ("Mark paid").
+6. **Jonathan's summary.** The same cron emails him a summary when there's news: new requests,
+   deadlines in the next week, payments, plans that ended, emails that didn't go out, and
+   payments that need a look (paid after cancelling, or paid twice).
+
+Every email is written to an outbox table first and sent through Cloudflare Email Service when
+it's set up, so nothing is lost; the admin's Emails tab shows each one, with Send now and
+Resend. Without email set up they wait there.
+
+### Where things live
+
+- Requests, payments, monthly plans and the email outbox: the D1 database
+  `songaday-commissions` (bound as `COMMISSIONS_DB`; schema in `commission-migrations/`).
+  Buyer data lives only there, never in this repo or in logs. Sent emails are deleted after 180
+  days.
+- Voice memos and delivered songs: the private R2 bucket `songaday-commissions` (bound as
+  `COMMISSION_FILES`). No public access; everything goes through the Worker.
+- Money: Stripe. Refunds and disputes happen in the Stripe Dashboard.
+
+### Changing prices and limits
+
+Everything is in `commission-config.mjs`: the floors and suggestions (`PRICES`), the video
+price (`VIDEO_PRICE_CENTS`, `null` until Jonathan sets one; then the page shows it and it's
+added to the floor of requests that want a video), the monthly options (`PLAN_MONTHS`), the
+5-songs-per-email cap, the reminder delay, and upload sizes. The page copy is built from the
+same values, so run `node build-production.mjs` and `wrangler deploy` after a change. A single
+request's floor can be changed in the admin (Edit), for a business invoice or a video price
+agreed by email.
+
+### Config and secrets
+
+Public values are `vars` in `wrangler.jsonc` (the ones marked PLACEHOLDER need real values):
+
+| Var | |
+| --- | --- |
+| `COMMISSION_REQUESTS` | `"open"` takes requests; anything else shows "Requests open soon." |
+| `SITE_ORIGIN` | `https://songaday.studio`: links in emails and Stripe's return addresses |
+| `COMMISSION_FROM_EMAIL`, `COMMISSION_FROM_NAME` | the sender, on a domain onboarded to Email Sending |
+| `COMMISSION_REPLY_TO` | where replies go (an Email Routing address that forwards to Jonathan) |
+| `COMMISSION_NOTIFY_TO` | where the daily summary goes |
+| `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` | Cloudflare Access for the admin; empty means localhost only |
+
+Secrets, set with `wrangler secret put <NAME>` (locally, in `.dev.vars`):
+
+| Secret | |
+| --- | --- |
+| `STRIPE_SECRET_KEY` | a restricted key (`rk_live_...`) with write access to Checkout Sessions, Subscriptions and Subscription Schedules, and to Products and Prices (Checkout's `price_data` makes them inline). In test mode, a refused call names the permission it's missing. |
+| `STRIPE_WEBHOOK_SECRET` | the webhook endpoint's `whsec_...` |
+| `ADMIN_EMAILS` | the addresses allowed into the admin, comma-separated. A secret only so Jonathan's address stays out of this public repo. |
+| `TURNSTILE_SECRET_KEY` | already set for Fumble |
+
+Missing pieces fail soft: without the database or the Turnstile secret the form is closed;
+without a Stripe key the buyer's page says payments aren't set up yet; without the webhook
+secret the webhook answers 503; without email, emails wait in the outbox; without Access the
+admin answers only on localhost; with Access but no `ADMIN_EMAILS`, nobody gets in.
+
+### Setup (Jonathan, once, in this order)
+
+1. **Database.** `wrangler d1 create songaday-commissions`, paste the `database_id` it prints
+   into the `COMMISSIONS_DB` entry in `wrangler.jsonc` (replacing the zeros), then
+   `wrangler d1 migrations apply songaday-commissions --remote`.
+2. **Bucket.** `wrangler r2 bucket create songaday-commissions`. Leave public access off: no
+   r2.dev URL and no custom domain.
+3. **Email** (Email Service needs the Workers Paid plan).
+   - `wrangler email sending enable songaday.studio` adds the SPF and DKIM records
+     (`wrangler email sending dns get songaday.studio` shows them). Add a DMARC record too:
+     a TXT record at `_dmarc.songaday.studio`, for example `v=DMARC1; p=none; rua=mailto:<you>`.
+   - Replies: check songaday.studio has no other MX records, then
+     `wrangler email routing enable songaday.studio`, add Jonathan's own inbox as a destination
+     with `wrangler email routing addresses create <his address>` (click the link it emails),
+     and in the dashboard (songaday.studio > Email > Email Routing > Routing rules > Create
+     address) forward `jonathan@songaday.studio` to it.
+   - If the addresses differ from `songs@songaday.studio` and `jonathan@songaday.studio`,
+     change them in `wrangler.jsonc`: the three `COMMISSION_*` address vars and
+     `allowed_sender_addresses` on the `COMMISSION_EMAIL` binding.
+   - A new account starts with a small daily sending quota that grows with good sending, so
+     open requests a few weeks before the Christmas rush (November and December are a third
+     of the year's commissions). If it's too low, ask with Cloudflare's Limit Increase Request
+     Form. Place-in-line emails wait behind everything else when the quota runs out.
+4. **Access** (the admin).
+   - Cloudflare dashboard > Zero Trust > Access > Applications > Add an application >
+     Self-hosted. Add two public hostnames on `songaday.studio`: path `commission/admin` and
+     path `commission/admin/*` (a wildcard path doesn't cover its parent).
+   - Add a policy: Action Allow, Include > Emails > Jonathan's address. Never "Everyone".
+   - From the application's Overview, copy the Application Audience (AUD) tag into
+     `ACCESS_AUD`, and the team domain (Zero Trust > Settings shows it as
+     `<team>.cloudflareaccess.com`) into `ACCESS_TEAM_DOMAIN` as
+     `https://<team>.cloudflareaccess.com`.
+   - `wrangler secret put ADMIN_EMAILS` with the same address.
+5. **Stripe** — Jonathan's own account, not the fiscal sponsor's. Do all of it in test mode
+   first.
+   - Settings > Business: business name and statement descriptor "JONATHAN MANN" or
+     "SONG A DAY".
+   - Settings > Customer emails: turn on receipts for successful payments.
+   - Billing > Revenue recovery: Smart Retries on, failed-payment emails on, and "cancel the
+     subscription" once all retries fail.
+   - Developers (Workbench) > API keys > Create restricted key, with the permissions above. Then
+     `wrangler secret put STRIPE_SECRET_KEY`.
+   - Developers (Workbench) > Webhooks > Add destination: endpoint
+     `https://songaday.studio/commission/stripe`, API version `2026-09-30.endive` (the one the
+     code pins, `STRIPE_VERSION`), and these four events: `checkout.session.completed`,
+     `checkout.session.async_payment_succeeded`, `invoice.paid` and
+     `customer.subscription.deleted`. Then `wrangler secret put STRIPE_WEBHOOK_SECRET` with its
+     signing secret.
+   - Leave Stripe Tax off: there's no sales tax.
+6. **Turnstile.** Nothing new: the form uses the site's widget with `data-action="commission"`.
+7. **Deploy.** `node build-production.mjs`, then `wrangler deploy`. The daily cron
+   (`0 14 * * *`, 9am New York in winter) comes with it.
+8. **Try it live in Stripe test mode**, with `COMMISSION_REQUESTS` set to `"open"`:
+   - Make a request, deliver it from the admin, and pay with `4242 4242 4242 4242`.
+   - Pay a 3-month plan with a test clock and check that the Checkout Session has `invoice`
+     set, that the schedule update went through with the subscription's own price, that
+     payments 2 and 3 charge the saved card, and that the subscription ends after the third
+     with no credit and no extra invoice.
+   - Stop a 6-month plan from the buyer's page after 2 payments, and check nothing was
+     prorated or credited.
+   - Then switch to live keys (`wrangler secret put STRIPE_SECRET_KEY` and a live webhook
+     endpoint) and deploy with requests open.
+9. **Outside this repo.** Point jonathanmann.net's /personal, /themes and /business at
+   `https://songaday.studio/commission` (Squarespace URL mappings), take down or repoint the
+   two Bandcamp commission listings, and update `now.html` on launch day.
+
+If Workers Logs is ever turned on for this Worker, set `observability.logs.invocation_logs` to
+`false`: invocation logs record URLs, and buyer links carry their token. The Worker's own logs
+carry only routes, ids and outcomes.
+
+### Running it locally
+
+```bash
+cp .env.example .dev.vars    # then fill in Turnstile's always-pass test keys; see the comments
+wrangler d1 migrations apply songaday-commissions --local
+node build-production.mjs
+wrangler dev --local-upstream localhost --test-scheduled
+```
+
+`.dev.vars` sets `COMMISSION_REQUESTS=open` and `SITE_ORIGIN=http://localhost:8787` (match the
+port if you pass `--port`), and leaves `ACCESS_TEAM_DOMAIN` empty, so the admin at
+http://localhost:8787/commission/admin works without Access. Wrangler simulates the email
+binding: it prints each email's From, To and Subject and saves the text and HTML under
+`.wrangler/tmp/email/`, and the admin's Emails tab shows them. (An older wrangler that rejects
+the compatibility date needs `--compatibility-date` set to one it supports, as above.)
+
+To run the daily step now: `curl http://localhost:8787/__scheduled` (with `--test-scheduled`),
+or `curl http://localhost:8787/cdn-cgi/handler/scheduled`.
+
+To pay locally, put a Stripe test-mode key in `.dev.vars` and forward webhooks with the Stripe
+CLI. `--latest` sends events in the current API version's shape, whatever the account's
+default version is:
+
+```bash
+stripe listen --latest --forward-to localhost:8787/commission/stripe   # prints the whsec_ for .dev.vars
+```
+
+The tests cover all of this with fakes (no network): `SONGADAY_OFFLINE=1 node --test tests/*.test.mjs`.
+
+### Left for later
+
+A monthly plan that earns songs is planned but not built. The seam is in place: the download
+and the pay options depend on `paid_at`, not the request's status, so a song paid for ahead of
+delivery needs no special case; `payments.kind` has no CHECK, so a new kind needs no table
+rebuild; webhooks dispatch on `metadata.plan`; and making a request is one function,
+`createRequest(env, answers)`. Also not built: releasing a song as that day's Song A Day
+(the admin shows "OK to be Song A Day"), video files beyond a link, refunds in the admin, song
+files over 30 MB, recording the voice memo in the browser, and a confirm-your-email step (only
+if fake requests show up).
+
 ## Donations
 
 Zeffy is the default donation form, including when JavaScript or wallet detection
@@ -301,7 +521,8 @@ method. Detection never requests wallet access. Wallet visitors can choose
 announcements; `?crypto=0` keeps Zeffy too.
 
 The footer says it plainly: gifts are tax-deductible through Fridays at The Park, and
-commissions and albums are purchases from Jonathan, not gifts.
+commissions and albums are purchases from Jonathan, not gifts. (The commission pages' footer
+says only that song commissions are purchases from Jonathan Mann.)
 
 Zeffy doesn't offer Apple Pay or Google Pay inside embedded forms, and its own page
 only shows them below 900px wide in Safari. So phones that can use a wallet see one
