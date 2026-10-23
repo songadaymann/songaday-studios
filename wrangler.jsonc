@@ -33,12 +33,11 @@
       "database_id": "016edff4-1274-406c-bcc4-32a14aa04a91"
     },
     // songaday.studio/commission (commission.mjs): requests, payments, plans and the email outbox.
-    // PLACEHOLDER database_id: run `wrangler d1 create songaday-commissions` and paste its id
-    // here before the next deploy, or the deploy fails (README, "Commissions").
+    // Created 2026-10-23 (`wrangler d1 create songaday-commissions`); README, "Commissions".
     {
       "binding": "COMMISSIONS_DB",
       "database_name": "songaday-commissions",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "8b4c640c-2f8b-4f21-865a-79d60fffdf61",
       "migrations_dir": "commission-migrations"
     }
   ],

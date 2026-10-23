@@ -312,9 +312,8 @@ create`) and put its site key in `wrangler.jsonc`, then `wrangler secret put TUR
 
 ## Commissions
 
-**Before the next `wrangler deploy`, do setup steps 1 and 2 below.** `wrangler.jsonc` names a
-D1 database and an R2 bucket that don't exist yet (the database id is a placeholder), and
-wrangler won't deploy the site until they do. Until `COMMISSION_REQUESTS` is `"open"` (step 8),
+The D1 database and the private R2 bucket (setup steps 1 and 2) were created on 2026-10-23, and
+the database id is in `wrangler.jsonc`. Until `COMMISSION_REQUESTS` is `"open"` (step 8),
 `/commission` goes on to the Bandcamp commission listings, as it always has, so deploying other
 changes in the meantime never leaves people without a way to buy a song.
 
@@ -440,10 +439,11 @@ emails wait in the outbox; without Access the admin answers only on localhost wi
 
 ### Setup (Jonathan, once, in this order)
 
-1. **Database.** `wrangler d1 create songaday-commissions`, paste the `database_id` it prints
+1. **Database** (done 2026-10-23; these are the steps for a new account).
+   `wrangler d1 create songaday-commissions`, paste the `database_id` it prints
    into the `COMMISSIONS_DB` entry in `wrangler.jsonc` (replacing the zeros), then
    `wrangler d1 migrations apply songaday-commissions --remote`.
-2. **Bucket.** `wrangler r2 bucket create songaday-commissions`. Leave public access off: no
+2. **Bucket** (done 2026-10-23). `wrangler r2 bucket create songaday-commissions`. Leave public access off: no
    r2.dev URL and no custom domain.
 3. **Email** (Email Service needs the Workers Paid plan).
    - `wrangler email sending enable songaday.studio` adds the SPF and DKIM records
