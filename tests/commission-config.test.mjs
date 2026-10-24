@@ -37,7 +37,8 @@ test('nothing in wrangler.jsonc opens the admin or logs buyer links', async () =
   assert.equal('COMMISSION_ADMIN_LOCAL' in config.vars, false);
   // Invocation logs record full URLs, and buyer links carry their token.
   assert.equal(config.observability?.logs?.invocation_logs, false);
-  for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'ADMIN_EMAILS', 'TURNSTILE_SECRET_KEY']) {
+  for (const name of ['STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'ADMIN_EMAILS', 'TURNSTILE_SECRET_KEY',
+    'COMMISSION_REPLY_TO', 'COMMISSION_NOTIFY_TO']) {
     assert.equal(name in config.vars, false, `${name} is a secret`);
   }
 });

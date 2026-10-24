@@ -510,8 +510,6 @@ Public values are `vars` in `wrangler.jsonc` (the ones marked PLACEHOLDER need r
 | `COMMISSION_REQUESTS` | `"open"` takes requests; anything else shows "Requests open soon." |
 | `SITE_ORIGIN` | `https://songaday.studio`: links in emails and Stripe's return addresses |
 | `COMMISSION_FROM_EMAIL`, `COMMISSION_FROM_NAME` | the sender, on a domain onboarded to Email Sending |
-| `COMMISSION_REPLY_TO` | where replies go (an Email Routing address that forwards to Jonathan) |
-| `COMMISSION_NOTIFY_TO` | where the daily summary goes |
 | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` | Cloudflare Access for the admin; empty means localhost only, with `COMMISSION_ADMIN_LOCAL` |
 | `COMMISSION_ADMIN_LOCAL` | `yes` in `.dev.vars` only, never in `wrangler.jsonc`: lets the admin open on localhost without Access |
 
@@ -522,6 +520,8 @@ Secrets, set with `wrangler secret put <NAME>` (locally, in `.dev.vars`):
 | `STRIPE_SECRET_KEY` | a restricted key (`rk_live_...`) with write access to Checkout Sessions, Subscriptions and Subscription Schedules, and to Products and Prices (Checkout's `price_data` makes them inline). In test mode, a refused call names the permission it's missing. |
 | `STRIPE_WEBHOOK_SECRET` | the webhook endpoint's `whsec_...` |
 | `ADMIN_EMAILS` | the addresses allowed into the admin, comma-separated. A secret only so Jonathan's address stays out of this public repo. |
+| `COMMISSION_REPLY_TO` | where buyers' replies go: Jonathan's own inbox. A secret for the same reason. |
+| `COMMISSION_NOTIFY_TO` | where the daily summary goes: Jonathan's own inbox. |
 | `TURNSTILE_SECRET_KEY` | already set for Fumble |
 
 Missing pieces fail soft: until `COMMISSION_REQUESTS` is `"open"`, `/commission` goes to the
@@ -539,21 +539,21 @@ emails wait in the outbox; without Access the admin answers only on localhost wi
    `wrangler d1 migrations apply songaday-commissions --remote`.
 2. **Bucket** (done 2026-10-23). `wrangler r2 bucket create songaday-commissions`. Leave public access off: no
    r2.dev URL and no custom domain.
-3. **Email** (Email Service needs the Workers Paid plan).
-   - `wrangler email sending enable songaday.studio` adds the SPF and DKIM records
-     (`wrangler email sending dns get songaday.studio` shows them). Add a DMARC record too:
-     a TXT record at `_dmarc.songaday.studio`, for example `v=DMARC1; p=none; rua=mailto:<you>`.
-   - Replies: check songaday.studio has no other MX records, then
-     `wrangler email routing enable songaday.studio`, add Jonathan's own inbox as a destination
-     with `wrangler email routing addresses create <his address>` (click the link it emails),
-     and in the dashboard (songaday.studio > Email > Email Routing > Routing rules > Create
-     address) forward `jonathan@songaday.studio` to it.
-   - If the addresses differ from `songs@songaday.studio` and `jonathan@songaday.studio`,
-     change them in `wrangler.jsonc`: the three `COMMISSION_*` address vars and
-     `allowed_sender_addresses` on the `COMMISSION_EMAIL` binding (`tests/commission-config.test.mjs`
-     checks the sender is allowed).
+3. **Email** (Email Service needs the Workers Paid plan). Sending was turned on for
+   songaday.studio on 2026-10-24 (`wrangler email sending enable songaday.studio`).
+   - songaday.studio's own mail is iCloud's (its MX and SPF records point there), so **don't
+     turn on Email Routing**: it would replace those MX records. Sending only adds records under
+     `cf-bounce.` and `_domainkey`, plus a DMARC record; `wrangler email sending dns get
+     songaday.studio` lists them. iCloud signs songaday.studio mail with its own DKIM key
+     (`sig1._domainkey`), so a strict DMARC policy doesn't affect it.
+   - Mail goes out from `songs@songaday.studio`. Replies and the daily summary go to Jonathan's
+     own inbox, set as secrets so the address stays out of this repo:
+     `wrangler secret put COMMISSION_REPLY_TO` and `wrangler secret put COMMISSION_NOTIFY_TO`.
+   - To send from a different address, change `COMMISSION_FROM_EMAIL` and
+     `allowed_sender_addresses` on the `COMMISSION_EMAIL` binding in `wrangler.jsonc`
+     (`tests/commission-config.test.mjs` checks the sender is allowed).
    - Check it end to end before anything else sends: `wrangler email sending send --from
-     songs@songaday.studio --to jonathan@songaday.studio --subject test --text test`, and see
+     songs@songaday.studio --to <his inbox> --subject test --text test`, and see
      it arrive in Jonathan's inbox. An address that bounces is added to Email Service's
      suppression list, and every later email to it fails at once (`E_RECIPIENT_SUPPRESSED`),
      even after routing is fixed. To take one off: list them with `GET

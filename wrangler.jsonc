@@ -75,20 +75,18 @@
     "crons": ["0 14 * * *"]
   },
   // Public values. Secrets are Worker secrets (`wrangler secret put ...`): TURNSTILE_SECRET_KEY,
-  // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET and ADMIN_EMAILS. Locally, .dev.vars overrides these.
+  // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS, COMMISSION_REPLY_TO and
+  // COMMISSION_NOTIFY_TO (Jonathan's inbox, kept out of this public repo). Locally, .dev.vars
+  // overrides these.
   "vars": {
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFdspSacH0xXspAj",
     // Links in emails and Stripe's return addresses.
     "SITE_ORIGIN": "https://songaday.studio",
     // "open" to take requests. Until then the page says "Requests open soon."
     "COMMISSION_REQUESTS": "closed",
-    // PLACEHOLDER: must be an address on a domain onboarded to Email Sending.
+    // songaday.studio has Email Sending on (since 2026-10-24); its mail is still iCloud's.
     "COMMISSION_FROM_EMAIL": "songs@songaday.studio",
     "COMMISSION_FROM_NAME": "Jonathan Mann",
-    // PLACEHOLDER: replies go here; Email Routing forwards it to Jonathan.
-    "COMMISSION_REPLY_TO": "jonathan@songaday.studio",
-    // PLACEHOLDER: the daily summary goes here.
-    "COMMISSION_NOTIFY_TO": "jonathan@songaday.studio",
     // PLACEHOLDER: Cloudflare Access for /commission/admin, https://<team>.cloudflareaccess.com.
     // Empty means the admin answers only on localhost (wrangler dev).
     "ACCESS_TEAM_DOMAIN": "",
