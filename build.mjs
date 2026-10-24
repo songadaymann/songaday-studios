@@ -1,12 +1,14 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { songADayNumber } from "./song-day.mjs";
 import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFilms } from "./films.mjs";
 import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
 import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
+import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
 // `node build.mjs --out <folder>` writes the pages there instead of next to the sources, and
@@ -15,7 +17,8 @@ const outFlag = process.argv.indexOf("--out");
 const outRoot = outFlag > 0 ? path.resolve(process.argv[outFlag + 1]) : projectRoot;
 const offline = process.env.SONGADAY_OFFLINE === "1";
 const source = (name) => readFile(path.join(projectRoot, name), "utf8");
-const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson, projectsJson, nowSource, everythingSource, walletDetect, walletGate] = await Promise.all([
+const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson, projectsJson, nowSource, everythingSource, walletDetect, walletGate,
+  commissionSource, commissionCss, commissionJs] = await Promise.all([
   source("profile.html"),
   source("films.html"),
   source("profile.css"),
@@ -27,6 +30,9 @@ const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson, projectsJs
   source("everything.html"),
   source("wallet/wallet-detect.js"),
   source("wallet/wallet-gate.js"),
+  source("commission.html"),
+  source("commission.css"),
+  source("commission-page.js"),
 ]);
 
 const projects = JSON.parse(projectsJson);
@@ -94,23 +100,29 @@ async function filmsSnapshot() {
   }
 }
 
-function documentHtml({ title, description, ogDescription = description, url, body, script }) {
+const DEFAULT_CSP = "default-src 'none'; img-src https: http: data: blob:; media-src 'self' https: http: data: blob:; style-src 'unsafe-inline' https:; font-src https: http: data:; script-src 'self' 'unsafe-inline' https:; frame-src https:; connect-src 'self' https:;";
+// An inline script as it goes into the page, so its CSP hash is of exactly these characters.
+const inlineScript = (script) => script.replaceAll("</script", "<\\/script");
+
+function documentHtml({ title, description, ogDescription = description, url, body, script, csp = DEFAULT_CSP, extraCss = "", robots = null }) {
+  const og = url ? `
+  <meta name="description" content="${description}">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${ogDescription}">
+  <meta property="og:url" content="${url}">` : "";
   return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data: blob:; media-src 'self' https: http: data: blob:; style-src 'unsafe-inline' https:; font-src https: http: data:; script-src 'self' 'unsafe-inline' https:; frame-src https:; connect-src 'self' https:;">
-  <title>${title}</title>
-  <meta name="description" content="${description}">
-  <meta property="og:title" content="${title}">
-  <meta property="og:description" content="${ogDescription}">
-  <meta property="og:url" content="${url}">
-  <style>html,body{margin:0;min-height:100%;}${css}</style>
+  <meta http-equiv="Content-Security-Policy" content="${csp}">${robots ? `
+  <meta name="robots" content="${robots}">` : ""}
+  <title>${title}</title>${og}
+  <style>html,body{margin:0;min-height:100%;}${css}${extraCss}</style>
 </head>
 <body>
 ${body}
-${script ? `<script>${script.replaceAll("</script", "<\\/script")}</script>\n` : ""}</body>
+${script ? `<script>${inlineScript(script)}</script>\n` : ""}</body>
 </html>
 `;
 }
@@ -146,7 +158,15 @@ await writePage("films/index.html", documentHtml({
 // /everything and /now share the Films page's header and footer.
 const header = filmsSource.match(/  <header class="site-header">[\s\S]*?<\/header>/)[0].replace(' aria-current="page"', "");
 const footer = filmsSource.match(/  <footer>[\s\S]*?<\/footer>/)[0];
-const withChrome = (page) => page.replace("{{HEADER}}", () => header).replace("{{FOOTER}}", () => footer);
+// The commission pages are purchases from Jonathan, so they say nothing about donating: no
+// Donate button or footer link, and a purchase line in place of the fiscal sponsor's.
+const purchaseHeader = header.replace(/\n\s*<a class="nav-donate"[^>]*>[^<]*<\/a>/, "")
+  .replace('<a href="/commission">', '<a href="/commission" aria-current="page">');
+const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate">Donate<\/a>/, "")
+  .replace(/<p class="sponsor-line">[\s\S]*?<\/p>/, '<p class="sponsor-line">Song commissions are purchases from Jonathan Mann.</p>');
+const withChrome = (page, { purchase = false } = {}) => page
+  .replace("{{HEADER}}", () => purchase ? purchaseHeader : header)
+  .replace("{{FOOTER}}", () => purchase ? purchaseFooter : footer);
 
 await writePage("everything/index.html", documentHtml({
   title: "Everything · Song A Day Studio",
@@ -181,6 +201,60 @@ await writePage("now/index.html", documentHtml({
   body: hostedMedia(withChrome(nowSource).replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))),
 }));
 
+// songaday.studio/commission: the page and request form, and the shell the Worker puts each
+// buyer's private song page into (commission.mjs). The prices and limits come from
+// commission-config.mjs, the same values the Worker checks. The Worker fills the
+// <!--commission:...--> slots and the Turnstile site key at request time.
+const money = (cents) => "$" + (cents / 100).toLocaleString("en-US");
+const listed = (items) => items.length > 1 ? `${items.slice(0, -1).join(", ")} or ${items.at(-1)}` : items.join("");
+const personal = PRICES.personal.suggested.map(money);
+const commissionTokens = {
+  PERSONAL_FROM: money(PRICES.personal.floor),
+  PERSONAL_SUGGESTED: `${personal.slice(0, -1).join(", ")}, or ${personal.at(-1)} or more`,
+  BUSINESS_FROM: money(PRICES.business.floor),
+  PLAN_MONTHS: listed(PLAN_MONTHS.map(String)),
+  VIDEO_LINE: VIDEO_PRICE_CENTS ? `A music video adds ${money(VIDEO_PRICE_CENTS)}.` : "A music video: tick the box and I’ll be in touch about it.",
+  MEMO_MAX_BYTES: String(MEMO_MAX_BYTES),
+  MEMO_MB: String(Math.round(MEMO_MAX_BYTES / 1024 / 1024)),
+  WRITES_PER_DAY: String(WRITES_PER_DAY),
+  LINE_EXAMPLE: `#${WRITES_PER_DAY * 3} is about three days away`,
+  ...Object.fromEntries(Object.entries(LIMITS).map(([name, value]) => [`LIMIT_${name}`, String(value)])),
+};
+const commissionBody = withChrome(commissionSource, { purchase: true })
+  .replaceAll(/\{\{([A-Za-z_]+)\}\}/g, (match, name) => {
+    if (!(name in commissionTokens)) throw new Error(`commission.html has an unknown {{${name}}}.`);
+    return commissionTokens[name];
+  });
+const commissionHash = createHash("sha256").update(inlineScript(commissionJs), "utf8").digest("base64");
+// No 'unsafe-inline': the one inline script runs by its hash. form-action lists Stripe because
+// Chrome applies it to the redirect after the pay form posts.
+const commissionCsp = `default-src 'none'; img-src 'self' https: data:; media-src 'self'; style-src 'unsafe-inline' https:; font-src https: data:; script-src 'sha256-${commissionHash}' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self'; form-action 'self' https://checkout.stripe.com; base-uri 'none'`;
+await writePage("commission/index.html", documentHtml({
+  title: "Get a song · Song A Day Studio",
+  description: "Jonathan Mann has written a song every day since 2009. He’ll write one for you. Pay what you want when it’s done.",
+  url: "https://songaday.studio/commission",
+  body: hostedMedia(commissionBody),
+  script: commissionJs,
+  csp: commissionCsp,
+  extraCss: commissionCss,
+}));
+await writePage("commission/song.html", documentHtml({
+  title: "Song A Day Studio",
+  body: hostedMedia(withChrome(`<div class="labs-page text-page commission-page" id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+{{HEADER}}
+
+  <main id="main" tabindex="-1"><!--commission:song--></main>
+
+{{FOOTER}}
+</div>`, { purchase: true })),
+  script: commissionJs,
+  csp: commissionCsp,
+  extraCss: commissionCss,
+  robots: "noindex",
+}));
+
 // The data lab (songaday.studio/data/). data-lab/lab.html is a self-contained page with its own
 // title, styles and script, which reads lab.json (data-lab/lab.json, exported by songaday-data's
 // web/export.py). The same file is published on its own for review, so here it only gets a
@@ -212,4 +286,4 @@ ${labBody}
 </body>
 </html>
 `);
-console.log(`Built Song A Day Studio index.html, films/, everything/ and now/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+console.log(`Built Song A Day Studio index.html, films/, everything/, now/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);

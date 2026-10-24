@@ -151,7 +151,7 @@
       "title": "Song commissions",
       "verb": "get-a-song",
       "path": "/commission",
-      "url": "https://jonathanmann.bandcamp.com/merch",
+      "url": "https://songaday.studio/commission",
       "tagline": "A song written for you, about anything.",
       "status": "active",
       "sourceUrl": null,

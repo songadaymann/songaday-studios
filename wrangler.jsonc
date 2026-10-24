@@ -16,27 +16,82 @@
     {
       "binding": "FUMBLE_IMAGES",
       "bucket_name": "songaday-fumble"
+    },
+    // songaday.studio/commission: voice memos and delivered songs. PRIVATE: no public access, no
+    // r2.dev URL, no custom domain; everything goes through the Worker. Create it with
+    // `wrangler r2 bucket create songaday-commissions` before the next deploy (README, "Commissions").
+    {
+      "binding": "COMMISSION_FILES",
+      "bucket_name": "songaday-commissions"
     }
   ],
-  // songaday.studio/fumble (fumble.mjs): stories in D1, their paintings in R2 (above).
   "d1_databases": [
+    // songaday.studio/fumble (fumble.mjs): stories in D1, their paintings in R2 (above).
     {
       "binding": "FUMBLE_DB",
       "database_name": "songaday-fumble",
       "database_id": "016edff4-1274-406c-bcc4-32a14aa04a91"
+    },
+    // songaday.studio/commission (commission.mjs): requests, payments, plans and the email outbox.
+    // Created 2026-10-23 (`wrangler d1 create songaday-commissions`); README, "Commissions".
+    {
+      "binding": "COMMISSIONS_DB",
+      "database_name": "songaday-commissions",
+      "database_id": "8b4c640c-2f8b-4f21-865a-79d60fffdf61",
+      "migrations_dir": "commission-migrations"
     }
   ],
-  // Per visitor IP, counted but never stored: 3 posts a minute.
+  // Per visitor IP (Fumble posts, commission requests) and per buyer link (starting a payment),
+  // counted but never stored: 3 a minute.
   "ratelimits": [
     {
       "name": "FUMBLE_LIMIT",
       "namespace_id": "20261020",
       "simple": { "limit": 3, "period": 60 }
+    },
+    {
+      "name": "COMMISSION_LIMIT",
+      "namespace_id": "20261023",
+      "simple": { "limit": 3, "period": 60 }
     }
   ],
-  // Public Turnstile site key. The secret is a Worker secret: `wrangler secret put TURNSTILE_SECRET_KEY`.
+  // Cloudflare Email Service, for commission emails. PLACEHOLDER sender: onboard songaday.studio
+  // for Email Sending first (README, "Commissions"). Under `wrangler dev` this is simulated.
+  "send_email": [
+    {
+      "name": "COMMISSION_EMAIL",
+      "allowed_sender_addresses": ["songs@songaday.studio"]
+    }
+  ],
+  // Workers Logs keeps the Worker's own console.log lines (routes, ids and outcomes), but no
+  // invocation logs: those record every request's URL, and buyer links carry their token.
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
+  },
+  // Daily at 14:00 UTC (9am in New York in winter, 10am in summer): commission place-in-line
+  // emails, the one payment reminder, Jonathan's summary, and any email that didn't go out.
+  "triggers": {
+    "crons": ["0 14 * * *"]
+  },
+  // Public values. Secrets are Worker secrets (`wrangler secret put ...`): TURNSTILE_SECRET_KEY,
+  // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS, COMMISSION_REPLY_TO and
+  // COMMISSION_NOTIFY_TO (Jonathan's inbox, kept out of this public repo). Locally, .dev.vars
+  // overrides these.
   "vars": {
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFdspSacH0xXspAj",
+    // Links in emails and Stripe's return addresses.
+    "SITE_ORIGIN": "https://songaday.studio",
+    // "open" to take requests. Until then the page says "Requests open soon."
+    "COMMISSION_REQUESTS": "closed",
+    // songaday.studio has Email Sending on (since 2026-10-24); its mail is still iCloud's.
+    "COMMISSION_FROM_EMAIL": "songs@songaday.studio",
+    "COMMISSION_FROM_NAME": "Jonathan Mann",
+    // PLACEHOLDER: Cloudflare Access for /commission/admin, https://<team>.cloudflareaccess.com.
+    // Empty means the admin answers only on localhost (wrangler dev).
+    "ACCESS_TEAM_DOMAIN": "",
+    // PLACEHOLDER: the Access application's AUD tag.
+    "ACCESS_AUD": "",
     // songaday.studio/press/ (press.mjs): the press sheet's Public tab, published to the web as
     // CSV. Empty keeps the snapshot in press/press.json (README, "Press").
     "PRESS_CSV_URL": ""

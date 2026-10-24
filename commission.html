@@ -1,0 +1,112 @@
+<div class="labs-page text-page commission-page" id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+{{HEADER}}
+
+  <main id="main" tabindex="-1">
+    <div class="text-page-intro">
+      <h1>Get a song written for you</h1>
+      <p>I’ve written a song every day since January 1, 2009. I’ll write one for you: for a birthday, a wedding, an anniversary, a launch, or just because.</p>
+    </div>
+
+    <div class="commission-sections">
+      <section aria-labelledby="how-title">
+        <h2 id="how-title">How it works</h2>
+        <ol class="commission-steps">
+          <li>Tell me about it. The more information the better.</li>
+          <li>You get your place in line. I write songs in the order they come in, and I’ll email you when you move up.</li>
+          <li>I write it. When it’s done you get a private page where you can listen and read the lyrics.</li>
+          <li>You pay what you want, and then you can download it.</li>
+        </ol>
+      </section>
+
+      <section aria-labelledby="cost-title">
+        <h2 id="cost-title">What it costs</h2>
+        <ul class="commission-list">
+          <li>For a person: pay what you want, from {{PERSONAL_FROM}}. Suggested: {{PERSONAL_SUGGESTED}}.</li>
+          <li>For a company, brand, event or organization, or a theme song for a podcast, show or channel: from {{BUSINESS_FROM}}, pay what you can.</li>
+          <li>{{VIDEO_LINE}}</li>
+          <li>Pay all at once, or spread it over {{PLAN_MONTHS}} months.</li>
+          <li>Nothing to pay until your song is done.</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="public-title">
+        <h2 id="public-title">Public or private</h2>
+        <p>Some songs become that day’s Song A Day. You choose: say yes and yours might be one; say no and it stays between us. Private doesn’t cost more. If yours goes up, it may be on the day I write it, which can be before your occasion, so if it’s a surprise, choose private.</p>
+      </section>
+
+      <section aria-labelledby="long-title">
+        <h2 id="long-title">How long it takes</h2>
+        <p>I take every request, with no cap, and write them in the order they come in. I can write about {{WRITES_PER_DAY}} a day, so {{LINE_EXAMPLE}}. <strong class="commission-line"><!--commission:line--></strong> November and December are the busiest months, so if it’s for Christmas, send it early.</p>
+      </section>
+    </div>
+
+    <section class="commission-request" aria-labelledby="request-title">
+      <h2 id="request-title">Tell me about it</h2>
+<!--commission:note-->
+<!--commission:form-->
+      <form class="commission-form" id="request" method="post" action="/commission" enctype="multipart/form-data" data-request>
+        <fieldset>
+          <legend>Is this song for a person, or for a business?</legend>
+          <label class="commission-choice"><input type="radio" name="kind" value="personal" required> A person (from {{PERSONAL_FROM}})</label>
+          <label class="commission-choice"><input type="radio" name="kind" value="business"> A company, brand, event or organization, or a theme song for a podcast, show or channel (from {{BUSINESS_FROM}})</label>
+        </fieldset>
+
+        <label for="c-recipient">Who’s it for?</label>
+        <input id="c-recipient" type="text" name="recipient" maxlength="{{LIMIT_recipient}}" required placeholder="Siobhan" autocomplete="off">
+
+        <label for="c-relationship">What are they to you?</label>
+        <input id="c-relationship" type="text" name="relationship" maxlength="{{LIMIT_relationship}}" placeholder="My best friend since third grade" autocomplete="off">
+
+        <label for="c-occasion">What’s the occasion?</label>
+        <input id="c-occasion" type="text" name="occasion" maxlength="{{LIMIT_occasion}}" placeholder="A 40th birthday" autocomplete="off">
+
+        <label for="c-names">Names to sing, and how to say them</label>
+        <textarea id="c-names" name="names" rows="3" maxlength="{{LIMIT_names}}" placeholder="Siobhan (shi-VAWN), her dog Biscuit"></textarea>
+
+        <label for="c-memo">Or send a voice memo saying them (optional)</label>
+        <p class="commission-hint" id="c-memo-hint">MP3, M4A or WAV, up to {{MEMO_MB}} MB.</p>
+        <input id="c-memo" type="file" name="memo" accept="audio/*" aria-describedby="c-memo-hint" data-max-bytes="{{MEMO_MAX_BYTES}}">
+
+        <label for="c-story">Tell me everything</label>
+        <p class="commission-hint" id="c-story-hint">Stories, inside jokes, places, what they love, what they’re like. For a business: what you do, who’ll hear it, and where it’ll play. The more information the better.</p>
+        <textarea id="c-story" name="story" rows="10" minlength="{{LIMIT_storyMin}}" maxlength="{{LIMIT_story}}" required aria-describedby="c-story-hint"></textarea>
+
+        <label for="c-leave-out">Anything I should leave out?</label>
+        <textarea id="c-leave-out" name="leave_out" rows="3" maxlength="{{LIMIT_leave_out}}"></textarea>
+
+        <label for="c-deadline">Is there a deadline?</label>
+        <p class="commission-hint" id="c-deadline-hint">I go in order, so I can’t promise a date. Tell me anyway: if your place in line is after it, I’ll say so straight away, and you can decide.</p>
+        <input id="c-deadline" type="date" name="deadline" aria-describedby="c-deadline-hint" data-deadline>
+
+        <fieldset aria-describedby="c-publish-hint">
+          <legend>Can it be that day’s Song A Day?</legend>
+          <p class="commission-hint" id="c-publish-hint">If yes, it may go up the day I write it, which can be before your occasion. If it’s a surprise, choose private (it’s free).</p>
+          <label class="commission-choice"><input type="radio" name="may_publish" value="yes" required> Yes, it can be public</label>
+          <label class="commission-choice"><input type="radio" name="may_publish" value="no"> No, keep it private</label>
+        </fieldset>
+
+        <label class="commission-choice commission-check"><input type="checkbox" name="video" value="yes"> I’d like a music video too</label>
+
+        <label for="c-name">Your name</label>
+        <input id="c-name" type="text" name="name" maxlength="{{LIMIT_name}}" required autocomplete="name">
+
+        <label for="c-email">Your email</label>
+        <input id="c-email" type="email" name="email" maxlength="{{LIMIT_email}}" required autocomplete="email">
+
+        <input class="commission-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="cf-turnstile" data-sitekey="commission-site-key" data-action="commission" data-theme="dark" data-appearance="interaction-only" data-callback="commissionChecked" data-expired-callback="commissionExpired" data-error-callback="commissionError"></div>
+        <noscript><p class="commission-status">This form needs JavaScript for its check that you’re human. Turn it on for this page to send your request.</p></noscript>
+
+        <button type="submit">Send my request</button>
+        <p class="commission-fine">Nothing to pay now. When your song is done, you’ll pay what you want and then download it.</p>
+        <p class="commission-status" id="commission-status" role="status"></p>
+      </form>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<!--/commission:form-->
+    </section>
+  </main>
+
+{{FOOTER}}
+</div>
