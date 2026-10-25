@@ -116,7 +116,10 @@ test('admin posts must come from the admin itself', async () => {
 
 test('the queue shows every answer, in order, escaped, with deadlines that are close marked', async () => {
   const env = await commissionEnv();
-  const soon = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
+  // Three days after today in New York, which is how the admin counts (not UTC's date, a day
+  // ahead from 8pm to midnight there).
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const soon = new Date(Date.parse(`${today}T12:00:00Z`) + 3 * 86_400_000).toISOString().slice(0, 10);
   await makeRequest(env, { story: 'First in line.\n\nShe loves <b>bold</b> things & https://example.com links.', deadline: soon, video: 'yes' });
   await makeRequest(env, { email: 'b@example.com', kind: 'business', recipient: 'Acme Bees', story: 'A jingle for our honey, please.', may_publish: 'no' });
   const third = await makeRequest(env, { email: 'c@example.com', story: 'Third, with a voice memo.', memo: [audio.m4a(), 'names.m4a', 'audio/mp4'] });
