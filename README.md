@@ -271,8 +271,8 @@ falls behind. To bring it up to date, run it again, then `node build-production.
 
 https://songaday.studio/press/ lists Jonathan's press, podcasts, radio and TV, newest first:
 the eight newest featured pieces (the rest open under "more featured"), then all of it by year,
-with filters for Press, Podcasts & radio, and TV & video. It replaces the press pages on
-jonathanmann.net.
+with filters for the kind (Press, Podcasts & radio, TV & video), the project and the year. It
+replaces the press pages on jonathanmann.net.
 
 It comes from the Google Sheet "jonathan_mann_press_inventory". The sheet's **Public** tab is a
 formula over the Press Inventory tab that keeps only the rows to publish, with 12 columns: `id`,
@@ -294,7 +294,8 @@ and `wallet_only`.
   piece that's about buying the NFTs, like a marketplace's own blog (see below). Format decides
   the filter: one that includes "podcast episode" or "podcast interview", or starts with
   "radio", is Podcasts & radio; one that starts with "TV", "talk" or "interview / video", or
-  includes "livestream", is TV & video; everything else is Press.
+  includes "livestream", is TV & video; everything else is Press. Project decides the project
+  filter (see "Project groups" below).
 - **One-time setup.** In the sheet, File > Share > Publish to web:
   1. Under Link, choose the Public tab and "Comma-separated values (.csv)".
   2. Open "Published content & settings" and change "Entire document" to just **Public**. Left
@@ -351,11 +352,38 @@ are left out. A `kind` it doesn't know counts as Press, and an empty outlet show
 Every value is escaped, so nothing in the sheet can add HTML or a script, and only http and https
 links are made.
 
-The filters are links (`/press/?kind=podcasts`), which the Worker answers with the other kinds
-hidden, so they work without JavaScript; with it, `press-page.js` filters in place. Rows with
-`wallet_only` (the OpenSea interview) are crypto parts: they're inside `data-crypto` and show only
-to browsers with a wallet (see `wallet/`), and only those browsers count them. Everything else,
-including the SEC suit and NFT news, shows to everyone.
+The filters combine, and each is part of the address: `/press/?kind=podcasts&project=sec&year=2024`.
+The kinds are links, and the project and year are menus with a Show button. The Worker answers
+the address with the other rows hidden, so the filters work without JavaScript. With it,
+`press-page.js` filters in place as you click or pick, hides the Show button and keeps the
+address in step. Any filter hides the featured pieces, and shows "Showing N of M" and Clear
+filters. Each menu choice shows how many pieces it would show with the other filters as they
+are. A year comes from the rows themselves, newest first. An address with a filter the page
+doesn't have (`?project=nope`, `?year=2008`) shows the whole list.
+
+**Project groups.** The sheet's Project column is free text, so `PRESS_PROJECTS` in `press.mjs`
+maps its values to the groups in the menu, each with a short slug for the address:
+
+| Group | Slug | Project values |
+| --- | --- | --- |
+| Song A Day | `song-a-day` | Song A Day, Song A Day / Hugh Mann, Career overview, Selling Song A Day NFTs, Crypto Tax Nightmare / Song A Day 6000 |
+| The SEC lawsuit | `sec` | Suing the SEC |
+| GameJew | `gamejew` | GameJew |
+| Coldplay Canoodle | `coldplay` | Coldplay Canoodle |
+| The Mario Opera | `mario-opera` | The Mario Opera |
+| WAMP | `wamp` | WAMP, WAMP / AI-built projects |
+| X-Play: The Musical | `x-play` | X-Play: The Musical |
+
+Case doesn't matter. A value no group lists goes under **Other**, which is in the menu only
+while it has rows, and `node update-press.mjs` names each such value. To fix one, add it to a
+group's `projects` in `press.mjs`, or add a group: a `slug` (keep it once it's live, since links
+use it), a `label`, and its `projects`. Everyone sees the labels, so they can't use crypto words
+like NFT. A group with no rows isn't in the menu.
+
+Rows with `wallet_only` (the OpenSea interview) are crypto parts: they're inside `data-crypto` and
+show only to browsers with a wallet (see `wallet/`), and only those browsers count them, in the
+totals, "Showing N of M" and the menus. Everything else, including the SEC suit and NFT news,
+shows to everyone.
 
 ## Fumble
 

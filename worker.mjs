@@ -5,7 +5,7 @@ import { handleFumble } from './fumble.mjs';
 import { handleCommission, runCommissionDaily } from './commission.mjs';
 import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from './today-song.mjs';
 import { songDate } from './calendar.mjs';
-import { livePress, pressKind, pressSnapshot, renderPress, renderPressSummary } from './press.mjs';
+import { livePress, pressFilters, pressSnapshot, renderPress, renderPressSummary } from './press.mjs';
 
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
@@ -198,9 +198,11 @@ export default {
       });
     }
     if (pressPromise) {
-      // The live press sheet, or the built-in snapshot again when ?kind= asks for a filter
-      // (the other kinds come back hidden, so the filter links work without JavaScript).
-      const kind = pressKind(url.searchParams.get('kind'));
+      // The live press sheet, or the built-in snapshot again when the address asks for a filter
+      // (?kind=, ?project=, ?year=: the other rows come back hidden, so the filters work without
+      // JavaScript).
+      const filters = pressFilters(url.searchParams);
+      const filtered = Object.values(filters).some(Boolean);
       rewriter.on('#press-summary', {
         async element(element) {
           const live = await pressPromise;
@@ -209,7 +211,7 @@ export default {
       }).on('#press', {
         async element(element) {
           const live = await pressPromise;
-          if (live || kind) element.setInnerContent(renderPress(live ?? pressSnapshot().items, { kind }), { html: true });
+          if (live || filtered) element.setInnerContent(renderPress(live ?? pressSnapshot().items, filters), { html: true });
         }
       });
     }

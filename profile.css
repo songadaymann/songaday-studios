@@ -375,7 +375,7 @@ body.video-modal-open { overflow: hidden; }
 .now-list li::before { content: ""; position: absolute; top: .5em; left: 0; width: .55rem; height: .55rem; border-radius: 50%; background: var(--red); }
 .now-list a { font-weight: 700; text-decoration-thickness: 2px; }
 .now-updated { margin: clamp(2rem, 4vw, 3rem) 0 0; color: var(--white-muted); font-size: .875rem; }
-/* /press: featured pieces as cards, then every piece by year, with the kind filters. Nothing
+/* /press: featured pieces as cards, then every piece by year, with the filters. Nothing
    here sets display on an li or a section, so the wallet gate and [hidden] both work on them. */
 .press-featured, .press-list { margin-top: clamp(2.25rem, 4.5vw, 3.25rem); }
 .press-jump { margin: 1rem 0 0; }
@@ -395,13 +395,30 @@ body.video-modal-open { overflow: hidden; }
 .press-filters a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; border: 2px solid var(--white-muted); font-size: .875rem; font-weight: 700; text-decoration: none; }
 .press-filters a:hover { border-color: var(--red); }
 .press-filters a[aria-current] { border-color: var(--white); background: var(--white); color: var(--ink); }
-/* "14 more featured": the rest of the featured cards, open with or without JavaScript. */
+/* Project and year are menus, so twenty years fit on a phone: side by side when there's room,
+   stacked on a phone. Without JavaScript the Show button sends them; with it they apply as they
+   change. 1rem text, so iPhones don't zoom in on them. */
+.press-pick { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; max-width: 36rem; margin-top: 1rem; }
+.press-pick label { display: grid; flex: 2 1 15rem; gap: .3rem; color: var(--white-muted); font-size: .8125rem; font-weight: 700; }
+.press-pick .press-pick-year { flex: 1 1 8rem; }
+.press-pick select { width: 100%; min-height: 44px; padding: 0 2.5rem 0 .75rem; border: 2px solid var(--white-muted); border-radius: 0; background: var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") no-repeat right .9rem center / .75rem; color: var(--white); color-scheme: dark; font: inherit; font-size: 1rem; font-weight: 700; appearance: none; cursor: pointer; }
+.press-pick select:hover { border-color: var(--red); }
+.press-pick select:focus-visible { outline: 4px solid var(--red); outline-offset: 4px; }
+.press-pick option { background: var(--paper); color: var(--white); font-weight: 400; }
+.press-pick button { min-height: 44px; padding: 0 1.25rem; border: 2px solid var(--white); background: var(--white); color: var(--ink); font-size: .875rem; font-weight: 700; cursor: pointer; }
+.press-pick button:hover { border-color: var(--red); }
+.press-pick button[hidden], .press-clear[hidden] { display: none; }
+/* "13 more featured": the rest of the featured cards, open with or without JavaScript. */
 .press-more summary { display: inline-block; min-height: 44px; margin-top: .75rem; padding: .6rem 1rem; border: 2px solid var(--white-muted); font-size: .875rem; font-weight: 700; line-height: 1.4; cursor: pointer; }
 .press-more summary::-webkit-details-marker { display: none; }
 .press-more summary::after { content: "+"; margin-left: .5rem; }
 .press-more[open] summary::after { content: "\2212"; }
 .press-more summary:hover { border-color: var(--red); }
-.press-status { margin: .9rem 0 0; color: var(--white-muted); font-size: .875rem; }
+/* "Showing 15 of 182." and Clear filters, when a filter is on. */
+.press-status-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1rem; margin-top: .5rem; }
+.press-status { margin: 0; color: var(--white-muted); font-size: .875rem; }
+.press-clear { display: inline-flex; align-items: center; min-height: 44px; font-size: .875rem; font-weight: 700; text-decoration-thickness: 2px; }
+.press-clear:hover { text-decoration-color: var(--red); }
 /* Rows run the full width, like /everything's, under the heading's rule; the text in them is
    held to a readable line. */
 .press-year { margin-top: clamp(1.75rem, 3.5vw, 2.5rem); }
