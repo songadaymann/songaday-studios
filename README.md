@@ -408,9 +408,10 @@ create`) and put its site key in `wrangler.jsonc`, then `wrangler secret put TUR
 
 The D1 database and the private R2 bucket (setup steps 1 and 2) were created on 2026-10-23, and
 the database id is in `wrangler.jsonc`. On 2026-10-24 email (step 3) passed its end-to-end test,
-and the Access application for the admin (step 4) was created. Until `COMMISSION_REQUESTS` is `"open"` (step 8),
-`/commission` goes on to the Bandcamp commission listings, as it always has, so deploying other
-changes in the meantime never leaves people without a way to buy a song.
+and the Access application for the admin (step 4) was created. Stripe (step 5) was set up in the
+sandbox on 2026-10-25; its live-only settings wait for step 8. Until `COMMISSION_REQUESTS` is
+`"open"` (step 8), `/commission` goes on to the Bandcamp commission listings, as it always has,
+so deploying other changes in the meantime never leaves people without a way to buy a song.
 
 https://songaday.studio/commission is where people ask Jonathan for a song. It's a purchase
 from Jonathan, on his own Stripe account: nothing on these pages or in these emails says donate,
@@ -577,14 +578,20 @@ emails wait in the outbox; without Access the admin answers only on localhost wi
      `curl -sI https://songaday.studio/commission/admin` answers 302 to
      `https://<team>.cloudflareaccess.com/...?kid=<AUD tag>`.
    - `wrangler secret put ADMIN_EMAILS` with the same address.
-5. **Stripe** — Jonathan's own account, not the fiscal sponsor's. Do all of it in test mode
-   first.
-   - Settings > Business: business name and statement descriptor "JONATHAN MANN" or
-     "SONG A DAY".
-   - Settings > Customer emails: turn on receipts for successful payments.
-   - Billing > Revenue recovery: Smart Retries on, failed-payment emails on, and "cancel the
-     subscription" once all retries fail.
-   - Developers (Workbench) > API keys > Create restricted key, with the permissions above. Then
+5. **Stripe** — Jonathan's own account, not the fiscal sponsor's: the **jonathanmann.bandcamp**
+   account. Do all of it in test mode (a sandbox) first.
+   - **Done in the sandbox (2026-10-25):** Smart Retries, the webhook below, a restricted key
+     ("songaday-studio-commissions (sandbox)"), and both secrets on the Worker.
+   - **Live-only, still to do (step 8):** Stripe hides these in test mode, so they're set once,
+     on the live account:
+     - Settings > Business: business name and statement descriptor "SONG A DAY".
+     - Settings > Customer emails: turn on receipts for successful payments.
+     - Billing > Revenue recovery: failed-payment emails on, and "cancel the subscription" once
+       all retries fail.
+   - Settings > Billing > Subscriptions and emails > Manage failed payments: Smart Retries for
+     cards (Stripe's default, up to 4 tries within a month).
+   - Developers (Workbench) > API keys > Create restricted key, with the permissions above
+     (subscription schedules come under Billing > Subscriptions). Then
      `wrangler secret put STRIPE_SECRET_KEY`.
    - Developers (Workbench) > Webhooks > Add destination: endpoint
      `https://songaday.studio/commission/stripe`, API version `2026-09-30.endive` (the one the
@@ -616,15 +623,16 @@ emails wait in the outbox; without Access the admin answers only on localhost wi
    - Clean up before switching keys: cancel and archive each test request in the admin (or use
      Delete for good), so the tabs and the summary start from real requests.
    - Switch to live keys:
-     1. Create a restricted live key with the same permissions, and `wrangler secret put
+     1. Set step 5's live-only settings on the live account, and Smart Retries there too.
+     2. Create a restricted live key with the same permissions, and `wrangler secret put
         STRIPE_SECRET_KEY`.
-     2. Add a live webhook endpoint: the same URL, the same four events, API version
+     3. Add a live webhook endpoint: the same URL, the same four events, API version
         `2026-09-30.endive`.
-     3. `wrangler secret put STRIPE_WEBHOOK_SECRET` with the live endpoint's own signing secret
+     4. `wrangler secret put STRIPE_WEBHOOK_SECRET` with the live endpoint's own signing secret
         (a live endpoint has a different `whsec_`; with the test one, every live event fails
         its signature and monthly payments 2 to N are never recorded).
-     4. Disable or delete the test-mode endpoint.
-     5. Make one real $200 payment and see it in the admin's Paid tab.
+     5. Disable or delete the test-mode endpoint.
+     6. Make one real $200 payment and see it in the admin's Paid tab.
 9. **Before opening.** Jonathan adds one line to `commission.html` about usage rights (a
    personal-use license; songs he makes public are Song A Day's, under its Creative Commons
    license) and refunds; then `node build-production.mjs` and `wrangler deploy`. Requests are
