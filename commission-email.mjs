@@ -87,6 +87,17 @@ const TEMPLATES = {
       "You're getting this because you asked me for a song at songaday.studio. To stop these updates, turn them off on your page."
     ]
   }),
+  // When Jonathan starts writing, the buyer's Cancel goes away, so they hear it then.
+  writing: (r, d) => ({
+    subject: "I've started writing your song",
+    body: [
+      greeting(r),
+      `I've started writing your song${forWhom(r)}. I'll email you as soon as it's ready.`,
+      "Now that I'm writing it, it can't be cancelled from your page. If something's changed, reply and tell me.",
+      { lead: 'Your page:', url: d.page, label: 'Your page' },
+      SIGN
+    ]
+  }),
   delivered: (r, d) => ({
     subject: 'Your song is ready',
     body: [

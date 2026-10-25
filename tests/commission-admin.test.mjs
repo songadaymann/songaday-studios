@@ -259,9 +259,15 @@ test('every move goes through the transition rules, and a refused one is a 409',
   await post(env, id, { action: 'writing' });
   assert.equal(status().status, 'writing');
   assert.ok(status().writing_at);
+  // The buyer hears it, since their Cancel is gone from here on.
+  const [started] = env.COMMISSIONS_DB.rows('outbox', "kind = 'writing'");
+  assert.equal(started.subject, `I've started writing your song (request ${id})`);
+  assert.match(started.text, /I've started writing your song for Siobhan, my sister\. I'll email you as soon as it's ready\./);
+  assert.match(started.text, /it can't be cancelled from your page/);
   const again = await post(env, id, { action: 'writing' });
   assert.equal(again.status, 409);
   assert.match(await again.text(), /That song is being written\./);
+  assert.equal(env.COMMISSIONS_DB.rows('outbox', "kind = 'writing'").length, 1);
 
   // Undo delivery: the file is deleted, the page goes back to the line, /listen is gone.
   await deliver(env, id);

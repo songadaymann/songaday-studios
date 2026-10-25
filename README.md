@@ -469,7 +469,9 @@ header's Donate button and the footer's sponsor line for that reason.
      or cancels them all with no email.
 3. **Writing.** Jonathan reads the requests in order at `/commission/admin`: every answer in
    full, one card each, with the voice memo playable. The line opens with any deadline due in a
-   week or at risk at its place. "Start writing" is optional. "Find a request" takes a request
+   week or at risk at its place. "Start writing" is optional; it emails the buyer that their
+   song is being written, since from then on they can't cancel it from their page (it's
+   Jonathan's to cancel). "Find a request" takes a request
    number (every buyer email's subject ends "(request 57)"), or part of an email, name or
    recipient, so a reply can be matched to its request.
 4. **Delivering.** On a request's admin page he uploads the song (MP3, M4A or WAV, up to 30 MB),

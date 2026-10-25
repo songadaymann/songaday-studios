@@ -97,12 +97,13 @@ export function checkoutParams(env, request, { plan, amount }, now = new Date())
     cancel_url: `${page}#pay`,
     client_reference_id: String(request.id),
     customer_email: request.buyer_email,
-    submit_type: 'pay',
     expires_at: Math.floor(now.getTime() / 1000) + CHECKOUT_SECONDS
   };
   if (plan === 'once' || plan === 'extra') {
     return {
       ...common,
+      // Payment mode only: Stripe refuses submit_type 'pay' in subscription mode (400).
+      submit_type: 'pay',
       mode: 'payment',
       line_items: [{
         price_data: {

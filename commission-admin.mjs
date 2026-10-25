@@ -413,7 +413,7 @@ ${pager}`));
 }
 
 const DONE = {
-  writing: 'Marked as being written.', deliver: 'Delivered.', undeliver: 'Delivery undone. It’s back in line, being written.',
+  writing: 'Marked as being written. The buyer gets an email saying so.', deliver: 'Delivered.', undeliver: 'Delivery undone. It’s back in line, being written.',
   paid: 'Payment recorded.', cancel: 'Cancelled.', restore: 'Back in line, in its old place.', archive: 'Archived.',
   unarchive: 'Unarchived.', edit: 'Saved.', send: 'Sent, or queued to send.', delete: 'Deleted for good.',
   'let-in': 'Let in. They’ve been emailed their place.', 'let-in-all': 'Let in, and emailed their places.',
@@ -604,7 +604,11 @@ async function act(request, env, url, ctx, identity, now, id) {
       return done();
 
     case 'writing':
-      await db.prepare("UPDATE requests SET status = 'writing', writing_at = ? WHERE id = ? AND status = 'requested'").bind(at, r.id).run();
+      // The email goes in only if this batch's update did (writing_at is this moment).
+      await db.batch([
+        db.prepare("UPDATE requests SET status = 'writing', writing_at = ? WHERE id = ? AND status = 'requested'").bind(at, r.id),
+        queueEmail(env, 'writing', r, { now, when: 'EXISTS (SELECT 1 FROM requests WHERE id = ? AND writing_at = ?)', whenArgs: [r.id, at] })
+      ]);
       return done();
 
     case 'deliver': {

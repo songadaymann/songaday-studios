@@ -209,7 +209,8 @@ test('paying over six months is a subscription of the total over six, rounded up
   assert.equal(form.get('subscription_data[description]'), `Song commission #${id}: 6 monthly payments of $83.34`);
   assert.equal(form.get('metadata[plan]'), 'installments');
   assert.equal(form.get('metadata[months]'), '6');
-  assert.equal(form.get('submit_type'), 'pay');
+  // Stripe answers 400 to submit_type 'pay' in subscription mode, so plans leave the button alone.
+  assert.equal(form.get('submit_type'), null);
   assert.equal(form.get('payment_intent_data[description]'), null);
 
   // $200 over 12 rounds up to $16.67 a month, $200.04 in all: at or above the floor.
@@ -538,7 +539,7 @@ test('nothing sent to Stripe names the recipient or says donate, gift or patron'
     const text = decodeURIComponent(entry.body);
     assert.doesNotMatch(text, /Siobhan|Recipient/);
     assert.doesNotMatch(text, /donat|gift|tax-deductible|patron/i);
-    assert.doesNotMatch(entry.form.get('submit_type'), /donate/);
+    assert.doesNotMatch(entry.form.get('submit_type') ?? '', /donate/);
   }
 });
 

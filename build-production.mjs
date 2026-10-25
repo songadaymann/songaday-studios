@@ -34,6 +34,9 @@ if (existsSync('assets')) {
   // Videos are served from R2 (node upload-media.mjs), so they stay out of dist/.
   const isVideo = (source) => MEDIA_PATH.test('/' + source.split(path.sep).join('/'));
   await cp('assets', 'dist/assets', { recursive: true, dereference: true, filter: (source) => !source.endsWith('.DS_Store') && !source.endsWith('.md') && !isVideo(source) });
+} else {
+  // A fresh clone has no assets link, and deploying dist/ then takes every /assets/ file offline.
+  console.warn('WARNING: no assets/ (ln -s private-assets/site assets), so dist/ has no /assets/ files. Don’t deploy this build.');
 }
 console.log('Production files ready in dist/');
 
