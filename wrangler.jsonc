@@ -87,11 +87,11 @@
     // songaday.studio has Email Sending on (since 2026-10-24); its mail is still iCloud's.
     "COMMISSION_FROM_EMAIL": "songs@songaday.studio",
     "COMMISSION_FROM_NAME": "Jonathan Mann",
-    // PLACEHOLDER: Cloudflare Access for /commission/admin, https://<team>.cloudflareaccess.com.
-    // Empty means the admin answers only on localhost (wrangler dev).
-    "ACCESS_TEAM_DOMAIN": "",
-    // PLACEHOLDER: the Access application's AUD tag.
-    "ACCESS_AUD": "",
+    // Cloudflare Access for /commission/admin: the team domain, and the AUD tag of the
+    // "songaday.studio commission admin" application (created 2026-10-24). Empty means the admin
+    // answers only on localhost (wrangler dev).
+    "ACCESS_TEAM_DOMAIN": "https://motba.cloudflareaccess.com",
+    "ACCESS_AUD": "994d526df3d9a41441aee974324d327f151dbb8942d030f1e73a46d28967de0f",
     // songaday.studio/press/ (press.mjs): the press sheet's Public tab, published to the web as
     // CSV. Empty keeps the snapshot in press/press.json (README, "Press").
     "PRESS_CSV_URL": ""

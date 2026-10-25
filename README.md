@@ -407,7 +407,8 @@ create`) and put its site key in `wrangler.jsonc`, then `wrangler secret put TUR
 ## Commissions
 
 The D1 database and the private R2 bucket (setup steps 1 and 2) were created on 2026-10-23, and
-the database id is in `wrangler.jsonc`. Until `COMMISSION_REQUESTS` is `"open"` (step 8),
+the database id is in `wrangler.jsonc`. On 2026-10-24 email (step 3) passed its end-to-end test,
+and the Access application for the admin (step 4) was created. Until `COMMISSION_REQUESTS` is `"open"` (step 8),
 `/commission` goes on to the Bandcamp commission listings, as it always has, so deploying other
 changes in the meantime never leaves people without a way to buy a song.
 
@@ -563,14 +564,18 @@ emails wait in the outbox; without Access the admin answers only on localhost wi
      open requests a few weeks before the Christmas rush (November and December are a third
      of the year's commissions). If it's too low, ask with Cloudflare's Limit Increase Request
      Form. Place-in-line emails wait behind everything else when the quota runs out.
-4. **Access** (the admin).
-   - Cloudflare dashboard > Zero Trust > Access > Applications > Add an application >
-     Self-hosted. Add two public hostnames on `songaday.studio`: path `commission/admin` and
-     path `commission/admin/*` (a wildcard path doesn't cover its parent).
+4. **Access** (the admin; done 2026-10-24: the "songaday.studio commission admin" application
+   on the `motba` team, and both values are in `wrangler.jsonc`).
+   - Cloudflare dashboard > Zero Trust > Access controls > Applications > Create new
+     application > Self-hosted and private > Public DNS. Add two public hostnames on
+     `songaday.studio`: path `commission/admin` and path `commission/admin/*` (a wildcard path
+     doesn't cover its parent).
    - Add a policy: Action Allow, Include > Emails > Jonathan's address. Never "Everyone".
-   - From the application's Overview, copy the Application Audience (AUD) tag into
-     `ACCESS_AUD`, and the team domain (Zero Trust > Settings shows it as
-     `<team>.cloudflareaccess.com`) into `ACCESS_TEAM_DOMAIN` (with or without `https://`).
+   - Copy the Application Audience (AUD) tag (the application's Additional settings tab) into
+     `ACCESS_AUD`, and the team domain (`<team>.cloudflareaccess.com`) into
+     `ACCESS_TEAM_DOMAIN` (with or without `https://`). Both are also in the login redirect:
+     `curl -sI https://songaday.studio/commission/admin` answers 302 to
+     `https://<team>.cloudflareaccess.com/...?kid=<AUD tag>`.
    - `wrangler secret put ADMIN_EMAILS` with the same address.
 5. **Stripe** — Jonathan's own account, not the fiscal sponsor's. Do all of it in test mode
    first.
