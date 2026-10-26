@@ -5,17 +5,40 @@
 .commission-page h2 { margin: 0 0 .75rem; font-size: clamp(1.35rem, 1.1rem + .9vw, 1.75rem); line-height: 1.2; }
 .commission-page p, .commission-page li { font-size: clamp(1.02rem, .97rem + .25vw, 1.15rem); line-height: 1.5; }
 .commission-page a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: .2em; }
-.commission-sections { display: grid; gap: clamp(1.75rem, 3.5vw, 2.5rem); margin: clamp(2rem, 4vw, 3rem) 0 0; }
+
+/* The public page (commission.html): the photo, a short intro, the form, and the details after
+   it. On phones the photo is a band under the header. From 960px it fills the left half and
+   stays put while the form scrolls past. Three type sizes: the heading, the text (inputs too)
+   and the hints. */
+.commission-start main { width: 100%; max-width: none; padding: 0; }
+.commission-photo { margin: 0; background: var(--ink); }
+.commission-photo img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: 60% 66%; }
+.commission-start-body { width: var(--wrap); max-width: 36rem; margin: 0 auto; padding: 2rem 0 4rem; font-size: 1.125rem; }
+.commission-start .text-page-intro h1 { font-size: 2.5rem; text-wrap: balance; }
+.commission-start .text-page-intro p { max-width: none; margin: 1rem 0 0; color: var(--white); font-size: inherit; line-height: 1.5; }
+.commission-start h2, .commission-start p, .commission-start li { font-size: inherit; }
+.commission-start h2 { margin: 0 0 .6rem; letter-spacing: 0; line-height: 1.3; }
+.commission-start .commission-form :is(input, textarea) { font-size: inherit; }
+.commission-start .commission-form button { font-size: .95rem; }
+.commission-line { font-weight: 700; }
+.commission-line:empty { display: none; }
+.commission-request { margin: 2.5rem 0 0; }
+.commission-closed { margin: 0; font-weight: 700; }
+.commission-sections { display: grid; gap: 2rem; margin: 4rem 0 0; padding: 2.5rem 0 0; border-top: 2px solid var(--hairline); }
 .commission-sections section p { margin: 0; }
 .commission-steps, .commission-list { display: grid; gap: .6rem; margin: 0; padding-left: 1.4rem; }
 .commission-steps li::marker { color: var(--red); font-weight: 700; }
 .commission-list li::marker { color: var(--red); }
-.commission-line { font-weight: 700; }
-.commission-request { margin: clamp(2.5rem, 5vw, 4rem) 0 0; padding: clamp(1.25rem, 3vw, 2rem); border: 4px solid var(--white); box-shadow: var(--offset) var(--offset) 0 var(--red); }
-.commission-closed { margin: 0; font-weight: 700; }
+@media (min-width: 960px) {
+  .commission-start main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .commission-photo { position: sticky; top: 68px; height: calc(100vh - 68px); }
+  .commission-photo img { height: 100%; aspect-ratio: auto; object-position: 62% 60%; }
+  .commission-start-body { width: auto; max-width: 47rem; margin: 0; padding: 3.5rem var(--gutter) 5rem 4rem; }
+  .commission-start .text-page-intro h1 { font-size: 3.5rem; }
+}
 
 .commission-form { display: grid; gap: .45rem; }
-.commission-form > label, .commission-form legend { margin-top: 1.1rem; font-weight: 700; font-size: 1.05rem; }
+.commission-form > label, .commission-form legend { margin-top: 1.1rem; font-weight: 700; font-size: inherit; }
 .commission-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: .45rem; }
 .commission-form fieldset legend { padding: 0; margin-bottom: .45rem; }
 .commission-form input[type="text"], .commission-form input[type="email"], .commission-form input[type="date"],

@@ -147,7 +147,9 @@ const snapshot = await filmsSnapshot();
 const filmsBody = filmsSource.replace("{{FILMS}}", () => snapshot)
   .replaceAll("{{FILMS_PLAYLIST_URL}}", FILMS_PLAYLIST_URL);
 const hostedMedia = (body) => hasLocalAssets ? body
-  : body.replaceAll(/\bsrc="\/assets\//g, 'src="https://songaday.studio/assets/');
+  : body.replaceAll(/\bsrc="\/assets\//g, 'src="https://songaday.studio/assets/')
+    .replaceAll(/\bsrcset="([^"]*)"/g, (match, list) =>
+      `srcset="${list.replaceAll(/(^|,\s*)\/assets\//g, "$1https://songaday.studio/assets/")}"`);
 await writePage("films/index.html", documentHtml({
   title: "Films · Song A Day Studio",
   description: "Mini-docs by Jonathan Mann about making something every day.",
