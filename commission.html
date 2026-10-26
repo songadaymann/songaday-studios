@@ -12,15 +12,15 @@
     <div class="text-page-intro">
       <h1>Get a custom song written for you</h1>
       <p>I’ve written a song every day since January 1, 2009. I’ll write one for you: for a birthday, a wedding, an anniversary, a launch, or just because.</p>
-      <p><strong class="commission-line"><!--commission:line--></strong> Nothing to pay until your song is done.</p>
     </div>
 
     <section class="commission-request" aria-label="Your request">
 <!--commission:note-->
 <!--commission:form-->
       <form class="commission-form" id="request" method="post" action="/commission" enctype="multipart/form-data" data-request>
-        <fieldset>
+        <fieldset aria-describedby="c-kind-hint">
           <legend>Is this song for a person, or for a business?</legend>
+          <p class="commission-hint" id="c-kind-hint">Nothing to pay until your song is done.</p>
           <label class="commission-choice"><input type="radio" name="kind" value="personal" required> A person (from {{PERSONAL_FROM}})</label>
           <label class="commission-choice"><input type="radio" name="kind" value="business"> A company, brand, event or organization, or a theme song for a podcast, show or channel (from {{BUSINESS_FROM}})</label>
         </fieldset>
@@ -107,7 +107,7 @@
 
       <section aria-labelledby="long-title">
         <h2 id="long-title">How long it takes</h2>
-        <p>I accept every request. I write them in the order they come in. I can write about {{WRITES_PER_DAY}} a day. November and December are the busiest months, so if it’s for Christmas, send it early.</p>
+        <p>I accept every request. I write them in the order they come in. I can write about {{WRITES_PER_DAY}} a day. <strong class="commission-line"><!--commission:line--></strong> November and December are the busiest months, so if it’s for Christmas, send it early.</p>
       </section>
     </div>
     </div>
