@@ -2,7 +2,7 @@
 // Worker checks payments and uploads against the same values, so the two can't disagree.
 // Amounts are in cents.
 
-// Pay what you want. "$1,000 or more" is the last suggestion plus the Other field.
+// Pay what you can. "$1,000 or more" is the last suggestion plus the Other field.
 export const PRICES = {
   personal: { floor: 20000, suggested: [30000, 50000, 100000] },
   business: { floor: 150000, suggested: [150000] }

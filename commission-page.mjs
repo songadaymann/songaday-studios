@@ -77,7 +77,7 @@ const newNote = (isNew) => isNew ? `<p class="commission-note" role="status">Got
 function inLine(request, { position, isNew, today }) {
   const writing = request.status === 'writing';
   const note = newNote(isNew);
-  const then = `When your song is done, it’ll be right here, and you’ll pay what you want, from ${dollars(request.floor_cents)}.`;
+  const then = `When your song is done, it’ll be right here, and you’ll pay what you can, from ${dollars(request.floor_cents)}.`;
   const heading = writing
     ? `<h1>I’m writing your song now.</h1>
 <p class="commission-lead">It’s your turn. I’ll email you as soon as it’s done, and it’ll be right here.</p>`
@@ -87,7 +87,7 @@ function inLine(request, { position, isNew, today }) {
       : `<h1>You’re #${position} in line.</h1>
 <p class="commission-lead">I write songs in the order they come in. I’ll email you when you move up, once a day at most. ${then}</p>`;
   const late = !writing && lateBy(request, position, today)
-    ? `<p class="commission-note">At #${position} your song is ${aboutDays(daysAway(position))} away, after your deadline (${escapeHtml(shortDate(request.deadline))}). You can cancel for free below, or keep your place and I’ll do my best.</p>` : '';
+    ? `<p class="commission-note">At #${position} your song is ${aboutDays(daysAway(position))} away, after your deadline (${escapeHtml(shortDate(request.deadline))}). There’s a good chance I can do yours first anyway, but I can’t promise. You can keep your place, or cancel for free below.</p>` : '';
   return `${note}<p class="commission-eyebrow">Your song${request.recipient ? ` for ${escapeHtml(request.recipient)}` : ''}</p>
 ${heading}
 ${late}
@@ -127,7 +127,7 @@ function payForm(request, { stripeReady, pending, choice }) {
   const plans = PLAN_MONTHS.map((months) => `<label class="commission-choice"><input type="radio" name="plan" value="${months}"${plan === String(months) ? ' checked' : ''}> Over ${months} months</label>`).join('\n        ');
   return `<section class="commission-box" id="pay" aria-labelledby="pay-title">
   ${heading}
-  <p>Pay what you want, from ${dollars(request.floor_cents)}. Then you can download it.</p>
+  <p>Pay what you can, from ${dollars(request.floor_cents)}. Then you can download it.</p>
   <form class="commission-pay" method="post" action="${pagePath(request)}/pay" data-pay data-floor="${request.floor_cents}">
     <fieldset>
       <legend>How much?</legend>
@@ -275,11 +275,11 @@ export const BARE_PUBLIC_PAGE = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Get a song · Song A Day Studio</title>
+<title>Get a custom song · Song A Day Studio</title>
 </head>
 <body>
 <main id="main">
-<h1>Get a song written for you</h1>
+<h1>Get a custom song written for you</h1>
 <p><!--commission:line--></p>
 <!--commission:note-->
 <!--commission:form--><p>The request form is in the built page: run node build-production.mjs.</p><!--/commission:form-->

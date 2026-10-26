@@ -42,7 +42,7 @@ outside the Fridays at The Park app.
   [songaday-data](https://github.com/songadaymann/songaday-data) repo: run its `web/export.py`
   and copy `web/lab.json` into `data-lab/` to refresh it. (The folder isn't called `data/`,
   which `.gitignore` keeps for private data.)
-- `calendar.mjs`, `build-calendar.mjs`, `calendar.json` — "This is all of it": every song as
+- `calendar.mjs`, `build-calendar.mjs`, `calendar.json` — the calendar under the hero: every song as
   one picture, an image per year; see "Calendar" below
 - `plugins/index.html` — the plugin downloads page (songaday.studio/plugins), a standalone static
   page; its images are in `assets/plugins/`. Downloads come from each project's GitHub releases.
@@ -247,9 +247,10 @@ rather than opening `index.html` directly from Finder.
 
 ## Calendar
 
-"This is all of it", under the hero, shows every song so far as one picture: an image per year,
-with each day's video still in a 31 × 12 grid (days across, months down). The rest of the
-current year shows as empty slots. The page itself has no script for it, just one `<img>` per
+The calendar under the hero shows every song so far as one picture: an image per year, with
+each day's video still in a 31 × 12 grid (days across, months down). Its heading says how long
+Song A Day has been going ("17 years and 298 days", from `songADayAge` in `song-day.mjs`). The
+rest of the current year shows as empty slots. The page itself has no script for it, just one `<img>` per
 year with a 2x version for sharp screens.
 
 `build-calendar.mjs` makes the images from the 480×270 stills that
@@ -480,7 +481,7 @@ header's Donate button and the footer's sponsor line for that reason.
    `/commission/share/<token>`, for passing on: it plays the song and shows the lyrics, with
    nothing they told Jonathan, no amounts and no buttons (the download once paid). Their own
    page's link stays theirs. "Undo delivery" pulls a song sent to the wrong request.
-5. **Paying.** Payment is on delivery, pay what you want: personal songs from $200 (suggested
+5. **Paying.** Payment is on delivery, pay what you can: personal songs from $200 (suggested
    $300, $500, $1,000 or more), business and theme songs from $1,500. They pay at once, or
    spread it over 3, 6 or 12 monthly payments that stop by themselves (honor system: the
    download unlocks after the first). After paying they can add an extra ("pay what it was
@@ -669,7 +670,8 @@ emails wait in the outbox; without Access the admin answers only on localhost wi
    open from step 8.
 10. **Outside this repo.** Point jonathanmann.net's /personal, /themes and /business at
     `https://songaday.studio/commission` (Squarespace URL mappings), take down or repoint the
-    two Bandcamp commission listings, and update `now.html` on launch day.
+    two Bandcamp commission listings, and on launch day change `now.html`'s "Thinking about
+    reopening personal song commissions" to "Taking song commissions."
 
 ### Running it locally
 
@@ -742,8 +744,8 @@ method. Detection never requests wallet access. Wallet visitors can choose
 (`wallet/`) asks installed wallets to announce themselves once, and this check hears the same
 announcements; `?crypto=0` keeps Zeffy too.
 
-The footer says it plainly: gifts are tax-deductible through Fridays at The Park, and
-commissions and albums are purchases from Jonathan, not gifts. (The commission pages' footer
+The footer says it plainly: donations are tax deductible through Fridays at The Park, and
+commissions and albums are purchases from Jonathan, not donations. (The commission pages' footer
 says only that song commissions are purchases from Jonathan Mann.)
 
 Zeffy doesn't offer Apple Pay or Google Pay inside embedded forms, and its own page

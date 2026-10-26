@@ -342,7 +342,7 @@ test('editing the floor changes what the buyer sees and what they can pay', asyn
   const row = env.COMMISSIONS_DB.one('SELECT * FROM requests');
   assert.deepEqual([row.floor_cents, row.may_publish, row.wants_video, row.admin_note], [60000, 0, 1, 'Agreed $600 with a video.']);
   const html = await (await call(env, `/commission/s/${token}`)).text();
-  assert.match(html, /Pay what you want, from \$600\./);
+  assert.match(html, /Pay what you can, from \$600\./);
   assert.match(html, /name="amount" value="1000" checked/);
   assert.doesNotMatch(html, /value="300"|value="500"/);
   assert.doesNotMatch(html, /Agreed \$600/, 'the note is Jonathan’s alone');

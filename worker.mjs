@@ -1,4 +1,4 @@
-import { songADayNumber } from './song-day.mjs';
+import { songADayAge, songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
 import { handleFumble } from './fumble.mjs';
@@ -179,6 +179,9 @@ export default {
       })
       .on('[data-song-day="count"]', {
         element(element) { element.setInnerContent(number.toLocaleString('en-US')); }
+      })
+      .on('[data-song-day="age"]', {
+        element(element) { element.setInnerContent(songADayAge(number).text); }
       });
     if (filmsPromise) {
       rewriter.on('#films-list', {

@@ -18,7 +18,7 @@ export function visible(html) {
   return html.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '')
     .replace(/<([a-z0-9]+)\b[^>]*?(\shref="[^"]*")?[^>]*>/gi, (match, tag, href) => `<${tag}${href ?? ''}>`);
 }
-const FORBIDDEN = /donat|gift|tax-deductible|patron/i;
+const FORBIDDEN = /donat|gift|tax.deductible|patron/i;
 
 const navLinks = (html) => [...html.match(/<nav class="site-sections"[\s\S]*?<\/nav>/)[0].matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
 
@@ -34,17 +34,17 @@ test('the page says how many songs are in line, and shows the form only when req
   assert.match(html, /<strong class="commission-line">Nobody’s in line right now\.<\/strong>/);
   assert.match(html, /<form class="commission-form" id="request"/);
   assert.match(html, /data-sitekey="site-key" data-action="commission"/);
-  assert.match(html, /For a person: pay what you want, from \$200\. Suggested: \$300, \$500, or \$1,000 or more\./);
+  assert.match(html, /For a person: pay what you can, from \$200\. Suggested: \$300, \$500, or \$1,000 \(or more\)\./);
   assert.match(html, /from \$1,500, pay what you can/);
   assert.match(html, /spread it over 3, 6 or 12 months/);
-  assert.match(html, /A music video: tick the box and I’ll be in touch about it\./);
+  assert.match(html, /A music video: tick the box on the form and I’ll be in touch about it\./);
   assert.doesNotMatch(html, /\{\{|commission-site-key/);
   // Theme songs are business songs; going public can come before the occasion; how long the line is.
   assert.match(html, /or a theme song for a podcast, show or channel: from \$1,500, pay what you can\./);
   assert.match(html, /value="personal" required> A person \(from \$200\)/);
   assert.match(html, /value="business"> A company, brand, event or organization, or a theme song for a podcast, show or channel \(from \$1,500\)/);
   assert.match(html, /If yes, it may go up the day I write it, which can be before your occasion\. If it’s a surprise, choose private \(it’s free\)\./);
-  assert.match(html, /I take every request, with no cap, and write them in the order they come in\. I can write about 10 a day, so #30 is about three days away\./);
+  assert.match(html, /I accept every request\. I write them in the order they come in\. I can write about 10 a day\./);
   assert.match(html, /placeholder="Siobhan" autocomplete/);
   assert.match(html, /For a business: what you do, who’ll hear it, and where it’ll play\./);
   assert.match(html, /data-error-callback="commissionError"/);
@@ -616,7 +616,7 @@ test('a buyer whose place in line is after their deadline hears so straight away
   const tomorrow = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(Date.now() + 86_400_000));
   const late = await makeRequest(env, { deadline: tomorrow, video: 'yes' });
   const email = db.one("SELECT text FROM outbox WHERE kind = 'received' AND request_id = ?", late.id).text;
-  assert.match(email, /At #25 your song is about 3 days away, after your deadline \([A-Z][a-z]{2} \d+\)\. You can cancel for free from your page, or keep your place and I'll do my best\./);
+  assert.match(email, /At #25 your song is about 3 days away, after your deadline \([A-Z][a-z]{2} \d+\)\. There's a good chance I can do yours first anyway, but I can't promise\. You can keep your place, or cancel for free from your page\./);
   assert.match(email, /You asked about a music video too\. I'll email you about it\./);
   assert.match(await (await call(env, `/commission/s/${late.token}`)).text(), /At #25 your song is about 3 days away, after your deadline/);
 

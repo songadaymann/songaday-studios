@@ -56,7 +56,7 @@ test('/commission is a page here once requests open, and the Bandcamp listings u
     };
     const open = await worker.fetch(new Request(`https://songaday.studio${path}`), env);
     assert.equal(open.status, 200, path);
-    assert.match(await open.text(), /Get a song written for you/, path);
+    assert.match(await open.text(), /Get a custom song written for you/, path);
   }
 });
 

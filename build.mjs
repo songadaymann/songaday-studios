@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { songADayNumber } from "./song-day.mjs";
+import { songADayAge, songADayNumber } from "./song-day.mjs";
 import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFilms } from "./films.mjs";
 import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
 import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
@@ -71,6 +71,7 @@ const todaySong = await todaySongSnapshot();
 let html = htmlSource.replaceAll("{{SONG_NUMBER}}", String(number))
   .replaceAll("{{NEXT_SONG_NUMBER}}", String(number + 1))
   .replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))
+  .replaceAll("{{SONG_AGE}}", songADayAge(number).text)
   .replace("{{TODAY_SONG}}", () => todaySong)
   .replace("{{CALENDAR}}", () => renderCalendar(JSON.parse(calendarJson)))
   .replace("{{DIRECTORY}}", () => renderDirectory(projects));
@@ -82,7 +83,7 @@ if (!hasLocalAssets) {
       `srcset="${list.replaceAll(/(^|,\s*)assets\//g, "$1https://songaday.studio/assets/")}"`);
 }
 const js = jsSource.replace("/* SONG_DAY_NUMBER_HELPER */",
-  `const songADayNumber = ${songADayNumber.toString()};`)
+  `const songADayNumber = ${songADayNumber.toString()};\n  const songADayAge = ${songADayAge.toString()};`)
   .replace("/* WALLET_GATE_HELPER */", () => walletGateScript);
 
 // A snapshot of the mini-docs playlist; the Worker refreshes it from the live feed.
@@ -210,14 +211,13 @@ const listed = (items) => items.length > 1 ? `${items.slice(0, -1).join(", ")} o
 const personal = PRICES.personal.suggested.map(money);
 const commissionTokens = {
   PERSONAL_FROM: money(PRICES.personal.floor),
-  PERSONAL_SUGGESTED: `${personal.slice(0, -1).join(", ")}, or ${personal.at(-1)} or more`,
+  PERSONAL_SUGGESTED: `${personal.slice(0, -1).join(", ")}, or ${personal.at(-1)} (or more)`,
   BUSINESS_FROM: money(PRICES.business.floor),
   PLAN_MONTHS: listed(PLAN_MONTHS.map(String)),
-  VIDEO_LINE: VIDEO_PRICE_CENTS ? `A music video adds ${money(VIDEO_PRICE_CENTS)}.` : "A music video: tick the box and I’ll be in touch about it.",
+  VIDEO_LINE: VIDEO_PRICE_CENTS ? `A music video adds ${money(VIDEO_PRICE_CENTS)}.` : "A music video: tick the box on the form and I’ll be in touch about it.",
   MEMO_MAX_BYTES: String(MEMO_MAX_BYTES),
   MEMO_MB: String(Math.round(MEMO_MAX_BYTES / 1024 / 1024)),
   WRITES_PER_DAY: String(WRITES_PER_DAY),
-  LINE_EXAMPLE: `#${WRITES_PER_DAY * 3} is about three days away`,
   ...Object.fromEntries(Object.entries(LIMITS).map(([name, value]) => [`LIMIT_${name}`, String(value)])),
 };
 const commissionBody = withChrome(commissionSource, { purchase: true })
@@ -230,8 +230,8 @@ const commissionHash = createHash("sha256").update(inlineScript(commissionJs), "
 // Chrome applies it to the redirect after the pay form posts.
 const commissionCsp = `default-src 'none'; img-src 'self' https: data:; media-src 'self'; style-src 'unsafe-inline' https:; font-src https: data:; script-src 'sha256-${commissionHash}' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self'; form-action 'self' https://checkout.stripe.com; base-uri 'none'`;
 await writePage("commission/index.html", documentHtml({
-  title: "Get a song · Song A Day Studio",
-  description: "Jonathan Mann has written a song every day since 2009. He’ll write one for you. Pay what you want when it’s done.",
+  title: "Get a custom song · Song A Day Studio",
+  description: `Jonathan Mann has written a song every day since 2009. He’ll write one for you. Birthdays, weddings, anniversaries or just because! Pay what you can when it’s done (from ${money(PRICES.personal.floor)}).`,
   url: "https://songaday.studio/commission",
   body: hostedMedia(commissionBody),
   script: commissionJs,

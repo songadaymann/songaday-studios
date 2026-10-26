@@ -538,7 +538,7 @@ test('nothing sent to Stripe names the recipient or says donate, gift or patron'
   for (const entry of stub.calls) {
     const text = decodeURIComponent(entry.body);
     assert.doesNotMatch(text, /Siobhan|Recipient/);
-    assert.doesNotMatch(text, /donat|gift|tax-deductible|patron/i);
+    assert.doesNotMatch(text, /donat|gift|tax.deductible|patron/i);
     assert.doesNotMatch(entry.form.get('submit_type') ?? '', /donate/);
   }
 });

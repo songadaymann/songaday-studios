@@ -34,7 +34,7 @@ const share = (d) => ({ lead: 'To share the song, send this link instead. It pla
 
 // When their place in line is after their deadline, they hear it straight away, and can choose.
 const late = (r, d) => lateBy(r, d.position, d.today) ? [
-  `At #${d.position} your song is ${aboutDays(daysAway(d.position))} away, after your deadline (${shortDate(r.deadline)}). You can cancel for free from your page, or keep your place and I'll do my best.`
+  `At #${d.position} your song is ${aboutDays(daysAway(d.position))} away, after your deadline (${shortDate(r.deadline)}). There's a good chance I can do yours first anyway, but I can't promise. You can keep your place, or cancel for free from your page.`
 ] : [];
 
 // Each template gives a subject and a body: paragraphs (strings), and links ({ lead, url,
@@ -46,7 +46,7 @@ const TEMPLATES = {
       greeting(r),
       `Thanks for asking me to write a song${forWhom(r)}. You're #${d.position} in line.`,
       ...late(r, d),
-      `I write songs in the order they come in, and I'll email you when you move up (once a day at most). When your song is done, you'll get a private page where you can listen to it and read the lyrics. You pay then, whatever you want from ${dollars(r.floor_cents)}, and that unlocks the download.`,
+      `I write songs in the order they come in, and I'll email you when you move up (once a day at most). When your song is done, you'll get a private page where you can listen to it and read the lyrics. You pay then, whatever you can from ${dollars(r.floor_cents)}, and that unlocks the download.`,
       ...(r.wants_video ? ["You asked about a music video too. I'll email you about it."] : []),
       { lead: "Here's your page, with everything you told me:", url: d.page, label: 'Your page' },
       'Keep that link to yourself. Anyone who has it can see your page. Changed your mind? You can cancel there until I start writing.',
@@ -104,7 +104,7 @@ const TEMPLATES = {
       greeting(r),
       `I finished your song${forWhom(r)}. It's called "${r.title}".${r.video_url ? " There's a video too." : ''}`,
       { lead: 'Listen to it and read the lyrics on your page:', url: d.page, label: 'Listen to your song' },
-      `When you're ready, pay what you want, from ${dollars(r.floor_cents)}. You can pay all at once or spread it over ${others} months. Paying unlocks the download.`,
+      `When you're ready, pay what you can, from ${dollars(r.floor_cents)}. You can pay all at once or spread it over ${others} months. Paying unlocks the download.`,
       PRIVATE,
       share(d),
       "If something isn't right, reply and tell me.",
@@ -161,7 +161,7 @@ const TEMPLATES = {
     body: [
       greeting(r),
       { lead: `Just a reminder that "${r.title}" is ready on your page:`, url: d.page, label: 'Your page' },
-      `Pay what you want, from ${dollars(r.floor_cents)}, whenever you're ready, and the download unlocks.`,
+      `Pay what you can, from ${dollars(r.floor_cents)}, whenever you're ready, and the download unlocks.`,
       PRIVATE,
       SIGN
     ]

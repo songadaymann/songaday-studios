@@ -148,6 +148,9 @@
     document.querySelectorAll('[data-song-day="count"]').forEach((el) => {
       el.textContent = number.toLocaleString("en-US");
     });
+    document.querySelectorAll('[data-song-day="age"]').forEach((el) => {
+      el.textContent = songADayAge(number).text;
+    });
   }
 
   renderSongNumbers();
@@ -155,16 +158,6 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") renderSongNumbers();
   });
-
-  function songADayAge(date) {
-    const years = date.getFullYear() - 2009;
-    const currentDay = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-    const anniversary = Date.UTC(date.getFullYear(), 0, 1);
-    return {
-      years,
-      days: Math.floor((currentDay - anniversary) / 86400000)
-    };
-  }
 
   function formatListenTime(totalSeconds) {
     const days = Math.floor(totalSeconds / 86400);
@@ -184,7 +177,7 @@
   function renderCatalogTicker() {
     if (!tickerTrack || !tickerSummary) return;
     const now = new Date();
-    const age = songADayAge(now);
+    const age = songADayAge(songADayNumber(now));
     const currentSongCount = Math.max(
       songADayNumber(now),
       catalogSnapshot.sourceSongCount,

@@ -457,7 +457,7 @@ test('no email says donate, gift, tax-deductible or patron, and none links to Pa
   for (const kind of EMAIL_KINDS) {
     for (const variant of [data, { ...data, months: undefined, by: 'buyer' }]) {
       const { subject, text, html } = renderEmail(kind, request, variant);
-      assert.doesNotMatch(subject + text + html, /donat|gift|tax-deductible|patron/i, kind);
+      assert.doesNotMatch(subject + text + html, /donat|gift|tax.deductible|patron/i, kind);
       assert.ok(subject && text && html, kind);
     }
   }

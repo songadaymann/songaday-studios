@@ -96,7 +96,7 @@ test('the home page directory groups live places by verb and hides crypto ones w
   const html = renderDirectory(projects);
   const headings = [...html.matchAll(/<h3 id="directory-[^"]+">([^<]+)<\/h3>/g)].map((match) => match[1]);
   assert.deepEqual(headings, ['Listen', 'See', 'Play', 'Build', 'Make', 'Get a song', 'Join', 'Watch', 'Collect']);
-  assert.match(html, /<a href="\/listen">songaday\.fan<span class="nav-out" aria-hidden="true">↗<\/span><\/a> <span>Every song/);
+  assert.match(html, /<a href="\/listen">songaday\.fan<span class="nav-out" aria-hidden="true">↗<\/span><\/a> <span>Listen to every song from the beginning/);
   assert.match(html, /<a href="\/fumble">The Museum of Fumbled Bags<\/a>/);
   assert.match(html, /Suggest tomorrow&#39;s song/);
   // Only live places: nothing coming soon, nothing archived, no donate (it's the rest of the page).

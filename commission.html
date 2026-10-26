@@ -5,7 +5,7 @@
 
   <main id="main" tabindex="-1">
     <div class="text-page-intro">
-      <h1>Get a song written for you</h1>
+      <h1>Get a custom song written for you</h1>
       <p>I’ve written a song every day since January 1, 2009. I’ll write one for you: for a birthday, a wedding, an anniversary, a launch, or just because.</p>
     </div>
 
@@ -14,16 +14,16 @@
         <h2 id="how-title">How it works</h2>
         <ol class="commission-steps">
           <li>Tell me about it. The more information the better.</li>
-          <li>You get your place in line. I write songs in the order they come in, and I’ll email you when you move up.</li>
-          <li>I write it. When it’s done you get a private page where you can listen and read the lyrics.</li>
-          <li>You pay what you want, and then you can download it.</li>
+          <li>I write songs in the order they come in.</li>
+          <li>When it’s done you get a private page where you can listen and read the lyrics.</li>
+          <li>You pay what you can, and then you can download it.</li>
         </ol>
       </section>
 
       <section aria-labelledby="cost-title">
         <h2 id="cost-title">What it costs</h2>
         <ul class="commission-list">
-          <li>For a person: pay what you want, from {{PERSONAL_FROM}}. Suggested: {{PERSONAL_SUGGESTED}}.</li>
+          <li>For a person: pay what you can, from {{PERSONAL_FROM}}. Suggested: {{PERSONAL_SUGGESTED}}.</li>
           <li>For a company, brand, event or organization, or a theme song for a podcast, show or channel: from {{BUSINESS_FROM}}, pay what you can.</li>
           <li>{{VIDEO_LINE}}</li>
           <li>Pay all at once, or spread it over {{PLAN_MONTHS}} months.</li>
@@ -33,12 +33,12 @@
 
       <section aria-labelledby="public-title">
         <h2 id="public-title">Public or private</h2>
-        <p>Some songs become that day’s Song A Day. You choose: say yes and yours might be one; say no and it stays between us. Private doesn’t cost more. If yours goes up, it may be on the day I write it, which can be before your occasion, so if it’s a surprise, choose private.</p>
+        <p>It’s up to you. Some people want their song to be part of Song A Day, and some don’t. It’s fine either way!</p>
       </section>
 
       <section aria-labelledby="long-title">
         <h2 id="long-title">How long it takes</h2>
-        <p>I take every request, with no cap, and write them in the order they come in. I can write about {{WRITES_PER_DAY}} a day, so {{LINE_EXAMPLE}}. <strong class="commission-line"><!--commission:line--></strong> November and December are the busiest months, so if it’s for Christmas, send it early.</p>
+        <p>I accept every request. I write them in the order they come in. I can write about {{WRITES_PER_DAY}} a day. <strong class="commission-line"><!--commission:line--></strong> November and December are the busiest months, so if it’s for Christmas, send it early.</p>
       </section>
     </div>
 
@@ -70,14 +70,14 @@
         <input id="c-memo" type="file" name="memo" accept="audio/*" aria-describedby="c-memo-hint" data-max-bytes="{{MEMO_MAX_BYTES}}">
 
         <label for="c-story">Tell me everything</label>
-        <p class="commission-hint" id="c-story-hint">Stories, inside jokes, places, what they love, what they’re like. For a business: what you do, who’ll hear it, and where it’ll play. The more information the better.</p>
+        <p class="commission-hint" id="c-story-hint">Stories, inside jokes, places, what they love, what they’re like. For a business: what you do, who’ll hear it, and where it’ll play. <strong>The more information the better.</strong></p>
         <textarea id="c-story" name="story" rows="10" minlength="{{LIMIT_storyMin}}" maxlength="{{LIMIT_story}}" required aria-describedby="c-story-hint"></textarea>
 
         <label for="c-leave-out">Anything I should leave out?</label>
         <textarea id="c-leave-out" name="leave_out" rows="3" maxlength="{{LIMIT_leave_out}}"></textarea>
 
         <label for="c-deadline">Is there a deadline?</label>
-        <p class="commission-hint" id="c-deadline-hint">I go in order, so I can’t promise a date. Tell me anyway: if your place in line is after it, I’ll say so straight away, and you can decide.</p>
+        <p class="commission-hint" id="c-deadline-hint">I usually go in order, so I can’t promise a date. But tell me: if your place in line is after it, there’s a good chance I can do yours first.</p>
         <input id="c-deadline" type="date" name="deadline" aria-describedby="c-deadline-hint" data-deadline>
 
         <fieldset aria-describedby="c-publish-hint">
@@ -100,7 +100,7 @@
         <noscript><p class="commission-status">This form needs JavaScript for its check that you’re human. Turn it on for this page to send your request.</p></noscript>
 
         <button type="submit">Send my request</button>
-        <p class="commission-fine">Nothing to pay now. When your song is done, you’ll pay what you want and then download it.</p>
+        <p class="commission-fine">Nothing to pay now. When your song is done, you’ll pay what you can and then download it.</p>
         <p class="commission-status" id="commission-status" role="status"></p>
       </form>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
