@@ -45,7 +45,7 @@ test('the page says how many songs are in line, and shows the form only when req
   assert.match(html, /value="business"> A company, brand, event or organization, or a theme song for a podcast, show or channel \(from \$1,500\)/);
   assert.match(html, /If yes, it may go up the day I write it, which can be before your occasion\. If it’s a surprise, choose private \(it’s free\)\./);
   assert.match(html, /I accept every request\. I write them in the order they come in\. I can write about 10 a day\./);
-  assert.match(html, /placeholder="Siobhan" autocomplete/);
+  assert.match(html, /placeholder="Frodo" autocomplete/);
   assert.match(html, /For a business: what you do, who’ll hear it, and where it’ll play\./);
   assert.match(html, /data-error-callback="commissionError"/);
   assert.match(html, /<noscript><p class="commission-status">This form needs JavaScript/);
