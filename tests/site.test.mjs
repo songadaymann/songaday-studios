@@ -27,8 +27,10 @@ test('section URLs redirect temporarily and are never cached', async () => {
     '/today': '/#today',
     '/Games': 'https://mann.cool/',
     '/wamp': 'https://wamp.land/',
-    '/commission': 'https://jonathanmann.bandcamp.com/merch',
-    '/commissions/': 'https://jonathanmann.bandcamp.com/merch',
+    '/commissions': '/commission',
+    '/commissions/': '/commission',
+    '/custom': '/commission',
+    '/Custom/': '/commission',
     '/albums': 'https://jonathanmann.bandcamp.com/music',
     '/discord': 'https://discord.gg/rGTQH7mFNS',
     '/me': 'https://www.jonathanmann.net/',
@@ -41,6 +43,22 @@ test('section URLs redirect temporarily and are never cached', async () => {
     assert.equal(response.status, 302, path);
     assert.equal(response.headers.get('Location'), location, path);
     assert.equal(response.headers.get('Cache-Control'), 'no-store', path);
+  }
+});
+
+test('/commission is a page here once requests open, and the Bandcamp listings until then', async () => {
+  for (const path of ['/commission', '/commission/']) {
+    const before = await fetchPath(path);
+    assert.equal(before.status, 302, path);
+    assert.equal(before.headers.get('Location'), 'https://jonathanmann.bandcamp.com/merch', path);
+    assert.equal(before.headers.get('Cache-Control'), 'no-store', path);
+    const env = {
+      COMMISSION_REQUESTS: 'open',
+      ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) }
+    };
+    const open = await worker.fetch(new Request(`https://songaday.studio${path}`), env);
+    assert.equal(open.status, 200, path);
+    assert.match(await open.text(), /Get a custom song written for you/, path);
   }
 });
 
