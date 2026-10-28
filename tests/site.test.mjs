@@ -29,6 +29,8 @@ test('section URLs redirect temporarily and are never cached', async () => {
     '/wamp': 'https://wamp.land/',
     '/commissions': '/commission',
     '/commissions/': '/commission',
+    '/custom': '/commission',
+    '/Custom/': '/commission',
     '/albums': 'https://jonathanmann.bandcamp.com/music',
     '/discord': 'https://discord.gg/rGTQH7mFNS',
     '/me': 'https://www.jonathanmann.net/',

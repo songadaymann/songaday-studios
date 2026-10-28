@@ -10,7 +10,7 @@ import { livePress, pressFilters, pressSnapshot, renderPress, renderPressSummary
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
 // cache them for good. /songs and /all go to the gallery, every song on one zoomable wall.
-// /commission is a page of its own (commission.mjs); /commissions lands on it.
+// /commission is a page of its own (commission.mjs); /commissions and /custom land on it.
 const SECTION_REDIRECTS = {
   '/all': 'https://gallery.songaday.world/',
   '/songs': 'https://gallery.songaday.world/',
@@ -21,6 +21,7 @@ const SECTION_REDIRECTS = {
   '/games': 'https://mann.cool/',
   '/wamp': 'https://wamp.land/',
   '/commissions': '/commission',
+  '/custom': '/commission',
   '/albums': 'https://jonathanmann.bandcamp.com/music',
   '/discord': 'https://discord.gg/rGTQH7mFNS',
   '/me': 'https://www.jonathanmann.net/',

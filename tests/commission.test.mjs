@@ -402,14 +402,14 @@ test('the song streams once delivered, and downloads only once paid', async () =
   for (const sub of ['listen', 'download']) assert.equal((await call(env, `/commission/s/${token}/${sub}`)).status, 404, sub);
 });
 
-test('other spellings land on the page, /commissions is an alias, and unknown paths are a 404', async () => {
+test('other spellings land on the page, /commissions and /custom are aliases, and unknown paths are a 404', async () => {
   const env = await commissionEnv();
   for (const path of ['/Commission', '/COMMISSION/', '/commission//']) {
     const response = await call(env, path + '?from=x');
     assert.equal(response.status, 302, path);
     assert.equal(response.headers.get('Location'), '/commission?from=x', path);
   }
-  for (const path of ['/commissions', '/commissions/', '/Commissions']) {
+  for (const path of ['/commissions', '/commissions/', '/Commissions', '/custom', '/custom/', '/CUSTOM']) {
     const response = await call(env, path);
     assert.equal(response.status, 302, path);
     assert.equal(response.headers.get('Location'), '/commission', path);

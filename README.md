@@ -93,7 +93,7 @@ real page, later:
 | `/games` | https://mann.cool/ |
 | `/wamp` | https://wamp.land/ |
 | `/commission` | Song commissions: the page and request form (`commission.mjs`; see "Commissions") |
-| `/commissions` | `/commission` |
+| `/commissions`, `/custom` | `/commission` |
 | `/albums` | https://jonathanmann.bandcamp.com/music |
 | `/discord` | https://discord.gg/rGTQH7mFNS |
 | `/me` | https://www.jonathanmann.net/ |
