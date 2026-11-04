@@ -199,7 +199,7 @@ await writePage("press/index.html", documentHtml({
 
 await writePage("now/index.html", documentHtml({
   title: "Now · Song A Day Studio",
-  description: "What Jonathan Mann is doing now, October 2026.",
+  description: "What Jonathan Mann is doing now, November 2026.",
   url: "https://songaday.studio/now/",
   body: hostedMedia(withChrome(nowSource).replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))),
 }));

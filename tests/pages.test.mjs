@@ -35,8 +35,8 @@ test('the build makes /everything and /now, and the home page directory and foot
     assert.match(everything, /<li data-crypto><div class="everything-row">/);
     assert.match(everything, /applyWalletGate\(\);/);
 
-    assert.match(now, /<h1>What I’m doing now <span>\(October 2026\)<\/span><\/h1>/);
-    assert.match(now, /Last updated <time datetime="2026-10-26">October 26, 2026<\/time>/);
+    assert.match(now, /<h1>What I’m doing now <span>\(November 2026\)<\/span><\/h1>/);
+    assert.match(now, /Last updated <time datetime="2026-11-04">November 4, 2026<\/time>/);
     assert.match(now, /#<span data-song-day="count">[\d,]+<\/span> and counting/);
     for (const href of ['/today', '/wamp', '/plugins/', '/data', '/everything/', '/jamuary', '/commission']) {
       assert.match(now, new RegExp(`<a href="${href}">`), href);
