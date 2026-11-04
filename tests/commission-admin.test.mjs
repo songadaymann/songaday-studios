@@ -150,9 +150,10 @@ test('the queue shows every answer, in order, escaped, with deadlines that are c
 
   env.COMMISSIONS_DB.exec("UPDATE requests SET status = 'requested', delivered_at = NULL WHERE id = 1");
   const marked = await (await asAdmin(env, '/commission/admin')).text();
-  assert.match(marked, /<span class="tag soon">DEADLINE [A-Z][a-z]{2} \d+ \(3 days\)<\/span>/);
+  assert.match(marked, /<span class="tag soon">DEADLINE [A-Z][a-z]{2} \d+(, \d{4})? \(3 days\)<\/span>/);
   env.COMMISSIONS_DB.exec("UPDATE requests SET deadline = '2026-01-02' WHERE id = 1");
-  assert.match(await (await asAdmin(env, '/commission/admin')).text(), /DEADLINE Jan 2 \(passed\)/);
+  // Its year shows once the real clock is past 2026.
+  assert.match(await (await asAdmin(env, '/commission/admin')).text(), /DEADLINE Jan 2(, 2026)? \(passed\)/);
 });
 
 test('delivering stores the song, marks it delivered and emails them the title', async () => {
@@ -493,7 +494,7 @@ test('the line opens with the deadlines that are close or at risk, linked', asyn
   const soon = await makeRequest(env, { deadline: inDays(3), recipient: 'Soon Person' });
   await makeRequest(env, { email: 'far@example.com', deadline: inDays(60), recipient: 'Far Person', story: 'Months away, no hurry at all.' });
   const html = await (await asAdmin(env, '/commission/admin')).text();
-  assert.match(html, new RegExp(`<h2 id="watch-title">Deadlines in the next 7 days, or at risk</h2><ul>\\n  <li><a href="/commission/admin/${soon.id}">#1 in line · request ${soon.id} · for Soon Person</a> · [A-Z][a-z]{2} \\d+ \\(3 days\\)</li>`));
+  assert.match(html, new RegExp(`<h2 id="watch-title">Deadlines in the next 7 days, or at risk</h2><ul>\\n  <li><a href="/commission/admin/${soon.id}">#1 in line · request ${soon.id} · for Soon Person</a> · [A-Z][a-z]{2} \\d+(, \\d{4})? \\(3 days\\)</li>`));
   assert.doesNotMatch(html.match(/<section class="watch"[\s\S]*?<\/section>/)[0], /Far Person/);
 });
 

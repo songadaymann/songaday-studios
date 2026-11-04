@@ -96,9 +96,11 @@ test('the page wears the studio header and footer, with no donate wording or Pat
 
 test('a good request is saved cleaned, gets its place in line, and queues the received email', async () => {
   const env = await commissionEnv();
+  // Two months out, so the form never finds it passed.
+  const deadline = new Date(Date.now() + 60 * 86_400_000).toISOString().slice(0, 10);
   const { response, turnstile } = await post(env, {
     recipient: '  Siobhan,\nmy sister ', email: ' PAT@Example.com ', story: `${ANSWERS.story}\r\n\r\n\r\n\r\nShe hates cilantro.‮`,
-    deadline: '2027-01-15', video: 'yes', memo: [audio.m4a(), 'names.m4a', 'audio/x-m4a']
+    deadline, video: 'yes', memo: [audio.m4a(), 'names.m4a', 'audio/x-m4a']
   });
   assert.equal(response.status, 200);
   const result = await response.json();
@@ -116,7 +118,7 @@ test('a good request is saved cleaned, gets its place in line, and queues the re
   assert.equal(row.recipient, 'Siobhan, my sister');
   assert.equal(row.buyer_email, 'pat@example.com');
   assert.equal(row.story, `${ANSWERS.story}\n\nShe hates cilantro.`);
-  assert.equal(row.deadline, '2027-01-15');
+  assert.equal(row.deadline, deadline);
   assert.equal(row.wants_video, 1);
   assert.equal(row.may_publish, 1);
   assert.equal(row.floor_cents, 20000);
@@ -616,11 +618,12 @@ test('a buyer whose place in line is after their deadline hears so straight away
   const tomorrow = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date(Date.now() + 86_400_000));
   const late = await makeRequest(env, { deadline: tomorrow, video: 'yes' });
   const email = db.one("SELECT text FROM outbox WHERE kind = 'received' AND request_id = ?", late.id).text;
-  assert.match(email, /At #25 your song is about 3 days away, after your deadline \([A-Z][a-z]{2} \d+\)\. There's a good chance I can do yours first anyway, but I can't promise\. You can keep your place, or cancel for free from your page\./);
+  assert.match(email, /At #25 your song is about 3 days away, after your deadline \([A-Z][a-z]{2} \d+(, \d{4})?\)\. There's a good chance I can do yours first anyway, but I can't promise\. You can keep your place, or cancel for free from your page\./);
   assert.match(email, /You asked about a music video too\. I'll email you about it\./);
   assert.match(await (await call(env, `/commission/s/${late.token}`)).text(), /At #25 your song is about 3 days away, after your deadline/);
 
-  const fine = await makeRequest(env, { email: 'fine@example.com', story: 'No rush on this one at all.', deadline: '2027-06-01' });
+  const later = new Date(Date.now() + 200 * 86_400_000).toISOString().slice(0, 10);
+  const fine = await makeRequest(env, { email: 'fine@example.com', story: 'No rush on this one at all.', deadline: later });
   assert.doesNotMatch(db.one("SELECT text FROM outbox WHERE kind = 'received' AND request_id = ?", fine.id).text, /after your deadline|music video/);
   assert.doesNotMatch(await (await call(env, `/commission/s/${fine.token}`)).text(), /after your deadline/);
 });

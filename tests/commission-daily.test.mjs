@@ -162,7 +162,9 @@ test('Jonathan’s summary goes only when there’s news, and flags what needs a
   await runCommissionDaily(env, DAY1);
   assert.equal(env.COMMISSIONS_DB.rows('outbox', "kind = 'summary'").length, 0, 'nothing happened');
 
-  const a = await makeRequest(env, { deadline: '2026-11-08', occasion: 'A retirement' });
+  const a = await makeRequest(env, { occasion: 'A retirement' });
+  // Set here, not on the form, which refuses a deadline the real clock has passed.
+  env.COMMISSIONS_DB.exec("UPDATE requests SET deadline = '2026-11-08' WHERE id = ?", a.id);
   const b = await makeRequest(env, { email: 'b@example.com', story: 'For my brother, who builds boats in his garage.', video: 'yes' });
   await deliver(env, b.id);
   await admin(env, b.id, { action: 'cancel' });
@@ -466,7 +468,7 @@ test('no email says donate, gift, tax-deductible or patron, and none links to Pa
 test('sent emails are purged after 180 days, except what someone in line was last told', async () => {
   const { env } = await line(1);
   const delivered = await makeRequest(env, { email: 'old@example.com', story: 'An old one, long since delivered and paid for.' });
-  env.COMMISSIONS_DB.exec("UPDATE requests SET status = 'delivered' WHERE id = ?", delivered.id);
+  env.COMMISSIONS_DB.exec("UPDATE requests SET status = 'delivered', requested_at = ? WHERE id = ?", EARLIER, delivered.id);
   env.COMMISSIONS_DB.exec('UPDATE outbox SET sent_at = ?', '2026-01-01T00:00:00.000Z');
   await runCommissionDaily(env, DAY1);
   assert.deepEqual(env.COMMISSIONS_DB.rows('outbox').map((row) => row.request_id), [1]);
