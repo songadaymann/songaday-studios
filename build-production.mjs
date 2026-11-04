@@ -14,6 +14,10 @@ await cp('index.html', 'dist/index.html');
 await cp('films/index.html', 'dist/films/index.html');
 await cp('everything/index.html', 'dist/everything/index.html');
 await cp('now/index.html', 'dist/now/index.html');
+// songaday.studio/commission: the page, and the shell for each buyer's song page (the Worker
+// fills both; commission.mjs).
+await cp('commission/index.html', 'dist/commission/index.html');
+await cp('commission/song.html', 'dist/commission/song.html');
 // The data lab: its built page and the data it reads.
 await cp('data/index.html', 'dist/data/index.html');
 await cp('data-lab/lab.json', 'dist/data/lab.json');
@@ -30,6 +34,9 @@ if (existsSync('assets')) {
   // Videos are served from R2 (node upload-media.mjs), so they stay out of dist/.
   const isVideo = (source) => MEDIA_PATH.test('/' + source.split(path.sep).join('/'));
   await cp('assets', 'dist/assets', { recursive: true, dereference: true, filter: (source) => !source.endsWith('.DS_Store') && !source.endsWith('.md') && !isVideo(source) });
+} else {
+  // A fresh clone has no assets link, and deploying dist/ then takes every /assets/ file offline.
+  console.warn('WARNING: no assets/ (ln -s private-assets/site assets), so dist/ has no /assets/ files. Don’t deploy this build.');
 }
 console.log('Production files ready in dist/');
 

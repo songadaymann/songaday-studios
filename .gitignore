@@ -48,6 +48,8 @@ venv/
 /press/index.html
 /now/index.html
 /data/index.html
+/commission/index.html
+/commission/song.html
 /assets
 
 # Local preview config for the Claude desktop app

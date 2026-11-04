@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { songADayNumber } from '../song-day.mjs';
+import { songADayAge, songADayNumber } from '../song-day.mjs';
 
 test('matches the toolkit calendar numbering and the catalog snapshot', () => {
   assert.equal(songADayNumber(new Date('2009-01-01T05:00:00Z')), 1);
@@ -22,4 +22,13 @@ test('daylight saving changes do not skip or repeat song numbers', () => {
   const fall = ['2026-11-01T04:00:00Z', '2026-11-01T06:00:00Z', '2026-11-02T05:00:00Z'].map(date => songADayNumber(new Date(date)));
   assert.equal(fall[1], fall[0]);
   assert.equal(fall[2], fall[0] + 1);
+});
+
+test('the age counts whole years since 2009 and days since that January 1', () => {
+  assert.deepEqual(songADayAge(1), { years: 0, days: 0, text: '0 years and 0 days' });
+  assert.equal(songADayAge(2).text, '0 years and 1 day');
+  assert.equal(songADayAge(366).text, '1 year and 0 days');
+  // 2012 was a leap year, so its December 31 is day 365 of that year.
+  assert.equal(songADayAge(songADayNumber(new Date('2012-12-31T17:00:00Z'))).text, '3 years and 365 days');
+  assert.equal(songADayAge(6508).text, '17 years and 298 days');
 });

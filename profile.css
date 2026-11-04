@@ -99,7 +99,7 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .hero-action-primary { border-color: var(--red-button); background: var(--red-button); }
 .hero-action-primary:hover, .hero-action-primary:focus-visible { border-color: var(--white); }
 
-/* This is all of it: every song as one picture, an image per year (build-calendar.mjs). */
+/* The calendar: every song as one picture, an image per year (build-calendar.mjs). */
 .calendar-section { padding: clamp(2.5rem, 5vw, 4rem) 0; border-top: 2px solid var(--hairline); background: var(--ink); }
 .calendar-inner { width: var(--wrap); margin: 0 auto; }
 .calendar-heading { display: grid; gap: .9rem; max-width: 62ch; }

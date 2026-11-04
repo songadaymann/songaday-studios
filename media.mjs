@@ -52,7 +52,9 @@ function rangeStillValid(request, object) {
 }
 
 // Answers GET and HEAD for one bucket key, or returns null when the bucket doesn't have it.
-export async function serveMedia(request, bucket, key) {
+// Options, for private files (commission songs and voice memos): cacheControl, a
+// Content-Disposition, and extra headers. The defaults are the site videos'.
+export async function serveMedia(request, bucket, key, { cacheControl = CACHE_CONTROL, disposition, headers: extra } = {}) {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return new Response(null, { status: 405, headers: { Allow: 'GET, HEAD' } });
   }
@@ -61,10 +63,12 @@ export async function serveMedia(request, bucket, key) {
 
   const headers = new Headers({
     'Accept-Ranges': 'bytes',
-    'Cache-Control': CACHE_CONTROL,
-    'Content-Type': object.httpMetadata?.contentType || mediaContentType(key),
+    'Cache-Control': cacheControl,
+    'Content-Type': object.httpMetadata?.contentType || mediaContentType(key) || 'application/octet-stream',
     ETag: object.httpEtag,
-    'Last-Modified': object.uploaded.toUTCString()
+    'Last-Modified': object.uploaded.toUTCString(),
+    ...(disposition ? { 'Content-Disposition': disposition } : {}),
+    ...extra
   });
   if (notModified(request, object)) return new Response(null, { status: 304, headers });
 

@@ -192,7 +192,7 @@ const HEADER = `<header class="site-header">
     <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
     <a href="/films/">Films</a>
     <a href="/plugins/">Plugins</a>
-    <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/commission">Get a song</a>
   </nav>
   <a class="nav-donate" href="/#donate">Donate</a>
 </header>`;

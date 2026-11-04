@@ -1,0 +1,105 @@
+/* songaday.studio/commission and the buyer's song pages, inlined only into those two pages
+   after profile.css (build.mjs). One column, inputs at full width and at least 16px so iPhones
+   don't zoom, and everything fits at 390px inside the page's 16px gutters. */
+.commission-page main { max-width: 46rem; }
+.commission-page h2 { margin: 0 0 .75rem; font-size: clamp(1.35rem, 1.1rem + .9vw, 1.75rem); line-height: 1.2; }
+.commission-page p, .commission-page li { font-size: clamp(1.02rem, .97rem + .25vw, 1.15rem); line-height: 1.5; }
+.commission-page a { color: inherit; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+
+/* The public page (commission.html): the photo, a short intro, the form, and the details after
+   it. On phones the photo is a band under the header. From 960px it fills the left half and
+   stays put while the form scrolls past. Three type sizes: the heading, the text (inputs too)
+   and the hints. */
+.commission-start main { width: 100%; max-width: none; padding: 0; }
+.commission-photo { margin: 0; background: var(--ink); }
+.commission-photo img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: 60% 66%; }
+.commission-start-body { width: var(--wrap); max-width: 36rem; margin: 0 auto; padding: 2rem 0 4rem; font-size: 1.125rem; }
+.commission-start .text-page-intro h1 { font-size: 2.5rem; text-wrap: balance; }
+.commission-start .text-page-intro p { max-width: none; margin: 1rem 0 0; color: var(--white); font-size: inherit; line-height: 1.5; }
+.commission-start h2, .commission-start p, .commission-start li { font-size: inherit; }
+.commission-start h2 { margin: 0 0 .6rem; letter-spacing: 0; line-height: 1.3; }
+.commission-start .commission-form :is(input, textarea) { font-size: inherit; }
+.commission-start .commission-form button { font-size: .95rem; }
+.commission-line { font-weight: 700; }
+.commission-line:empty { display: none; }
+.commission-request { margin: 2.5rem 0 0; }
+.commission-closed { margin: 0; font-weight: 700; }
+.commission-sections { display: grid; gap: 2rem; margin: 4rem 0 0; padding: 2.5rem 0 0; border-top: 2px solid var(--hairline); }
+.commission-sections section p { margin: 0; }
+.commission-steps, .commission-list { display: grid; gap: .6rem; margin: 0; padding-left: 1.4rem; }
+.commission-steps li::marker { color: var(--red); font-weight: 700; }
+.commission-list li::marker { color: var(--red); }
+@media (min-width: 960px) {
+  .commission-start main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .commission-photo { position: sticky; top: 68px; height: calc(100vh - 68px); }
+  .commission-photo img { height: 100%; aspect-ratio: auto; object-position: 62% 60%; }
+  .commission-start-body { width: auto; max-width: 47rem; margin: 0; padding: 3.5rem var(--gutter) 5rem 4rem; }
+  .commission-start .text-page-intro h1 { font-size: 3.5rem; }
+}
+
+.commission-form { display: grid; gap: .45rem; }
+.commission-form > label, .commission-form legend { margin-top: 1.1rem; font-weight: 700; font-size: inherit; }
+.commission-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: .45rem; }
+.commission-form fieldset legend { padding: 0; margin-bottom: .45rem; }
+.commission-form input[type="text"], .commission-form input[type="email"], .commission-form input[type="date"],
+.commission-form textarea, .commission-pay input[type="text"], .commission-extra input[type="text"] {
+  display: block; width: 100%; max-width: 100%; min-height: 48px; padding: .7rem .8rem; border: 2px solid var(--white); border-radius: 0;
+  background: var(--white); color: var(--ink); font: inherit; font-size: max(16px, 1.05rem); -webkit-appearance: none; appearance: none;
+}
+.commission-form textarea { resize: vertical; line-height: 1.45; }
+.commission-form input::placeholder, .commission-form textarea::placeholder { color: #6a6a6a; }
+.commission-form input[type="file"] { width: 100%; max-width: 100%; font-size: 16px; color: var(--white); }
+.commission-hint { margin: 0; color: var(--white-muted); font-size: .95rem !important; }
+.commission-choice { display: flex; gap: .7rem; align-items: flex-start; padding: .7rem .8rem; border: 2px solid var(--hairline); font-weight: 400 !important; cursor: pointer; }
+.commission-choice:has(input:checked) { border-color: var(--red); }
+.commission-choice input { flex: none; width: 1.25rem; height: 1.25rem; margin: .15rem 0 0; accent-color: var(--red); }
+.commission-check { margin-top: 1.1rem; }
+/* The honeypot. Specific enough to beat the text-input rule above, which would make it full width. */
+.commission-form input.commission-trap { position: absolute; left: 0; width: 1px; min-height: 0; height: 1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.commission-form { position: relative; }
+.commission-page .cf-turnstile { margin-top: 1rem; }
+.commission-page button, .commission-button {
+  display: inline-block; justify-self: start; margin-top: 1.25rem; padding: 1rem 1.4rem; border: 0; border-radius: 0; background: var(--red-button);
+  color: var(--white); font: inherit; font-size: 1rem; font-weight: 700; letter-spacing: .04em; line-height: 1.1; text-decoration: none; text-transform: uppercase; cursor: pointer;
+}
+.commission-page button:hover, .commission-page button:focus-visible, .commission-button:hover, .commission-button:focus-visible { background: var(--white); color: var(--ink); }
+.commission-page button:disabled { background: var(--hairline); cursor: wait; }
+/* Secondary actions on the buyer's page (place-in-line emails, cancelling, stopping payments). */
+.commission-page button.commission-quiet { margin-top: .75rem; padding: .6rem .9rem; border: 2px solid var(--hairline); background: transparent; color: var(--white); font-size: .9rem; letter-spacing: .02em; text-transform: none; }
+.commission-page button.commission-quiet:hover, .commission-page button.commission-quiet:focus-visible { border-color: var(--white); background: transparent; color: var(--white); }
+.commission-fine { margin: .5rem 0 0; color: var(--white-muted); font-size: .95rem !important; }
+.commission-status { margin: .5rem 0 0; font-weight: 700; }
+.commission-status:empty { display: none; }
+
+/* The buyer's page. */
+.commission-eyebrow { margin: 0 0 .5rem; color: var(--red); font-size: .85rem !important; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; overflow-wrap: anywhere; }
+.commission-page main > h1 { margin: 0; font-size: clamp(2.2rem, 1.6rem + 3vw, 3.75rem); line-height: 1.05; overflow-wrap: anywhere; }
+.commission-lead { max-width: 40ch; margin: .9rem 0 0; color: var(--white-muted); }
+.commission-note { margin: 0 0 1.25rem; padding: .8rem 1rem; border-left: 4px solid var(--red); background: #161616; }
+.commission-error { margin: 0 0 1rem; padding: .8rem 1rem; border-left: 4px solid var(--red); background: #2a0a10; font-weight: 700; }
+.commission-box { margin: clamp(2rem, 4vw, 2.75rem) 0 0; padding: clamp(1.1rem, 3vw, 1.6rem); border: 2px solid var(--hairline); }
+.commission-box > p { margin: 0 0 .75rem; }
+.commission-box form { margin: 0; }
+.commission-player { display: block; width: 100%; margin: 1.75rem 0 0; }
+.commission-video { font-weight: 700; }
+.commission-answers { margin: clamp(2rem, 4vw, 2.75rem) 0 0; }
+.commission-answers dl { display: grid; gap: .2rem; margin: 0; }
+.commission-answers dt { margin-top: .9rem; color: var(--white-muted); font-size: .85rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.commission-answers dd { margin: 0; overflow-wrap: anywhere; }
+.commission-answers dd p { margin: 0 0 .6rem; }
+.commission-answers dd p:last-child { margin-bottom: 0; }
+.commission-answers .commission-fine { margin-top: 1.25rem; }
+.commission-cancel { margin: clamp(2rem, 4vw, 2.75rem) 0 0; }
+.commission-cancel summary { cursor: pointer; font-weight: 700; }
+.commission-cancel p { margin: .75rem 0 0; color: var(--white-muted); }
+.commission-pay, .commission-extra { display: grid; gap: .45rem; }
+.commission-pay fieldset { min-width: 0; margin: .5rem 0 0; padding: 0; border: 0; }
+.commission-pay legend { padding: 0; margin-bottom: .5rem; font-weight: 700; }
+.commission-choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: .5rem; }
+.commission-other { flex-wrap: wrap; align-items: center; grid-column: 1 / -1; }
+.commission-dollar { display: flex; flex: 1 1 8rem; gap: .4rem; align-items: center; font-weight: 700; }
+.commission-dollar input { flex: 1; min-width: 0; }
+.commission-extra { grid-template-columns: minmax(0, 1fr); }
+.commission-plan-note { min-height: 1.5em; margin: .6rem 0 0; color: var(--white-muted); }
+.commission-lyrics { margin: clamp(2.5rem, 5vw, 3.5rem) 0 0; }
+.commission-lyrics p { margin: 0 0 1.1rem; }

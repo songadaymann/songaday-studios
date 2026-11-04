@@ -1,4 +1,4 @@
-// The "This is all of it" calendar on the home page: one image per year of Song A Day, with a
+// The calendar on the home page: one image per year of Song A Day, with a
 // cell for each day's song still. Months are rows and days are columns, so every year is the
 // same 31 × 12 grid and February 30 is a gap. build-calendar.mjs makes the images and
 // calendar.json; build.mjs renders this markup from calendar.json.

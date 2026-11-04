@@ -12,7 +12,7 @@
       <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
       <a href="/films/">Films</a>
       <a href="/plugins/">Plugins</a>
-      <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
+      <a href="/commission">Get a song</a>
     </nav>
     <a class="nav-donate" href="#donate">Donate</a>
   </header>
@@ -22,7 +22,7 @@
       <div class="hero-stage">
         <div class="hero-intro">
           <h1 class="hero-headline" id="mission-title"><span class="hero-eyebrow">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-ask">Help me write <span class="hero-ask-number">#<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span></span>.</span></h1>
-          <p class="hero-subheader">I’m Jonathan Mann. I’ve written a song every day since January&nbsp;1,&nbsp;2009. Now I make games and free music software too.</p>
+          <p class="hero-subheader">Hi, I’m Jonathan Mann. I’ve written a song every day since January&nbsp;1,&nbsp;2009. Now I make games and free music software too.</p>
           <div class="today-song" id="today">
 {{TODAY_SONG}}
           </div>
@@ -102,8 +102,8 @@
     <section class="calendar-section" id="every-song" aria-labelledby="calendar-title">
       <div class="calendar-inner">
         <div class="calendar-heading">
-          <h2 id="calendar-title">This is all of it</h2>
-          <p>Every square is one day’s song, starting January&nbsp;1,&nbsp;2009. In each year, the months are rows and the days are columns.</p>
+          <h2 id="calendar-title" data-song-day="age">{{SONG_AGE}}</h2>
+          <p>Each square is one day’s song, starting January&nbsp;1,&nbsp;2009.</p>
         </div>
 {{CALENDAR}}
         <a class="calendar-more" href="/all">Explore every song<span class="nav-out" aria-hidden="true">↗</span></a>
@@ -112,17 +112,17 @@
 
     <section class="gift-section" id="studios" aria-labelledby="gift-title">
       <div class="gift-inner">
-        <h2 id="gift-title">What your gift makes</h2>
+        <h2 id="gift-title">Your patronage keeps it all going.</h2>
         <div class="gift-grid">
           <a class="gift-card" href="/songs">
             <img class="gift-card-icon" src="assets/icons/musician.png" alt="" width="56" height="56" loading="lazy" decoding="async">
             <h3>Songs<span class="nav-out" aria-hidden="true">↗</span></h3>
-            <p><span data-song-day="count">{{SONG_COUNT}}</span> songs and counting, every one under a Creative Commons license.</p>
+            <p><span data-song-day="count">{{SONG_COUNT}}</span> songs and counting, and they’re all Creative Commons.</p>
           </a>
           <a class="gift-card" href="/games">
             <img class="gift-card-icon" src="assets/icons/gamer.png" alt="" width="56" height="56" loading="lazy" decoding="async">
             <h3>Games<span class="nav-out" aria-hidden="true">↗</span></h3>
-            <p>Game A Day, WAMP, and games about the news.</p>
+            <p>WAMP and topical games based on the news.</p>
           </a>
           <a class="gift-card" href="/films/">
             <img class="gift-card-icon" src="assets/icons/explorer.png" alt="" width="56" height="56" loading="lazy" decoding="async">
@@ -132,7 +132,7 @@
           <a class="gift-card" href="/plugins/">
             <img class="gift-card-icon" src="assets/icons/science.png" alt="" width="56" height="56" loading="lazy" decoding="async">
             <h3>Plugins</h3>
-            <p>Novox The Robot makes your computer sing. Free and open source.</p>
+            <p>Free and open source music software. Novox The Robot is my first plugin; it makes your computer sing.</p>
           </a>
         </div>
       </div>
@@ -228,7 +228,7 @@
             <img class="video-games-heading-icon" src="assets/icons/gamer.png" alt="" aria-hidden="true">
             <div class="video-games-heading-copy">
               <h3 id="video-games-title">VIDEO GAMES</h3>
-              <p>In addition to continuing Song A Day, I've turned my attention back to my other major love</p>
+              <p>In addition to continuing Song A Day, I've turned my attention back to my other major love.</p>
             </div>
           </div>
           <div class="video-games-grid">
@@ -380,7 +380,7 @@
         <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
         <a href="/films/">Films</a>
         <a href="/plugins/">Plugins</a>
-        <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
+        <a href="/commission">Get a song</a>
         <a href="/everything/">Everything</a>
         <a href="/now/">Now</a>
         <a href="/press/">Press</a>
@@ -394,6 +394,6 @@
         <a href="https://wamp.land" target="_blank" rel="noreferrer">WAMP</a>
       </nav>
     </div>
-    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park, so gifts are tax-deductible. Commissions and albums are purchases from Jonathan, not gifts.</p>
+    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park, and executive produced by C.Y. Lee. Donations are tax deductible. Commissions and albums are purchases from Jonathan, not donations.</p>
   </footer>
 </div>
