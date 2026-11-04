@@ -82,8 +82,8 @@
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFdspSacH0xXspAj",
     // Links in emails and Stripe's return addresses.
     "SITE_ORIGIN": "https://songaday.studio",
-    // "open" to take requests. Open since 2026-10-25 for setup step 8, with Stripe's test keys
-    // in: deliver no real request until the live keys are (README, Commissions > Setup).
+    // "open" to take requests. Open since 2026-10-25, on Stripe's live keys since later that
+    // day, so payments are real money (README, Commissions).
     "COMMISSION_REQUESTS": "open",
     // songaday.studio has Email Sending on (since 2026-10-24); its mail is still iCloud's.
     "COMMISSION_FROM_EMAIL": "songs@songaday.studio",

@@ -437,10 +437,14 @@ create`) and put its site key in `wrangler.jsonc`, then `wrangler secret put TUR
 
 The D1 database and the private R2 bucket (setup steps 1 and 2) were created on 2026-10-23, and
 the database id is in `wrangler.jsonc`. On 2026-10-24 email (step 3) passed its end-to-end test,
-and the Access application for the admin (step 4) was created. Stripe (step 5) was set up in the
-sandbox on 2026-10-25; its live-only settings wait for step 8. Until `COMMISSION_REQUESTS` is
-`"open"` (step 8), `/commission` goes on to the Bandcamp commission listings, as it always has,
-so deploying other changes in the meantime never leaves people without a way to buy a song.
+and the Access application for the admin (step 4) was created. On 2026-10-25 Stripe (step 5) was
+set up in the sandbox, step 8's test-mode run passed, and the live key and live webhook went in,
+so payments have been real money since then. The real $200 payment that ends step 8 was skipped,
+so the first real buyer is the live test (check a monthly plan's webhook deliveries especially).
+Step 5's live-only settings aren't recorded as done. Step 8's cleanup of test requests #1 to #3,
+and steps 9 and 10, are still to do. While `COMMISSION_REQUESTS` isn't `"open"`, `/commission`
+goes on to the Bandcamp commission listings, as it always has, so people always have a way to buy
+a song.
 
 https://songaday.studio/commission is where people ask Jonathan for a song. It's a purchase
 from Jonathan, on his own Stripe account: nothing on these pages or in these emails says donate,
