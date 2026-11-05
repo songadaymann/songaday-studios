@@ -428,6 +428,10 @@ async function handleEvent(env, event, ctx) {
   switch (event?.type) {
     case 'checkout.session.completed':
     case 'checkout.session.async_payment_succeeded':
+      if (object?.metadata?.store_order_id) {
+        const {settleStoreCheckout} = await import('./store.mjs');
+        return settleStoreCheckout(env, object);
+      }
       return settleCheckoutSession(env, object, { ctx });
     case 'invoice.paid': {
       const details = object?.parent?.subscription_details;

@@ -807,12 +807,43 @@ use Gelato's mounted, ready-to-hang products for small and medium. No matching
 30 × 40 frame was returned by the API catalog. The seven available configurations
 were individually quoted for a US address. Current launch market: US.
 
-Purchasing is closed: prices are unset and there is no store checkout endpoint.
-The commission checkout is separate and unchanged. Next: settle retail pricing,
-add destination-specific shipping quotes, durable store orders, a store-specific
-Stripe webhook with signature/payment/amount checks, and idempotent Gelato
-submission/reconciliation and tracking. Do not send paid Gelato orders on browser
-redirects. Keep API credentials in Worker secrets, never in the public catalog.
+Retail prices are approved: $29/$39/$59 unframed and $69/$99 framed (small/medium),
+plus destination-specific shipping and tax. `store.mjs` implements quotes, checkout,
+private order status, paid-order fulfillment and reconciliation. Store records are
+separate tables in the existing private `COMMISSIONS_DB`; apply migrations before
+deployment. The existing `/commission/stripe` endpoint verifies Stripe signatures
+and dispatches store sessions by metadata; commission sessions keep their handler.
+No browser redirect authorizes printing. Only live, paid, amount-verified sessions
+with a successful, unrefunded PaymentIntent can print. Prices/artwork are stored
+as immutable per-order snapshots. A timed-out Gelato create is searched by exact
+reference and never blindly retried. Every five minutes, cron retries paid work,
+reconciles uncertain submissions, and updates tracking. The daily commission job
+still runs only at its original time. Store administration is at
+`/commission/admin/store`, with the same Access JWT and allowlist checks.
+
+Purchasing is CLOSED (`STORE_OPEN=no`) while live Stripe configuration is finished.
+The current commission restricted key returned `more_permissions_required` during
+the store Checkout probe. Prefer a separate LIVE restricted key on the SAME Stripe
+account: Customers write, Checkout Sessions write, PaymentIntents read. Install as
+`STORE_STRIPE_SECRET_KEY` (Worker secret). If omitted, the store tries the existing
+commission key. `GELATO_API_KEY` is installed as a Worker secret. No secrets belong
+in the public catalog. Automatic Stripe Tax is enabled with the tangible-goods
+product code; confirm the account's tax settings/registrations in Stripe. The
+shipping address is collected on the store, saved to the Stripe customer and
+PaymentIntent, and fixed for that Checkout session so shipping quotes stay valid.
+
+Before opening: repeat the real quote/unpaid Checkout probe, verify the Checkout
+page and account webhook delivery/configuration, then set `STORE_OPEN=yes` and
+rebuild/deploy. Do not charge a test card in live mode or send a paid test print
+order without explicit authorization. Test-mode Stripe sessions cannot print.
+First version supports one poster per order, shipping to the US only.
+
+For a `submitting`/`ambiguous` order with no reference match, inspect Gelato manually
+before resetting it to `paid`; no match alone does not prove a timeout failed.
+For `manual_review`, inspect the payment/refund or duplicate reference before doing
+anything. Never reset a row that already has `gelato_id`. Refund/return requests
+remain a manual owner process in Stripe/Gelato. The buyer's private status page
+shows payment and tracking; customer addresses are not returned by that endpoint.
 
 Approved print files are immutable R2 assets: large uses
 `centered-v4-original-color/pdf/NNN.pdf`; small/medium use

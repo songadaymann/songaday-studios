@@ -44,6 +44,7 @@
   // Per visitor IP (Fumble posts, commission requests) and per buyer link (starting a payment),
   // counted but never stored: 3 a minute.
   "ratelimits": [
+    {"name": "STORE_LIMIT", "namespace_id": "20261105", "simple": {"limit": 6, "period": 60}},
     {
       "name": "FUMBLE_LIMIT",
       "namespace_id": "20261020",
@@ -72,7 +73,7 @@
   // Daily at 14:00 UTC (9am in New York in winter, 10am in summer): commission place-in-line
   // emails, the one payment reminder, Jonathan's summary, and any email that didn't go out.
   "triggers": {
-    "crons": ["0 14 * * *"]
+    "crons": ["0 14 * * *", "*/5 * * * *"]
   },
   // Public values. Secrets are Worker secrets (`wrangler secret put ...`): TURNSTILE_SECRET_KEY,
   // STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, ADMIN_EMAILS, COMMISSION_REPLY_TO and
@@ -85,6 +86,7 @@
     // "open" to take requests. Open since 2026-10-25, on Stripe's live keys since later that
     // day, so payments are real money (README, Commissions).
     "COMMISSION_REQUESTS": "open",
+    "STORE_OPEN": "no",
     // songaday.studio has Email Sending on (since 2026-10-24); its mail is still iCloud's.
     "COMMISSION_FROM_EMAIL": "songs@songaday.studio",
     "COMMISSION_FROM_NAME": "Jonathan Mann",

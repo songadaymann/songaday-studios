@@ -320,6 +320,7 @@ async function top(db, now, current, q = '') {
 <nav class="tabs" aria-label="Lists">
 ${TABS.map(([name, label], index) => name === 'held' && !counts[index] && current !== name ? ''
     : `  <a href="/commission/admin${name === 'line' ? '' : `?show=${name}`}"${current === name ? ' aria-current="page"' : ''}${name === 'held' ? ' class="alert"' : ''}>${label} ${counts[index]}</a>`).filter(Boolean).join('\n')}
+  <a href="/commission/admin/store">Store orders</a>
   <a href="/commission/admin/emails"${current === 'emails' ? ' aria-current="page"' : ''}>Emails</a>
 </nav>
 <form class="search" method="get" action="/commission/admin"><label>Find a request <span>A request number, or part of an email, a name, or who it’s for.</span><input type="text" name="q" value="${escapeHtml(q)}" maxlength="254"></label><button type="submit" class="quiet">Find</button></form>`;

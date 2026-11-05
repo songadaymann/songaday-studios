@@ -3,13 +3,35 @@
 {{HEADER}}
 <main id="main" tabindex="-1">
 <div class="store-intro"><h1>Store</h1><p>Little figures. Big posters.</p></div>
+<p id="store-order-status" role="status" hidden></p>
 <section class="store-product" aria-labelledby="figure-name">
  <div class="store-art"><img id="figure-image" src="https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/015.jpg" alt="Sunshine poster" width="600" height="800"></div>
  <div class="store-choices"><h2 id="figure-name">#015 Sunshine</h2><p>MUSCLE men, photographed up close. All 236 original figures, printed edge to edge on semi-glossy paper.</p>
  <fieldset><legend>Size</legend><div id="store-sizes" class="store-options"></div></fieldset>
  <fieldset><legend>Frame</legend><div id="store-frames" class="store-options"></div></fieldset>
  <p id="store-frame-note">Black or white wooden frame, with plexiglass. Small and medium arrive ready to hang.</p>
- <p class="store-launch" id="store-launch">Purchasing opens soon.</p>
+ <p class="store-launch"><strong id="store-price">$59</strong><span id="store-launch"> · Purchasing opens soon.</span></p>
+ <form id="store-shipping" hidden>
+ <p>Shipping within the United States. One poster per order.</p>
+ <div class="store-address-grid">
+ <label>First name<input name="firstName" autocomplete="given-name" required maxlength="50"></label>
+ <label>Last name<input name="lastName" autocomplete="family-name" required maxlength="50"></label>
+ </div>
+ <label>Email<input name="email" type="email" autocomplete="email" required maxlength="254"></label>
+ <label>Phone for delivery<input name="phone" type="tel" autocomplete="tel" required maxlength="30"></label>
+ <label>Street address<input name="addressLine1" autocomplete="address-line1" required maxlength="100"></label>
+ <label>Apartment, suite, etc. (optional)<input name="addressLine2" autocomplete="address-line2" maxlength="100"></label>
+ <label>City<input name="city" autocomplete="address-level2" required maxlength="60"></label>
+ <div class="store-address-grid">
+ <label>State<input name="state" autocomplete="address-level1" placeholder="NY" required maxlength="2" pattern="[A-Za-z]{2}"></label>
+ <label>ZIP code<input name="postCode" autocomplete="postal-code" required pattern="[0-9]{5}(-[0-9]{4})?"></label>
+ </div>
+ <input type="hidden" name="country" value="US">
+ <p>Your delivery details are shared with Stripe and Gelato to process and ship your order.</p>
+ <button type="submit" id="store-quote">Get shipping price</button>
+ <p id="store-quote-status" role="status" aria-live="polite"></p>
+ <button type="button" id="store-checkout" hidden>Continue to secure checkout</button>
+ </form>
  <a href="#collection" class="store-browse">Find your figure ↓</a>
  </div>
 </section>

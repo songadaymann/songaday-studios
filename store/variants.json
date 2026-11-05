@@ -34,7 +34,7 @@
       "size": "12x16",
       "frame": "none",
       "productUid": "flat_300x400-mm-12x16-inch_170-gsm-65lb-coated-silk_4-0_ver",
-      "priceCents": null,
+      "priceCents": 2900,
       "artworkPrefix": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/store-original-color-v1/12x16"
     },
     {
@@ -42,7 +42,7 @@
       "size": "12x16",
       "frame": "black",
       "productUid": "frame_and_poster_mounted_product_frs_12x16-inch_frc_black_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_12x16-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
-      "priceCents": null,
+      "priceCents": 6900,
       "artworkPrefix": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/store-original-color-v1/12x16"
     },
     {
@@ -50,7 +50,7 @@
       "size": "12x16",
       "frame": "white",
       "productUid": "frame_and_poster_mounted_product_frs_12x16-inch_frc_white_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_12x16-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
-      "priceCents": null,
+      "priceCents": 6900,
       "artworkPrefix": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/store-original-color-v1/12x16"
     },
     {
@@ -58,7 +58,7 @@
       "size": "18x24",
       "frame": "none",
       "productUid": "flat_450x600-mm-18x24-inch_170-gsm-65lb-coated-silk_4-0_ver",
-      "priceCents": null,
+      "priceCents": 3900,
       "artworkPrefix": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/store-original-color-v1/18x24"
     },
     {
@@ -66,7 +66,7 @@
       "size": "18x24",
       "frame": "black",
       "productUid": "frame_and_poster_mounted_product_frs_18x24-inch_frc_black_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_18x24-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
-      "priceCents": null,
+      "priceCents": 9900,
       "artworkPrefix": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/store-original-color-v1/18x24"
     },
     {
@@ -74,7 +74,7 @@
       "size": "18x24",
       "frame": "white",
       "productUid": "frame_and_poster_mounted_product_frs_18x24-inch_frc_white_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_18x24-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
-      "priceCents": null,
+      "priceCents": 9900,
       "artworkPrefix": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/store-original-color-v1/18x24"
     },
     {
@@ -82,7 +82,7 @@
       "size": "30x40",
       "frame": "none",
       "productUid": "flat_750x1000-mm-30x40-inch_170-gsm-65lb-coated-silk_4-0_ver",
-      "priceCents": null,
+      "priceCents": 5900,
       "artworkPrefix": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/pdf"
     }
   ]

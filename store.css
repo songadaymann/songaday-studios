@@ -29,3 +29,12 @@
 .store-figure span { font-size:var(--type-body); }
 .store-figure[aria-pressed="true"] span { text-decoration:underline; text-decoration-color:var(--red); text-underline-offset:.3rem; }
 @media(max-width:760px) { .store-product { grid-template-columns:1fr; gap:2rem; } .store-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .store-search-row { display:block; } .store-search-row input { width:100%; } .store-page main { padding-top:2rem; } }
+
+#store-shipping label { display:block; font-size:var(--type-meta); margin:1rem 0; }
+#store-shipping input { display:block; width:100%; border:1px solid #777; border-radius:0; background:#080808; color:#fff; padding:.75rem; margin-top:.4rem; }
+.store-address-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+#store-shipping button { border:0; border-radius:0; min-height:48px; padding:.75rem 1rem; background:#fff; color:#000; cursor:pointer; }
+#store-shipping button:disabled { background:#555; color:#fff; cursor:wait; }
+#store-shipping p { font-size:var(--type-meta); }
+[hidden] { display:none !important; }
+#store-order-status { border-top:1px solid #777; border-bottom:1px solid #777; padding:1rem 0; margin:0 0 2rem; }

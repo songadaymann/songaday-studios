@@ -27,7 +27,8 @@ test('the commission bindings in wrangler.jsonc are the ones the code uses', asy
   const email = config.send_email.find((entry) => entry.name === 'COMMISSION_EMAIL');
   assert.ok(email, 'COMMISSION_EMAIL');
   assert.ok(email.allowed_sender_addresses.includes(config.vars.COMMISSION_FROM_EMAIL), 'the sender is an allowed sender');
-  assert.equal(config.triggers.crons.length, 1);
+  assert.equal(config.triggers.crons.length, 2);
+  assert.ok(config.triggers.crons.includes("*/5 * * * *"));
   assert.match(config.triggers.crons[0], /^\d+ \d+ \* \* \*$/, 'once a day');
 });
 

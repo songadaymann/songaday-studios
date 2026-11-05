@@ -1,3 +1,4 @@
+import {handleStore, runStoreOrders} from './store.mjs';
 import { songADayAge, songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
@@ -151,6 +152,8 @@ export default {
     }
 
     // songaday.studio/commission: song commissions, the buyer pages and the admin (commission.mjs).
+    const store = await handleStore(request, env, url);
+    if (store) return store;
     const commission = await handleCommission(request, env, url, ctx);
     if (commission) return commission;
 
@@ -231,6 +234,7 @@ export default {
   // Daily (wrangler.jsonc triggers): commission place-in-line emails, the payment reminder,
   // Jonathan's summary, and any email that didn't go out.
   async scheduled(controller, env, ctx) {
-    ctx.waitUntil(runCommissionDaily(env, new Date(controller.scheduledTime)));
+    ctx.waitUntil(runStoreOrders(env));
+    if (!controller.cron || controller.cron === '0 14 * * *') ctx.waitUntil(runCommissionDaily(env, new Date(controller.scheduledTime)));
   }
 };

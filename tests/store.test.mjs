@@ -9,7 +9,7 @@ test('every figure has exactly one original-color preview and no dashboard links
 });
 test('size and frame options only map to quote-verified products',async()=>{
  const c=await read('variants.json');assert.equal(c.variants.length,7);assert.equal(c.checkoutEnabled,false);
- for(const s of c.sizes){const v=c.variants.filter(v=>v.size===s.id);assert.deepEqual(v.map(v=>v.frame),s.id==='30x40'?['none']:['none','black','white']);for(const p of v){assert.ok(p.productUid);assert.equal(p.priceCents,null);assert.ok(p.artworkPrefix.startsWith('https://'));}}
+ for(const s of c.sizes){const v=c.variants.filter(v=>v.size===s.id);assert.deepEqual(v.map(v=>v.frame),s.id==='30x40'?['none']:['none','black','white']);for(const p of v){assert.ok(p.productUid);assert.ok(Number.isInteger(p.priceCents)&&p.priceCents>0);assert.ok(p.artworkPrefix.startsWith('https://'));}}
 });
 test('the store canonical route preserves chosen figure options',async()=>{
  const response=await worker.fetch(new Request('https://songaday.studio/STORE?figure=15&size=12x16'),{},{});
