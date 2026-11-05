@@ -463,8 +463,8 @@ footer nav a { font-weight: 700; }
   .hero-action-primary { display: none; }
 }
 
-/* Phones: the section links ride above the logo and scroll away; the logo and Donate stay pinned. */
-@media (max-width: 760px) {
+/* Compact navigation: links scroll above the logo before the full header would overflow. */
+@media (max-width: 1100px) {
   :root { --header-clearance: 72px; }
   .site-header { top: -41px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "sections sections" "brand donate"; gap: 0 .75rem; min-height: 0; padding: 0 var(--gutter) .55rem; }
   .site-header:focus-within { top: 0; }

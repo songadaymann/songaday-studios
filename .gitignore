@@ -54,3 +54,5 @@ venv/
 
 # Local preview config for the Claude desktop app
 .claude/launch.json
+
+/store/index.html

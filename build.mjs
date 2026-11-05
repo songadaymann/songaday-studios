@@ -289,3 +289,13 @@ ${labBody}
 </html>
 `);
 console.log(`Built Song A Day Studio index.html, films/, everything/, now/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+
+// The store uses the Studio purchase header/footer; no donation claims on merchandise.
+const [storeSource, storeCss, storeJs] = await Promise.all([source("store.html"), source("store.css"), source("store-page.js")]);
+const storeHeader = purchaseHeader.replace(' aria-current="page"', '').replace('<a href="/store/">', '<a href="/store/" aria-current="page">');
+await writePage("store/index.html", documentHtml({
+  title: "Store · Song A Day Studio", description: "All 236 MUSCLE figures as photographic posters. Choose your figure, size and frame.",
+  url: "https://songaday.studio/store/",
+  body: hostedMedia(storeSource.replace("{{HEADER}}", () => storeHeader).replace("{{FOOTER}}", () => purchaseFooter.replace('Song commissions are purchases', 'Posters and song commissions are purchases'))),
+  script: storeJs, extraCss: storeCss,
+}));

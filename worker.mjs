@@ -35,7 +35,7 @@ const SECTION_REDIRECTS = {
 };
 
 // Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
-const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data', '/press']);
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data', '/press', '/store']);
 
 // The universe bar and projects.json load on other Song A Day sites too, and module scripts and
 // cross-origin fetches need CORS. The bar is pinned by version folder (bar/v1/), so it can be

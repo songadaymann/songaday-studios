@@ -193,6 +193,7 @@ const HEADER = `<header class="site-header">
     <a href="/films/">Films</a>
     <a href="/plugins/">Plugins</a>
     <a href="/commission">Get a song</a>
+      <a href="/store/">Store</a>
   </nav>
   <a class="nav-donate" href="/#donate">Donate</a>
 </header>`;

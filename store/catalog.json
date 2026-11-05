@@ -1,0 +1,1182 @@
+[
+  {
+    "id": 1,
+    "name": "Muscle Man",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/001.jpg"
+  },
+  {
+    "id": 2,
+    "name": "Terri-Bull",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/002.jpg"
+  },
+  {
+    "id": 3,
+    "name": "Sunshine(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/003.jpg"
+  },
+  {
+    "id": 4,
+    "name": "Kani Besu",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/004.jpg"
+  },
+  {
+    "id": 5,
+    "name": "Planet Man",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/005.jpg"
+  },
+  {
+    "id": 6,
+    "name": "Erimaki Tokage",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/006.jpg"
+  },
+  {
+    "id": 7,
+    "name": "Puyo Puyo",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/007.jpg"
+  },
+  {
+    "id": 8,
+    "name": "Shishikababu",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/008.jpg"
+  },
+  {
+    "id": 9,
+    "name": "Wakusei Barukan",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/009.jpg"
+  },
+  {
+    "id": 10,
+    "name": "Jessie Maybia",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/010.jpg"
+  },
+  {
+    "id": 11,
+    "name": "Hidora King",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/011.jpg"
+  },
+  {
+    "id": 12,
+    "name": "Oil Man",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/012.jpg"
+  },
+  {
+    "id": 13,
+    "name": "King Cobra",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/013.jpg"
+  },
+  {
+    "id": 14,
+    "name": "Robin Mask",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/014.jpg"
+  },
+  {
+    "id": 15,
+    "name": "Sunshine (D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/015.jpg"
+  },
+  {
+    "id": 16,
+    "name": "Neptuneman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/016.jpg"
+  },
+  {
+    "id": 17,
+    "name": "Kinnikuman (B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/017.jpg"
+  },
+  {
+    "id": 18,
+    "name": "Daiyaman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/018.jpg"
+  },
+  {
+    "id": 19,
+    "name": "Black Killer",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/019.jpg"
+  },
+  {
+    "id": 20,
+    "name": "Kinniku Daiou",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/020.jpg"
+  },
+  {
+    "id": 21,
+    "name": "Akuma Shogun(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/021.jpg"
+  },
+  {
+    "id": 22,
+    "name": "The Manriki",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/022.jpg"
+  },
+  {
+    "id": 23,
+    "name": "lwao",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/023.jpg"
+  },
+  {
+    "id": 24,
+    "name": "Cubeman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/024.jpg"
+  },
+  {
+    "id": 25,
+    "name": "Prince Kamehame",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/025.jpg"
+  },
+  {
+    "id": 26,
+    "name": "The Ninja(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/026.jpg"
+  },
+  {
+    "id": 27,
+    "name": "Ashuraman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/027.jpg"
+  },
+  {
+    "id": 28,
+    "name": "John Stimboard",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/028.jpg"
+  },
+  {
+    "id": 29,
+    "name": "Terryman(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/029.jpg"
+  },
+  {
+    "id": 30,
+    "name": "Keyman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/030.jpg"
+  },
+  {
+    "id": 31,
+    "name": "Terryman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/031.jpg"
+  },
+  {
+    "id": 32,
+    "name": "Kington",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/032.jpg"
+  },
+  {
+    "id": 33,
+    "name": "Skull Bozu",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/033.jpg"
+  },
+  {
+    "id": 34,
+    "name": "Nokogira Man",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/034.jpg"
+  },
+  {
+    "id": 35,
+    "name": "Warsman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/035.jpg"
+  },
+  {
+    "id": 36,
+    "name": "Kinkotsuman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/036.jpg"
+  },
+  {
+    "id": 37,
+    "name": "Dynamite Piper",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/037.jpg"
+  },
+  {
+    "id": 38,
+    "name": "Tileman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/038.jpg"
+  },
+  {
+    "id": 39,
+    "name": "Sunshine(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/039.jpg"
+  },
+  {
+    "id": 40,
+    "name": "Kendaman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/040.jpg"
+  },
+  {
+    "id": 41,
+    "name": "Beauty Rhodes",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/041.jpg"
+  },
+  {
+    "id": 42,
+    "name": "Goremuman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/042.jpg"
+  },
+  {
+    "id": 43,
+    "name": "Curry Cook",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/043.jpg"
+  },
+  {
+    "id": 44,
+    "name": "Benkiman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/044.jpg"
+  },
+  {
+    "id": 45,
+    "name": "Springman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/045.jpg"
+  },
+  {
+    "id": 46,
+    "name": "Robin Mask(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/046.jpg"
+  },
+  {
+    "id": 47,
+    "name": "Linchou",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/047.jpg"
+  },
+  {
+    "id": 48,
+    "name": "Teapack Man",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/048.jpg"
+  },
+  {
+    "id": 49,
+    "name": "Black Shadow",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/049.jpg"
+  },
+  {
+    "id": 50,
+    "name": "Hawkman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/050.jpg"
+  },
+  {
+    "id": 51,
+    "name": "Canadianman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/051.jpg"
+  },
+  {
+    "id": 52,
+    "name": "Jawsman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/052.jpg"
+  },
+  {
+    "id": 53,
+    "name": "Junkman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/053.jpg"
+  },
+  {
+    "id": 54,
+    "name": "The Mountain",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/054.jpg"
+  },
+  {
+    "id": 55,
+    "name": "Skyman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/055.jpg"
+  },
+  {
+    "id": 56,
+    "name": "Neptune King",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/056.jpg"
+  },
+  {
+    "id": 57,
+    "name": "Kinnikuman Great",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/057.jpg"
+  },
+  {
+    "id": 58,
+    "name": "Buffaloman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/058.jpg"
+  },
+  {
+    "id": 59,
+    "name": "Warsman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/059.jpg"
+  },
+  {
+    "id": 60,
+    "name": "Mito(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/060.jpg"
+  },
+  {
+    "id": 61,
+    "name": "Kinnikuman (A",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/061.jpg"
+  },
+  {
+    "id": 62,
+    "name": "The Sheik",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/062.jpg"
+  },
+  {
+    "id": 63,
+    "name": "Goriki",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/063.jpg"
+  },
+  {
+    "id": 64,
+    "name": "Sunshine(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/064.jpg"
+  },
+  {
+    "id": 65,
+    "name": "Crystalman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/065.jpg"
+  },
+  {
+    "id": 66,
+    "name": "Mr. Barracuda(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/066.jpg"
+  },
+  {
+    "id": 67,
+    "name": "Pentagon",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/067.jpg"
+  },
+  {
+    "id": 68,
+    "name": "0kutopasu Dragon",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/068.jpg"
+  },
+  {
+    "id": 69,
+    "name": "Specialman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/069.jpg"
+  },
+  {
+    "id": 70,
+    "name": "Ashuraman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/070.jpg"
+  },
+  {
+    "id": 71,
+    "name": "Neptuneman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/071.jpg"
+  },
+  {
+    "id": 72,
+    "name": "Sunigator(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/072.jpg"
+  },
+  {
+    "id": 73,
+    "name": "Mairudoman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/073.jpg"
+  },
+  {
+    "id": 74,
+    "name": "Spray Majin",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/074.jpg"
+  },
+  {
+    "id": 75,
+    "name": "Abdullah",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/075.jpg"
+  },
+  {
+    "id": 76,
+    "name": "Eraginesu",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/076.jpg"
+  },
+  {
+    "id": 77,
+    "name": "Ashuraman No Sensei",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/077.jpg"
+  },
+  {
+    "id": 78,
+    "name": "Vikingman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/078.jpg"
+  },
+  {
+    "id": 79,
+    "name": "Hammerhead",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/079.jpg"
+  },
+  {
+    "id": 80,
+    "name": "Paper Miira",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/080.jpg"
+  },
+  {
+    "id": 81,
+    "name": "Amelman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/081.jpg"
+  },
+  {
+    "id": 82,
+    "name": "Ramenman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/082.jpg"
+  },
+  {
+    "id": 83,
+    "name": "Hang Killer",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/083.jpg"
+  },
+  {
+    "id": 84,
+    "name": "Snakeman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/084.jpg"
+  },
+  {
+    "id": 85,
+    "name": "Kinnikuman Zebra(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/085.jpg"
+  },
+  {
+    "id": 86,
+    "name": "De Bellman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/086.jpg"
+  },
+  {
+    "id": 87,
+    "name": "Magnitude lchiman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/087.jpg"
+  },
+  {
+    "id": 88,
+    "name": "Armstrong",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/088.jpg"
+  },
+  {
+    "id": 89,
+    "name": "Watchman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/089.jpg"
+  },
+  {
+    "id": 90,
+    "name": "Combatman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/090.jpg"
+  },
+  {
+    "id": 91,
+    "name": "Cyborg SW #26",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/091.jpg"
+  },
+  {
+    "id": 92,
+    "name": "Akurna Kishi",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/092.jpg"
+  },
+  {
+    "id": 93,
+    "name": "Buffaloman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/093.jpg"
+  },
+  {
+    "id": 94,
+    "name": "Kintaman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/094.jpg"
+  },
+  {
+    "id": 95,
+    "name": "Big Radial",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/095.jpg"
+  },
+  {
+    "id": 96,
+    "name": "The Ninja(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/096.jpg"
+  },
+  {
+    "id": 97,
+    "name": "Condora",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/097.jpg"
+  },
+  {
+    "id": 98,
+    "name": "Dark Nisei",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/098.jpg"
+  },
+  {
+    "id": 99,
+    "name": "The Mari",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/099.jpg"
+  },
+  {
+    "id": 100,
+    "name": "Barn Barn Ji",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/100.jpg"
+  },
+  {
+    "id": 101,
+    "name": "Godo Shisa",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/101.jpg"
+  },
+  {
+    "id": 102,
+    "name": "Mapman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/102.jpg"
+  },
+  {
+    "id": 103,
+    "name": "Black Hole",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/103.jpg"
+  },
+  {
+    "id": 104,
+    "name": "Buka(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/104.jpg"
+  },
+  {
+    "id": 105,
+    "name": "Buffaloman(D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/105.jpg"
+  },
+  {
+    "id": 106,
+    "name": "Aiansueto Kita Choin",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/106.jpg"
+  },
+  {
+    "id": 107,
+    "name": "Sunshine(E)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/107.jpg"
+  },
+  {
+    "id": 108,
+    "name": "Rikishiman(B) Wolfman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/108.jpg"
+  },
+  {
+    "id": 109,
+    "name": "Ashuraman  No Chichi",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/109.jpg"
+  },
+  {
+    "id": 110,
+    "name": "Kinnikuman(F)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/110.jpg"
+  },
+  {
+    "id": 111,
+    "name": "Akuma Shogun(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/111.jpg"
+  },
+  {
+    "id": 112,
+    "name": "Sunigator(D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/112.jpg"
+  },
+  {
+    "id": 113,
+    "name": "Kinnikuman Super Phoenix(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/113.jpg"
+  },
+  {
+    "id": 114,
+    "name": "Pandaman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/114.jpg"
+  },
+  {
+    "id": 115,
+    "name": "Kiki Jin",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/115.jpg"
+  },
+  {
+    "id": 116,
+    "name": "Kinnikuman Soldier A",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/116.jpg"
+  },
+  {
+    "id": 117,
+    "name": "Rollerman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/117.jpg"
+  },
+  {
+    "id": 118,
+    "name": "ICBM",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/118.jpg"
+  },
+  {
+    "id": 119,
+    "name": "Bermuda III(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/119.jpg"
+  },
+  {
+    "id": 120,
+    "name": "Sabotenman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/120.jpg"
+  },
+  {
+    "id": 121,
+    "name": "Hantenguman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/121.jpg"
+  },
+  {
+    "id": 122,
+    "name": "Kinnikuman(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/122.jpg"
+  },
+  {
+    "id": 123,
+    "name": "Geronimo(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/123.jpg"
+  },
+  {
+    "id": 124,
+    "name": "Foxman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/124.jpg"
+  },
+  {
+    "id": 125,
+    "name": "Buka(A",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/125.jpg"
+  },
+  {
+    "id": 126,
+    "name": "Kenkaman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/126.jpg"
+  },
+  {
+    "id": 127,
+    "name": "Junkman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/127.jpg"
+  },
+  {
+    "id": 128,
+    "name": "Smileman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/128.jpg"
+  },
+  {
+    "id": 129,
+    "name": "Ashuraman(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/129.jpg"
+  },
+  {
+    "id": 130,
+    "name": "Mirion Hell",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/130.jpg"
+  },
+  {
+    "id": 131,
+    "name": "Ukon",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/131.jpg"
+  },
+  {
+    "id": 132,
+    "name": "Screw Kid(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/132.jpg"
+  },
+  {
+    "id": 133,
+    "name": "Buka(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/133.jpg"
+  },
+  {
+    "id": 134,
+    "name": "Ameragu Chojin No Bosu",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/134.jpg"
+  },
+  {
+    "id": 135,
+    "name": "Kyoaku Chojin(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/135.jpg"
+  },
+  {
+    "id": 136,
+    "name": "Harigorasu",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/136.jpg"
+  },
+  {
+    "id": 137,
+    "name": "Bermuda III (C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/137.jpg"
+  },
+  {
+    "id": 138,
+    "name": "Personalman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/138.jpg"
+  },
+  {
+    "id": 139,
+    "name": "MokoSeijin",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/139.jpg"
+  },
+  {
+    "id": 140,
+    "name": "Terryman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/140.jpg"
+  },
+  {
+    "id": 141,
+    "name": "Kinnikuman(E)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/141.jpg"
+  },
+  {
+    "id": 142,
+    "name": "Bermuda III(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/142.jpg"
+  },
+  {
+    "id": 143,
+    "name": "Black Night",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/143.jpg"
+  },
+  {
+    "id": 144,
+    "name": "Mr. America",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/144.jpg"
+  },
+  {
+    "id": 145,
+    "name": "Black Tomahawk",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/145.jpg"
+  },
+  {
+    "id": 146,
+    "name": "Playerman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/146.jpg"
+  },
+  {
+    "id": 147,
+    "name": "Iron Commando",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/147.jpg"
+  },
+  {
+    "id": 148,
+    "name": "Furashya Balloon",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/148.jpg"
+  },
+  {
+    "id": 149,
+    "name": "Screw Kid(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/149.jpg"
+  },
+  {
+    "id": 150,
+    "name": "Apollo The Giant",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/150.jpg"
+  },
+  {
+    "id": 151,
+    "name": "Kanderaman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/151.jpg"
+  },
+  {
+    "id": 152,
+    "name": "Mongolman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/152.jpg"
+  },
+  {
+    "id": 153,
+    "name": "Sunigator Shotai The Claw",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/153.jpg"
+  },
+  {
+    "id": 154,
+    "name": "Anmonaitosu",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/154.jpg"
+  },
+  {
+    "id": 155,
+    "name": "Shyaneruman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/155.jpg"
+  },
+  {
+    "id": 156,
+    "name": "Wolfman (A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/156.jpg"
+  },
+  {
+    "id": 157,
+    "name": "Black King",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/157.jpg"
+  },
+  {
+    "id": 158,
+    "name": "Bazookara",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/158.jpg"
+  },
+  {
+    "id": 159,
+    "name": "Mr. Akiresu  Mr. Achilles",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/159.jpg"
+  },
+  {
+    "id": 160,
+    "name": "Chavo Kerori",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/160.jpg"
+  },
+  {
+    "id": 161,
+    "name": "Atlantis",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/161.jpg"
+  },
+  {
+    "id": 162,
+    "name": "Nakano-San The Announcer",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/162.jpg"
+  },
+  {
+    "id": 163,
+    "name": "Mammothman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/163.jpg"
+  },
+  {
+    "id": 164,
+    "name": "Kinnikuman Big Body(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/164.jpg"
+  },
+  {
+    "id": 165,
+    "name": "Black Zumou",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/165.jpg"
+  },
+  {
+    "id": 166,
+    "name": "Kinnikuman Mariposa(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/166.jpg"
+  },
+  {
+    "id": 167,
+    "name": "Black Rain",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/167.jpg"
+  },
+  {
+    "id": 168,
+    "name": "Mr. VTR",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/168.jpg"
+  },
+  {
+    "id": 169,
+    "name": "Benkiman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/169.jpg"
+  },
+  {
+    "id": 170,
+    "name": "The Hunter",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/170.jpg"
+  },
+  {
+    "id": 171,
+    "name": "Mixer Taite(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/171.jpg"
+  },
+  {
+    "id": 172,
+    "name": "Terryman(D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/172.jpg"
+  },
+  {
+    "id": 173,
+    "name": "Mr. Kamen(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/173.jpg"
+  },
+  {
+    "id": 174,
+    "name": "Ashuraman(E)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/174.jpg"
+  },
+  {
+    "id": 175,
+    "name": "Leoparudon",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/175.jpg"
+  },
+  {
+    "id": 176,
+    "name": "Heavy Metal",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/176.jpg"
+  },
+  {
+    "id": 177,
+    "name": "Dai Ukon",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/177.jpg"
+  },
+  {
+    "id": 178,
+    "name": "Black Satan",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/178.jpg"
+  },
+  {
+    "id": 179,
+    "name": "Black Buffalo",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/179.jpg"
+  },
+  {
+    "id": 180,
+    "name": "Black Knight",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/180.jpg"
+  },
+  {
+    "id": 181,
+    "name": "Black Bear",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/181.jpg"
+  },
+  {
+    "id": 182,
+    "name": "Mystery Partner",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/182.jpg"
+  },
+  {
+    "id": 183,
+    "name": "Pinchman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/183.jpg"
+  },
+  {
+    "id": 184,
+    "name": "Geronimo(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/184.jpg"
+  },
+  {
+    "id": 185,
+    "name": "King The Tons(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/185.jpg"
+  },
+  {
+    "id": 186,
+    "name": "Kendaman(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/186.jpg"
+  },
+  {
+    "id": 187,
+    "name": "The Hawkman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/187.jpg"
+  },
+  {
+    "id": 188,
+    "name": "Phoenixman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/188.jpg"
+  },
+  {
+    "id": 189,
+    "name": "Mito (C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/189.jpg"
+  },
+  {
+    "id": 190,
+    "name": "Gan Satan",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/190.jpg"
+  },
+  {
+    "id": 191,
+    "name": "Satan King",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/191.jpg"
+  },
+  {
+    "id": 192,
+    "name": "Tenjokai Chojin No Kami",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/192.jpg"
+  },
+  {
+    "id": 193,
+    "name": "Cobra Satan",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/193.jpg"
+  },
+  {
+    "id": 194,
+    "name": "Haniwa Satan",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/194.jpg"
+  },
+  {
+    "id": 195,
+    "name": "Sunshine (F)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/195.jpg"
+  },
+  {
+    "id": 196,
+    "name": "Nusuto George",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/196.jpg"
+  },
+  {
+    "id": 197,
+    "name": "Robin Mask(D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/197.jpg"
+  },
+  {
+    "id": 198,
+    "name": "Soldierman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/198.jpg"
+  },
+  {
+    "id": 199,
+    "name": "Ahsuraman(D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/199.jpg"
+  },
+  {
+    "id": 200,
+    "name": "Terryman(E)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/200.jpg"
+  },
+  {
+    "id": 201,
+    "name": "King The Tons (B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/201.jpg"
+  },
+  {
+    "id": 202,
+    "name": "Strongman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/202.jpg"
+  },
+  {
+    "id": 203,
+    "name": "Cannon Baller",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/203.jpg"
+  },
+  {
+    "id": 204,
+    "name": "Sunigator(E)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/204.jpg"
+  },
+  {
+    "id": 205,
+    "name": "Powerfulman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/205.jpg"
+  },
+  {
+    "id": 206,
+    "name": "Kinnikuman(I)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/206.jpg"
+  },
+  {
+    "id": 207,
+    "name": "Satan Prince",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/207.jpg"
+  },
+  {
+    "id": 208,
+    "name": "Dickieman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/208.jpg"
+  },
+  {
+    "id": 209,
+    "name": "Mixer Taite(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/209.jpg"
+  },
+  {
+    "id": 210,
+    "name": "Kinnikuman Soldier(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/210.jpg"
+  },
+  {
+    "id": 211,
+    "name": "Buffaloman(E)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/211.jpg"
+  },
+  {
+    "id": 212,
+    "name": "Parthenon",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/212.jpg"
+  },
+  {
+    "id": 213,
+    "name": "Kinnikuman Big Body(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/213.jpg"
+  },
+  {
+    "id": 214,
+    "name": "Robin Mask(F)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/214.jpg"
+  },
+  {
+    "id": 215,
+    "name": "Bikeman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/215.jpg"
+  },
+  {
+    "id": 216,
+    "name": "The Ninja(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/216.jpg"
+  },
+  {
+    "id": 217,
+    "name": "Kinnikuman Mariposa(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/217.jpg"
+  },
+  {
+    "id": 218,
+    "name": "Warsman(C)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/218.jpg"
+  },
+  {
+    "id": 219,
+    "name": "Kinnikuman Zebra(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/219.jpg"
+  },
+  {
+    "id": 220,
+    "name": "Devil Magician",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/220.jpg"
+  },
+  {
+    "id": 221,
+    "name": "New Sunshine",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/221.jpg"
+  },
+  {
+    "id": 222,
+    "name": "Kinnikuman(J)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/222.jpg"
+  },
+  {
+    "id": 223,
+    "name": "Mr. Barracuda(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/223.jpg"
+  },
+  {
+    "id": 224,
+    "name": "New Black Hole",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/224.jpg"
+  },
+  {
+    "id": 225,
+    "name": "Robin Mask(E)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/225.jpg"
+  },
+  {
+    "id": 226,
+    "name": "Ramenman(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/226.jpg"
+  },
+  {
+    "id": 227,
+    "name": "Kinnikuman Great(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/227.jpg"
+  },
+  {
+    "id": 228,
+    "name": "The Ninja(D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/228.jpg"
+  },
+  {
+    "id": 229,
+    "name": "Kinnikuman Siper Phoenix(B)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/229.jpg"
+  },
+  {
+    "id": 230,
+    "name": "Kendaman(A)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/230.jpg"
+  },
+  {
+    "id": 231,
+    "name": "Warsman(D)",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/231.jpg"
+  },
+  {
+    "id": 232,
+    "name": "Turboman",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/232.jpg"
+  },
+  {
+    "id": 233,
+    "name": "Godfon Eric",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/233.jpg"
+  },
+  {
+    "id": 234,
+    "name": "MuscleMan",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/234.jpg"
+  },
+  {
+    "id": 235,
+    "name": "Terri-Bull",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/235.jpg"
+  },
+  {
+    "id": 236,
+    "name": "Satan's Cross",
+    "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/236.jpg"
+  }
+]

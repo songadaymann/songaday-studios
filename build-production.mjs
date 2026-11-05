@@ -14,6 +14,7 @@ await cp('index.html', 'dist/index.html');
 await cp('films/index.html', 'dist/films/index.html');
 await cp('everything/index.html', 'dist/everything/index.html');
 await cp('now/index.html', 'dist/now/index.html');
+await cp('store', 'dist/store', { recursive: true });
 // songaday.studio/commission: the page, and the shell for each buyer's song page (the Worker
 // fills both; commission.mjs).
 await cp('commission/index.html', 'dist/commission/index.html');

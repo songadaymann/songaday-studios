@@ -144,7 +144,7 @@ test('every page header links to the same sections', async () => {
   const home = await readFile(new URL('profile.html', root), 'utf8');
   const plugins = await readFile(new URL('plugins/index.html', root), 'utf8');
   const films = await readFile(new URL('films.html', root), 'utf8');
-  assert.deepEqual(navLinks(home), ['/all', '/listen', '/games', '/films/', '/plugins/', '/commission']);
+  assert.deepEqual(navLinks(home), ['/all', '/listen', '/games', '/films/', '/plugins/', '/commission', '/store/']);
   assert.deepEqual(navLinks(plugins), navLinks(home));
   assert.deepEqual(navLinks(films), navLinks(home));
   assert.match(plugins, /class="nav-donate" href="\/#donate"/);

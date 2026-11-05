@@ -795,3 +795,29 @@ first, and keeps that copy in `output/media/`. Browsers cache videos for a day.
 
 Code is MIT, copyright Jonathan Mann. Media and third-party branding are separate
 from the code license; see `ASSETS.md`.
+
+## Store
+
+`/store/` introduces the 236 MUSCLE photographic posters. Edit `store.html`,
+`store.css`, and `store-page.js`; `build.mjs` uses the Studio purchase header/footer.
+`store/catalog.json` contains public figure names and approved original-color
+previews; `store/variants.json` maps verified Gelato products to sizes and frames.
+Small is 12 × 16 inches, medium 18 × 24, large 30 × 40. Black/white wooden frames
+use Gelato's mounted, ready-to-hang products for small and medium. No matching
+30 × 40 frame was returned by the API catalog. The seven available configurations
+were individually quoted for a US address. Current launch market: US.
+
+Purchasing is closed: prices are unset and there is no store checkout endpoint.
+The commission checkout is separate and unchanged. Next: settle retail pricing,
+add destination-specific shipping quotes, durable store orders, a store-specific
+Stripe webhook with signature/payment/amount checks, and idempotent Gelato
+submission/reconciliation and tracking. Do not send paid Gelato orders on browser
+redirects. Keep API credentials in Worker secrets, never in the public catalog.
+
+Approved print files are immutable R2 assets: large uses
+`centered-v4-original-color/pdf/NNN.pdf`; small/medium use
+`store-original-color-v1/{12x16,18x24}/NNN.pdf`. All are US sizes with 4 mm bleed.
+The smaller files scale the approved page uniformly to cover their full bleed,
+without decoding, recompressing or recoloring embedded image streams. The frame
+border on the page is an illustrative preview. Original TIFFs and preparation
+scripts remain in the separate posters project; print binaries stay out of Git.
