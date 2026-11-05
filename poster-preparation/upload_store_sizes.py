@@ -18,7 +18,7 @@ def upload(meta):
  marker.write_text(json.dumps({'sha256':m['sha256'],'url':BASE+'/'+key}))
  return key
 if __name__=='__main__':
- files=sorted(OUT.glob('*/*.json'));files=[f for f in files if not f.name.endswith('.uploaded.json')]
+ files=[f for size in ['12x16','18x24'] for f in sorted((OUT/size).glob('*.json')) if not f.name.endswith('.uploaded.json')]
  assert len(files)==472
  with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
   for i,_ in enumerate(ex.map(upload,files),1):

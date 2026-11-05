@@ -1,0 +1,74 @@
+[
+  {
+    "id": "12x16-black",
+    "size": "12x16",
+    "frame": "black",
+    "productUid": "frame_and_poster_mounted_product_frs_12x16-inch_frc_black_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_12x16-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
+    "gelatoId": "94479d46-a860-4282-bbc7-9aefb0666ac2",
+    "gelatoUrl": "https://dashboard.gelato.com/checkout/94479d46-a860-4282-bbc7-9aefb0666ac2/product",
+    "reference": "LPM-015-store-v1-12x16-black",
+    "sha256": "e91acd1a00bd8ebbc5af7fb3039b14bcc1eac54f56b217528a082b373ae5c79c",
+    "verified": true,
+    "unpaid": true
+  },
+  {
+    "id": "12x16-unframed",
+    "size": "12x16",
+    "frame": "none",
+    "productUid": "flat_300x400-mm-12x16-inch_170-gsm-65lb-coated-silk_4-0_ver",
+    "gelatoId": "a999be72-efca-4ae5-94ae-6e5fb029981c",
+    "gelatoUrl": "https://dashboard.gelato.com/checkout/a999be72-efca-4ae5-94ae-6e5fb029981c/product",
+    "reference": "LPM-015-store-v1-12x16-unframed",
+    "sha256": "e91acd1a00bd8ebbc5af7fb3039b14bcc1eac54f56b217528a082b373ae5c79c",
+    "verified": true,
+    "unpaid": true
+  },
+  {
+    "id": "12x16-white",
+    "size": "12x16",
+    "frame": "white",
+    "productUid": "frame_and_poster_mounted_product_frs_12x16-inch_frc_white_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_12x16-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
+    "gelatoId": "d7d1760e-836a-4a3d-b9c4-e3416455e31a",
+    "gelatoUrl": "https://dashboard.gelato.com/checkout/d7d1760e-836a-4a3d-b9c4-e3416455e31a/product",
+    "reference": "LPM-015-store-v1-12x16-white",
+    "sha256": "e91acd1a00bd8ebbc5af7fb3039b14bcc1eac54f56b217528a082b373ae5c79c",
+    "verified": true,
+    "unpaid": true
+  },
+  {
+    "id": "18x24-black",
+    "size": "18x24",
+    "frame": "black",
+    "productUid": "frame_and_poster_mounted_product_frs_18x24-inch_frc_black_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_18x24-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
+    "gelatoId": "1e708b55-b18b-404e-a672-859068b77fba",
+    "gelatoUrl": "https://dashboard.gelato.com/checkout/1e708b55-b18b-404e-a672-859068b77fba/product",
+    "reference": "LPM-015-store-v1-18x24-black",
+    "sha256": "c538c087bf2ffa4f5898bf401f7aba597a15245b25933528d17660be78bb2691",
+    "verified": true,
+    "unpaid": true
+  },
+  {
+    "id": "18x24-unframed",
+    "size": "18x24",
+    "frame": "none",
+    "productUid": "flat_450x600-mm-18x24-inch_170-gsm-65lb-coated-silk_4-0_ver",
+    "gelatoId": "a6838ef5-b2fa-4da3-a251-069840b40080",
+    "gelatoUrl": "https://dashboard.gelato.com/checkout/a6838ef5-b2fa-4da3-a251-069840b40080/product",
+    "reference": "LPM-015-store-v1-18x24-unframed",
+    "sha256": "c538c087bf2ffa4f5898bf401f7aba597a15245b25933528d17660be78bb2691",
+    "verified": true,
+    "unpaid": true
+  },
+  {
+    "id": "18x24-white",
+    "size": "18x24",
+    "frame": "white",
+    "productUid": "frame_and_poster_mounted_product_frs_18x24-inch_frc_white_frm_wood_frp_w12xt22-mm_gt_plexiglass__pf_18x24-inch_pt_65-lb-cover-coated-silk_cl_4-0_ct_none_prt_none_ver",
+    "gelatoId": "04d43219-14c6-44e3-9e70-ea7586b21b2f",
+    "gelatoUrl": "https://dashboard.gelato.com/checkout/04d43219-14c6-44e3-9e70-ea7586b21b2f/product",
+    "reference": "LPM-015-store-v1-18x24-white",
+    "sha256": "c538c087bf2ffa4f5898bf401f7aba597a15245b25933528d17660be78bb2691",
+    "verified": true,
+    "unpaid": true
+  }
+]
