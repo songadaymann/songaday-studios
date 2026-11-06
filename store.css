@@ -38,3 +38,35 @@
 #store-shipping p { font-size:var(--type-meta); }
 [hidden] { display:none !important; }
 #store-order-status { border-top:1px solid #777; border-bottom:1px solid #777; padding:1rem 0; margin:0 0 2rem; }
+
+.store-hat { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:4rem; align-items:center; padding-top:4rem; margin-top:4rem; border-top:1px solid #777; }
+.store-hat-image { display:block; max-width:450px; }
+.store-hat-image img { display:block; width:100%; height:auto; aspect-ratio:1; object-fit:contain; }
+.store-hat-copy h2 { font-size:var(--type-body); font-weight:700; margin:0 0 1.5rem; }
+.store-hat-copy p { font-size:var(--type-body); }
+.store-hat-buy { display:inline-block; min-height:48px; margin-top:1rem; padding:.75rem 1rem; background:#fff; color:#000; text-decoration:none; }
+@media(max-width:760px) { .store-hat { grid-template-columns:1fr; gap:2rem; } }
+
+.store-media { min-width:0; }
+.store-room { display:flex; align-items:center; min-height:0; aspect-ratio:4/3; background:#242424; }
+.store-room-scene { display:block; position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; }
+.store-room-photo { display:block; width:100%; height:100%; object-fit:contain; }
+.store-room-art { position:absolute; display:block; background:#111; box-shadow:1px 2px 2px #4c4138; }
+.store-room-art[data-frame="white"] { background:#f8f7f3; }
+.store-room-art[data-frame="none"] { background:none; box-shadow:1px 1px 1px #63564b; }
+.store-room-print { display:block; position:absolute; object-fit:cover; max-width:none; }
+.store-image-thumbs { display:flex; gap:1rem; margin-top:1rem; }
+.store-image-thumbs button { width:112px; background:none; color:#fff; border:1px solid #555; border-radius:0; padding:.5rem; cursor:pointer; text-align:left; font:inherit; }
+.store-image-thumbs button[aria-pressed="true"] { border-color:#fff; }
+.store-image-thumbs button > span:first-child { height:78px; width:100%; margin-bottom:.5rem; }
+.store-image-thumbs button > span:last-child { font-size:var(--type-meta); }
+.store-image-thumbs .store-room-scene { aspect-ratio:auto; }
+.store-image-thumbs .store-room-photo { object-fit:fill; }
+.store-thumb-print { display:flex; align-items:center; justify-content:center; background:#242424; }
+.store-thumb-print img { display:block; height:72px; width:auto; border:0 solid #111; }
+.store-thumb-print[data-frame="black"] img { border-width:3px; }
+.store-thumb-print[data-frame="white"] img { border-width:3px; border-color:#fff; }
+.store-image-caption { margin-top:1rem; font-size:var(--type-meta); }
+
+.store-media { scroll-margin-top:calc(var(--header-clearance) + 16px); }
+.store-collection-links { display:flex; gap:2rem; flex-wrap:wrap; margin:-1rem 0 3rem; font-size:var(--type-body); }

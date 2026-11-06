@@ -1,9 +1,10 @@
 (() => {
  "use strict";
+ /* STORE_ROOM_GEOMETRY */
  const $ = (id) => document.getElementById(id);
  const query = new URLSearchParams(location.search);
  let figures = [], config, figure, size = query.get("size") || "30x40", frame = query.get("frame") || "none";
- let quoteToken=null, buying=false, revision=0;
+ let quoteToken=null, buying=false, revision=0, imageView="print";
  const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(cents/100);
  const labels = {none:"Unframed",black:"Black wood",white:"White wood"};
  function chooseButton(text,small,pressed,disabled,callback) {
@@ -19,14 +20,38 @@
   document.querySelector(".store-art").dataset.frame=frame;
   $("store-frame-note").textContent=size==="30x40"?"30 × 40″ is available unframed. Choose small or medium for a ready-to-hang wooden frame.":frame==="none"?"Printed edge to edge on semi-glossy paper. Frame it your way.":"Wooden frame with plexiglass, assembled and ready to hang. Frame preview is illustrative.";
   $("store-price").textContent=money(config.variants.find(v=>v.size===size&&v.frame===frame).priceCents);
-  clearQuote(); updateUrl();
+  renderMedia(); clearQuote(); updateUrl();
  }
  function updateUrl(){if(!figure)return;const u=new URL(location.href);u.searchParams.set("figure",figure.id);u.searchParams.set("size",size);u.searchParams.set("frame",frame);history.replaceState(null,"",u);}
  function select(f,scroll=false) {
   clearQuote(); figure=f;$("figure-name").textContent="#"+String(f.id).padStart(3,"0")+" "+f.name;
-  $("figure-image").src=f.image;$("figure-image").alt=f.name+" poster";updateUrl();renderGrid();
+  $("figure-image").src=f.image;$("figure-image").alt=f.name+" poster";renderMedia();updateUrl();renderGrid();
   if(scroll){$("figure-name").setAttribute("tabindex","-1");$("figure-name").focus({preventScroll:true});document.querySelector(".store-product").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});}
  }
+ function renderMedia() {
+  if(!figure)return;
+  const geometry=roomGeometry(size,frame);
+  $("store-print-thumb").src=figure.image;
+  for(const art of document.querySelectorAll(".store-room-art")){
+   art.dataset.frame=frame;for(const key of ["left","top","width","height"])art.style[key]=geometry[key]+"%";
+   const img=art.querySelector("img");img.src=figure.image;img.style.left=geometry.insetX+"%";img.style.top=geometry.insetY+"%";img.style.width=geometry.printWidth+"%";img.style.height=geometry.printHeight+"%";
+  }
+  $("store-room-view").querySelector(".store-room-print").alt=figure.name+", "+size.replace("x"," × ")+" inches, "+labels[frame]+", in Jonathan’s studio";
+  document.querySelector(".store-thumb-print").dataset.frame=frame;
+  syncPrintFrame();
+ }
+ function syncPrintFrame(){
+  const art=$("store-print-view"),css=getComputedStyle(art),width=art.clientWidth-parseFloat(css.paddingLeft)-parseFloat(css.paddingRight);
+  const inches=Number(size.split("x")[0]);$("figure-image").style.borderWidth=frame==="none"?"0":width*12/(inches*25.4+24)+"px";
+ }
+ for(const button of document.querySelectorAll("[data-poster-view]"))button.addEventListener("click",()=>{
+  imageView=button.dataset.posterView;$("store-print-view").hidden=imageView!=="print";$("store-room-view").hidden=imageView!=="room";
+  for(const b of document.querySelectorAll("[data-poster-view]"))b.setAttribute("aria-pressed",String(b===button));
+  $("store-image-caption").textContent=imageView==="room"?"Illustrative preview in Jonathan’s studio. Scale is approximate.":"Framing preview is illustrative.";
+  if(imageView==="print")syncPrintFrame();
+  document.querySelector(".store-media").scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});
+ });
+ new ResizeObserver(()=>{if(imageView==="print")syncPrintFrame();}).observe($("store-print-view"));
  function renderGrid() {
   const q=$("store-search").value.trim().toLowerCase().replace(/^#/,"");
   const matched=figures.filter(f=>!q||f.name.toLowerCase().includes(q)||String(f.id)===q||String(f.id).padStart(3,"0")===q);
@@ -59,5 +84,5 @@
  }
  orderStatus();
  $("store-search").addEventListener("input",renderGrid);
- Promise.all([fetch("/store/catalog.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/variants.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/config").then(r=>r.ok?r.json():{checkoutEnabled:false}).catch(()=>({checkoutEnabled:false}))]).then(([items,options,availability])=>{figures=items;config=options;$("store-shipping").hidden=!availability.checkoutEnabled;$("store-launch").textContent=availability.checkoutEnabled?" · Shipping and tax added at checkout.":" · Purchasing opens soon.";select(figures.find(f=>f.id===Number(query.get("figure")))||figures.find(f=>f.id===15));renderOptions();}).catch(()=>{$("store-count").textContent="The collection couldn’t load. Please refresh to try again.";});
+ Promise.all([fetch("/store/catalog.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/variants.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/config").then(r=>r.ok?r.json():{checkoutEnabled:false}).catch(()=>({checkoutEnabled:false}))]).then(([items,options,availability])=>{figures=items;config=options;$("store-shipping").hidden=!availability.checkoutEnabled;$("store-launch").textContent=availability.checkoutEnabled?" · Shipping and tax added at checkout.":" · Purchasing opens soon.";renderOptions();select(figures.find(f=>f.id===Number(query.get("figure")))||figures.find(f=>f.id===15));}).catch(()=>{$("store-count").textContent="The collection couldn’t load. Please refresh to try again.";});
 })();

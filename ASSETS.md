@@ -49,3 +49,17 @@ D1 database and R2 bucket), not in this repository. Local copies of paintings go
 `node build.mjs` and `node build-production.mjs` use the site's hosted media when
 local `assets` is absent. They do not download or redistribute that media.
 Replace these references with your own assets for an independent deployment.
+
+## Store imagery
+
+- `private-assets/site/images/store/studio-wall.jpg` is Jonathan's own studio photo,
+  supplied October 25, 2026 for the Song A Day poster mockups. Unmodified copy of
+  `output/poster-concepts/round-8/rooms/studio-wall.jpg`. It remains in the ignored
+  private media bundle, not public Git; background artworks retain their own rights.
+  The store overlays the selected artwork in HTML/CSS. Its scale is estimated from
+  the earlier room mockups and is explicitly labeled illustrative. No image color
+  adjustments or generated room photography are applied.
+- The Songs Hat image is hotlinked from Cotton Bureau's official product mockup:
+  https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024 . It is used
+  to link to Jonathan's Songs Hat listing. No image binary is copied into Git, and
+  this reference grants no redistribution rights to Cotton Bureau photography.

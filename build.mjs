@@ -1,3 +1,4 @@
+import { roomGeometry } from './store-preview.mjs';
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -291,7 +292,8 @@ ${labBody}
 console.log(`Built Song A Day Studio index.html, films/, everything/, now/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
 
 // The store uses the Studio purchase header/footer; no donation claims on merchandise.
-const [storeSource, storeCss, storeJs] = await Promise.all([source("store.html"), source("store.css"), source("store-page.js")]);
+const [storeSource, storeCss, storeJsSource] = await Promise.all([source("store.html"), source("store.css"), source("store-page.js")]);
+const storeJs = storeJsSource.replace("/* STORE_ROOM_GEOMETRY */", () => roomGeometry.toString());
 const storeHeader = purchaseHeader.replace(' aria-current="page"', '').replace('<a href="/store/">', '<a href="/store/" aria-current="page">');
 await writePage("store/index.html", documentHtml({
   title: "Store · Song A Day Studio", description: "All 236 MUSCLE figures as photographic posters. Choose your figure, size and frame.",

@@ -852,3 +852,28 @@ The smaller files scale the approved page uniformly to cover their full bleed,
 without decoding, recompressing or recoloring embedded image streams. The frame
 border on the page is an illustrative preview. Original TIFFs and preparation
 scripts remain in the separate posters project; print binaries stay out of Git.
+
+### Store images and external products
+
+The Songs Hat links directly to Cotton Bureau for style selection and purchase;
+its official product mockup stays hosted by Cotton Bureau. Add future external
+products in `store.html` using the same explicit purchase link, not the Stripe form.
+
+The MUSCLE gallery has Print and In a room thumbnails. `store-preview.mjs` computes
+an illustrative studio placement using the earlier room-photo calibration (14 px/in,
+center 890,610 on the 2016×1512 image). The browser overlays the exact approved preview
+image, without image filters, on Jonathan's original studio photo. Sizes and frame
+colors update both thumbnails and the main room view. The frame is 12mm wide in this
+preview, matching the selected product specification. Room scale remains approximate.
+The backing photo is in the existing private asset bundle; see ASSETS.md.
+
+These room views are our own storefront previews, not Gelato room photographs.
+The seven verified Sunshine API drafts expose only default, thumbnail, and flat
+front views. Gelato's template-selected mockups require a connected store and saved
+template; no room-generation API was established for our current Order API setup.
+
+The earlier all-of-Song-A-Day poster project was recovered in the separate local
+`output/poster-concepts/` archive. Finalists are F (continuous grid) and H (18 year
+blocks), 40×30 inches, with 300-dpi print assets and historical room mockups. Imagery
+currently stops at song 6505 (October 23, 2026), although its anticipated completed
+2026 title says 6574. Finish that edition before adding it as a complete poster for sale.

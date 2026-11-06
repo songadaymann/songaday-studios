@@ -2,10 +2,23 @@
 <a class="skip-link" href="#main">Skip to content</a>
 {{HEADER}}
 <main id="main" tabindex="-1">
-<div class="store-intro"><h1>Store</h1><p>Little figures. Big posters.</p></div>
+<div class="store-intro"><h1>Store</h1><p>Posters, hats, and things I make.</p></div>
+<nav class="store-collection-links" aria-label="Store collections"><a href="#muscle-posters">MUSCLE posters</a><a href="#songs-hat">Songs Hat</a></nav>
 <p id="store-order-status" role="status" hidden></p>
-<section class="store-product" aria-labelledby="figure-name">
- <div class="store-art"><img id="figure-image" src="https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/015.jpg" alt="Sunshine poster" width="600" height="800"></div>
+<section class="store-product" id="muscle-posters" aria-labelledby="figure-name">
+ <div class="store-media">
+  <div class="store-art" id="store-print-view"><img id="figure-image" src="https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/015.jpg" alt="Sunshine poster" width="600" height="800"></div>
+  <div class="store-room" id="store-room-view" hidden>
+   <div class="store-room-scene"><img class="store-room-photo" src="/assets/images/store/studio-wall.jpg" alt="Jonathan in his studio, gesturing toward a poster on the wall" width="2016" height="1512">
+    <div class="store-room-art"><img class="store-room-print" alt="Selected poster in Jonathan’s studio"></div>
+   </div>
+  </div>
+  <div class="store-image-thumbs" role="group" aria-label="Poster images">
+   <button type="button" data-poster-view="print" aria-pressed="true" aria-controls="store-print-view"><span class="store-thumb-print"><img id="store-print-thumb" alt="" width="72" height="96"></span><span>Print</span></button>
+   <button type="button" data-poster-view="room" aria-pressed="false" aria-controls="store-room-view"><span class="store-room-scene" aria-hidden="true"><img class="store-room-photo" src="/assets/images/store/studio-wall.jpg" alt="" width="2016" height="1512"><span class="store-room-art"><img class="store-room-print" alt=""></span></span><span>In a room</span></button>
+  </div>
+  <p class="store-image-caption" id="store-image-caption">Framing preview is illustrative.</p>
+ </div>
  <div class="store-choices"><h2 id="figure-name">#015 Sunshine</h2><p>MUSCLE men, photographed up close. All 236 original figures, printed edge to edge on semi-glossy paper.</p>
  <fieldset><legend>Size</legend><div id="store-sizes" class="store-options"></div></fieldset>
  <fieldset><legend>Frame</legend><div id="store-frames" class="store-options"></div></fieldset>
@@ -33,6 +46,17 @@
  <button type="button" id="store-checkout" hidden>Continue to secure checkout</button>
  </form>
  <a href="#collection" class="store-browse">Find your figure ↓</a>
+ </div>
+</section>
+<section class="store-hat" id="songs-hat" aria-labelledby="songs-hat-heading">
+ <a class="store-hat-image" href="https://cottonbureau.com/p/NW5ZGT/hat/songs-hat" target="_blank" rel="noopener noreferrer" aria-label="See the Songs Hat on Cotton Bureau (opens in a new tab)">
+  <img src="https://cottonbureau.com/mockup?default=1&amp;hash=LSmS&amp;pid=115154&amp;w=1024" alt="Black Songs dad hat with white embroidered lettering" width="1024" height="1024" loading="lazy" referrerpolicy="no-referrer">
+ </a>
+ <div class="store-hat-copy">
+  <h2 id="songs-hat-heading">Songs Hat</h2>
+  <p>A hat that says “songs.”</p>
+  <p>Dad hat, trucker, or snapback. Choose your style and buy directly from Cotton Bureau.</p>
+  <a class="store-hat-buy" href="https://cottonbureau.com/p/NW5ZGT/hat/songs-hat" target="_blank" rel="noopener noreferrer">Shop on Cotton Bureau ↗</a>
  </div>
 </section>
 <section id="collection" aria-labelledby="collection-heading"><div class="store-search-row"><h2 id="collection-heading">The collection</h2><label for="store-search">Find a name or number<input id="store-search" type="search" placeholder="Sunshine, #15…" autocomplete="off"></label></div>
