@@ -72,3 +72,22 @@ Images keep their16:9 ratio; no generative imagery, retouching or color filters.
 PDF/PNG proof binaries and downloaded video stay in ignored output/tmp folders,
 not Git. These concepts are NOT in Gelato or the public store; finalize layout
 and add bleed before any future print order.
+
+### Every-frame Antenna Song concept
+
+`make_antenna_every_frame.py` produces a40×30-inch concept containing ALL3608
+source frames once each, including opening/closing credits and lyric cards.
+The prior verbal80×46 estimate was incorrect for16:9 images; actual layout is
+54columns×67rows with10empty final cells. Each image is about0.708in wide.
+Frames are downsampled to320×180 (about452ppi at print size), in source order,
+without frame-rate conversion, color filters or deduplication:
+
+```sh
+mkdir -p tmp/iphone-antenna-song/all-frames
+ffmpeg -i tmp/iphone-antenna-song/VKIcaejkpD4_Song_A_Day_561_-_The_iPhone_Antenna_Song.mp4 -map 0:v:0 -vf scale=320:180:flags=lanczos -fps_mode passthrough -q:v 2 tmp/iphone-antenna-song/all-frames/frame-%05d.jpg
+python3 make_antenna_every_frame.py
+```
+
+Local output:`output/iphone-antenna-every-frame-v1/{preview.png,iphone-4-antenna-all-3608-frames.pdf,manifest.json}`.
+The PDF verifies3608embedded images and Helvetica Neue fonts. Summary is preserved
+here; full per-frame geometry manifest is local. Concept only, not added to Gelato.

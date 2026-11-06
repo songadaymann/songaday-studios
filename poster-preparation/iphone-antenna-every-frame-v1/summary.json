@@ -1,0 +1,25 @@
+{
+  "size_inches": [
+    40,
+    30
+  ],
+  "grid": [
+    54,
+    67
+  ],
+  "frame_count": 3608,
+  "empty_cells": 10,
+  "cell_inches": [
+    0.7075720164609053,
+    0.39800925925925923
+  ],
+  "effective_image_ppi": 452.25078515761317,
+  "frame_order": "Chronological, row-major, every decoded source frame exactly once",
+  "includes_credits": true,
+  "source_video": "VKIcaejkpD4_Song_A_Day_561_-_The_iPhone_Antenna_Song.mp4",
+  "source_video_sha256": "66855f0840848dd465bca9c7bea3c5fea269c3bf61ebf4133d236ff875edbd49",
+  "extraction": "ffmpeg -i source.mp4 -map 0:v:0 -vf scale=320:180:flags=lanczos -fps_mode passthrough -q:v 2 all-frames/frame-%05d.jpg",
+  "pdf_sha256": "85c903fc416af36f2156424c893e74974dfa90983e886f976fde97661a031059",
+  "production_status": "Concept proof only; not uploaded or added to Gelato",
+  "frame_index_mapping": "Frame n at row=(n-1)//54,column=(n-1)%54;source time=(n-1)*1001/30000 seconds."
+}
