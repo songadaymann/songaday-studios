@@ -1,0 +1,24 @@
+{
+  "layout": "f",
+  "name": "Continuous grid",
+  "trim_inches": [
+    40,
+    30
+  ],
+  "page_mm": [
+    1024,
+    770
+  ],
+  "bleed_mm": 4,
+  "bleed_treatment": "mirrored outside nominal trim",
+  "image_pixels": [
+    12000,
+    9000
+  ],
+  "effective_ppi": 300,
+  "source_jpeg_sha256": "5a8b642b453620a112f9836d65b29d4d60ec26515de70836b54805a7a95103aa",
+  "pdf_sha256": "3555ef078d0fa62c813e14864ea3626b1c59a6db91e2a18a3bc2698f44345319",
+  "jpeg_bytes_unchanged": true,
+  "artwork_status": "Recovered proof artwork; imagery through song6505; title/count unchanged",
+  "filename": "songaday-f-40x30-proof-v1.pdf"
+}

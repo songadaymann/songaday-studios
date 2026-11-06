@@ -1,0 +1,36 @@
+{
+  "errors": [],
+  "quotes": [
+    {
+      "productCost": 40.17,
+      "shippingOptions": [
+        {
+          "name": "ShipX Ground",
+          "price": 6.88
+        },
+        {
+          "name": "UPS Ground Residential",
+          "price": 15.25
+        },
+        {
+          "name": "USPS Ground Advantage",
+          "price": 17.7
+        },
+        {
+          "name": "UPS 3 Day Select",
+          "price": 22.14
+        },
+        {
+          "name": "UPS 2 Day",
+          "price": 25.92
+        }
+      ],
+      "carrierSurcharge": {
+        "title": "Carrier-imposed surcharge",
+        "price": 0.4,
+        "currency": "USD"
+      },
+      "currency": "USD"
+    }
+  ]
+}
