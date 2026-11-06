@@ -4,6 +4,8 @@ from pathlib import Path
 from sync_gelato_v4 import gelato,put,BASE,UID
 ROOT=Path(__file__).resolve().parent;OUT=ROOT/'output/songaday-fh-proof-v1';REF='STUDIO-F-H-MUSCLE015-SAMPLE-v1'
 landscape='flat_750x1000-mm-30x40-inch_170-gsm-65lb-coated-silk_4-0_hor'
+if (ROOT/'output/songaday-fh-sunshine-a-proof-v2/draft-verified.json').exists():
+    raise RuntimeError('Superseded sample cart: use replace_sample_sunshine.py / v2 verified record')
 items=[]
 for key in ['f','h']:
  m=json.loads((OUT/f'{key}-metadata.json').read_text());p=OUT/m['filename'];object_key='songaday-fh-proof-v1/'+p.name

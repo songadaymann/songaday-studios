@@ -1,0 +1,32 @@
+{
+  "id": "e0e692fd-724f-4d60-b63b-8eaec9a53068",
+  "reference": "STUDIO-F-H-MUSCLE039-SAMPLE-v2",
+  "url": "https://dashboard.gelato.com/checkout/e0e692fd-724f-4d60-b63b-8eaec9a53068/product",
+  "orderType": "draft",
+  "financialStatus": "draft",
+  "superseded_draft": "434e3ddf-0a4e-469c-a6ce-33b842c22938",
+  "superseded_draft_removed": true,
+  "items": [
+    {
+      "reference": "SAD-F-40x30",
+      "productUid": "flat_750x1000-mm-30x40-inch_170-gsm-65lb-coated-silk_4-0_hor",
+      "quantity": 1,
+      "pdf_sha256": "3555ef078d0fa62c813e14864ea3626b1c59a6db91e2a18a3bc2698f44345319",
+      "verified": true
+    },
+    {
+      "reference": "SAD-H-40x30",
+      "productUid": "flat_750x1000-mm-30x40-inch_170-gsm-65lb-coated-silk_4-0_hor",
+      "quantity": 1,
+      "pdf_sha256": "8ca0dd24b603e97e718e15e5c3a1734602ba00db77877233c0f74218b5c2aaea",
+      "verified": true
+    },
+    {
+      "reference": "MUSCLE-039-Sunshine-A-centered-original-color",
+      "productUid": "flat_750x1000-mm-30x40-inch_170-gsm-65lb-coated-silk_4-0_ver",
+      "quantity": 1,
+      "pdf_sha256": "2e4ed30d4e8dc95f28730721a8c2904ecf6667d5be4fbb6b4ba2ed37affc4b18",
+      "verified": true
+    }
+  ]
+}
