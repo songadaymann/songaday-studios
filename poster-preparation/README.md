@@ -91,3 +91,22 @@ python3 make_antenna_every_frame.py
 Local output:`output/iphone-antenna-every-frame-v1/{preview.png,iphone-4-antenna-all-3608-frames.pdf,manifest.json}`.
 The PDF verifies3608embedded images and Helvetica Neue fonts. Summary is preserved
 here; full per-frame geometry manifest is local. Concept only, not added to Gelato.
+
+### Alternative every-frame arrangements
+
+User likes all3608frames but dislikes chronological horizontal black bands.
+`make_antenna_arrangements.py` generates four40×30 concepts from the SAME cached
+frame images, each retaining every frame exactly once, original aspect and color:
+A down columns; B chronological center-out spiral; C deterministic shuffle(seed561);
+D dark/monochrome frames around the perimeter, remaining frames chronological
+inside. D classifies893frames using mean luma<58 OR green-pixel fraction<.12;
+no frames are altered or omitted. Classification is tuned to this green-wall video.
+
+Run in the posters workspace after every-frame extraction. No args regenerates
+all variants; `python3 make_antenna_arrangements.py d` regenerates D and the
+comparison while preserving existing A/B/C. Output:
+`output/iphone-antenna-arrangements-v2/{a,b,c,d}-all-3608-frames.pdf`, corresponding
+previews and full source-frame→cell mappings, plus comparison.pdf/comparison.png.
+Summary is preserved here. All four PDF embedded-image counts and bijective
+frame/slot mappings were verified. Root favors D for clearer center and C for
+uniformly dispersed texture. No Gelato/store/cart changes.
