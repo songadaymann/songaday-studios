@@ -4,7 +4,7 @@ import test from 'node:test';
 import worker from '../worker.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from '../films.mjs';
 import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from '../today-song.mjs';
-import { renderCalendar, songNumberFor, yearImageSize } from '../calendar.mjs';
+import { calendarSongAtPoint, renderCalendar, songNumberFor, yearImageSize } from '../calendar.mjs';
 import { songADayNumber } from '../song-day.mjs';
 
 const root = new URL('../', import.meta.url);
@@ -237,12 +237,12 @@ test('the newest song is picked from the channel feed and rendered safely', asyn
   assert.deepEqual(song, { id: 'VNWfqsdMXl8', title: 'The Broken Keys & <The Internet>', number: 6503 });
   const today = renderTodaySong(song, 6503);
   assert.match(today, /data-video-id="VNWfqsdMXl8"/);
-  assert.match(today, /Today’s song/);
+  assert.match(today, /Here is today’s song, #6,503/);
   assert.match(today, /The Broken Keys &amp; &lt;The Internet&gt;/);
   assert.doesNotMatch(today, /<The Internet>/);
-  assert.match(today, /#6,503 · Oct 21, 2026/);
-  assert.match(renderTodaySong(song, 6504), /Latest song/);
-  assert.match(renderTodaySong(song), /Latest song/);
+  assert.match(today, /Oct 21, 2026/);
+  assert.match(renderTodaySong(song, 6504), /Here is the latest song, #6,503/);
+  assert.match(renderTodaySong(song), /Here is the latest song, #6,503/);
   assert.equal(latestSong('<feed></feed>'), null);
 });
 
@@ -299,7 +299,7 @@ test('the calendar numbers days like Song A Day and renders every year', () => {
     { year: 2009, songs: 365, home: 'Berkeley' },
     { year: 2026, songs: 293, home: 'Hartford' }
   ] });
-  assert.match(html, /id="year-2009">\s*<img src="assets\/calendar\/2009\.webp\?v=6502"/);
+  assert.match(html, /id="year-2009">\s*<button[^>]+>\s*<img src="assets\/calendar\/2009\.webp\?v=6502"/);
   assert.match(html, /srcset="assets\/calendar\/2026\.webp\?v=6502 526w, assets\/calendar\/2026-2x\.webp\?v=6502 1052w"/);
   // No "@" in image paths: Cloudflare redirects it to "%40", an extra round trip per image.
   assert.doesNotMatch(html, /@/);
@@ -356,4 +356,20 @@ test('every link on the links page goes somewhere', async () => {
   assert.match(html, /open\.spotify\.com\/artist\/4O4Rkb6K3ppeXyVvD6zBJA/);
   assert.match(html, /music\.apple\.com\/us\/artist\/jonathan-mann\/188742143/);
   assert.doesNotMatch(html, /patreon/i);
+});
+
+
+test('calendar pointer selection respects scaled cells, leap days, gaps and snapshot limits', () => {
+  const at = (year, day, month, through = 6502) => calendarSongAtPoint(year, ((day - 1) * 17 + 8) / 2, (month * 10 + 4) / 2, 263, 59.5, through);
+  assert.equal(at(2009, 1, 0), 1);
+  assert.equal(at(2009, 31, 11), 365);
+  assert.equal(at(2024, 29, 1), songNumberFor(2024, 1, 29));
+  assert.equal(at(2025, 29, 1), 0);
+  assert.equal(at(2026, 20, 9), 6502);
+  assert.equal(at(2026, 21, 9), 0);
+  assert.equal(calendarSongAtPoint(2009, 16.5, 4, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, 8, 9.5, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, -1, 4, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, 526, 4, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, 8, 119, 526, 119, 6502), 0);
 });

@@ -29,7 +29,7 @@ outside the Fridays at The Park app.
   `?crypto=auto` test both states). On the home page the same check also feeds the crypto
   donation switch (see "Donations").
 - `song-day.mjs` — shared daily song-number calculation for the browser and Worker
-- `today-song.mjs` — the "Today's song" card under the headline: the newest "Title | Song A Day
+- `today-song.mjs` — the "Today's song" card above the archive: the newest "Title | Song A Day
   #N" upload on the YouTube channel. It plays in the page's video modal. The Worker re-reads the
   channel feed (cached for ten minutes), so the card changes soon after the day's song goes up.
 - `links/index.html` — the bio link page (songaday.studio/links) for Instagram, TikTok and X: one
@@ -250,8 +250,14 @@ rather than opening `index.html` directly from Finder.
 The calendar under the hero shows every song so far as one picture: an image per year, with
 each day's video still in a 31 × 12 grid (days across, months down). Its heading says how long
 Song A Day has been going ("17 years and 298 days", from `songADayAge` in `song-day.mjs`). The
-rest of the current year shows as empty slots. The page itself has no script for it, just one `<img>` per
-year with a 2x version for sharp screens.
+rest of the current year shows as empty slots. Each year uses one image with a 2x version for sharp screens.
+`calendar-preview.mjs` maps pointer positions to days using the image geometry in `calendar.mjs`.
+Hovering shows the selected still immediately and starts a muted YouTube embed after 250 ms;
+moving away cancels it. Click/tap opens the existing video modal. Arrow keys select songs,
+Home/End choose the first/last song in a year, and Escape dismisses the preview. Reduced-motion
+visitors get still previews without autoplay. The public gallery catalog and stills at
+`tiles.songaday.world` load when the archive approaches the viewport; if catalog loading fails,
+clicking goes to that song in the gallery. No per-song players load on initial page load.
 
 `build-calendar.mjs` makes the images from the 480×270 stills that
 [songaday-display](https://github.com/songadaymann/songaday-display) builds, one `<number>.webp`
@@ -758,8 +764,10 @@ link above the form to Zeffy's own page, and nobody else does: on iPhones it car
 official Apple Pay mark ("Donate with [Apple Pay] on Zeffy's page"); on Android Chrome it
 says Google Pay in text.
 
-The funding goals are static in `profile.html`: "First goal: $3,000 a month" above the
-form, and the monthly ladder ($3,000 first goal, $20,000 the dream) in the Patronage section.
+The donation form asks visitors to become a monthly supporter or donate, with a tax-deductible
+note. The monthly ladder ($3,000 first goal, $20,000 the dream) remains in the Patronage section.
+Shared Studio typography uses `--type-display`, `--type-body`, and `--type-meta` in `profile.css`;
+third-party embeds control their own type.
 
 ## Production
 

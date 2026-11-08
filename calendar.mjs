@@ -30,6 +30,20 @@ export function formatSongDate(number, month = 'short') {
   return songDate(number).toLocaleDateString('en-US', { month, day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
+// Hit-test the same 31 × 12 geometry used to render the year images. Gaps,
+// impossible dates, and days beyond the snapshot never select a song.
+export function calendarSongAtPoint(year, x, y, width, height, through) {
+  if (width <= 0 || height <= 0 || x < 0 || y < 0 || x >= width || y >= height) return 0;
+  const size = yearImageSize();
+  const px = x / width * size.width;
+  const py = y / height * size.height;
+  if (px % (CELL.width + CELL.gap) >= CELL.width || py % (CELL.height + CELL.gap) >= CELL.height) return 0;
+  const day = Math.floor(px / (CELL.width + CELL.gap)) + 1;
+  const month = Math.floor(py / (CELL.height + CELL.gap));
+  const number = songNumberFor(year, month, day);
+  return number > 0 && number <= through ? number : 0;
+}
+
 export function renderCalendar(calendar) {
   const one = yearImageSize(1);
   const two = yearImageSize(2);
@@ -41,7 +55,10 @@ export function renderCalendar(calendar) {
     const src2x = `assets/calendar/${year}-2x.webp${version}`;
     const count = year === lastYear && songs < 365 ? `${songs} so far` : `${songs} songs`;
     return `<li class="calendar-year" id="year-${year}">
-  <img src="${src}" srcset="${src} ${one.width}w, ${src2x} ${two.width}w" sizes="(max-width: 520px) 46vw, (max-width: 960px) 30vw, 380px" width="${one.width}" height="${one.height}" alt="${songs} video stills from ${year}, one for each day's song" loading="lazy" decoding="async">
+  <button class="calendar-map" type="button" data-year="${year}" data-through="${calendar.through}" aria-label="Explore songs from ${year}" aria-describedby="calendar-help">
+    <img src="${src}" srcset="${src} ${one.width}w, ${src2x} ${two.width}w" sizes="(max-width: 520px) 46vw, (max-width: 960px) 30vw, 380px" width="${one.width}" height="${one.height}" alt="${songs} video stills from ${year}, one for each day's song" loading="lazy" decoding="async" draggable="false">
+    <span class="calendar-cursor" hidden></span>
+  </button>
   <p class="calendar-year-label"><strong>${year}</strong> <span>${home} · ${count}</span></p>
 </li>`;
   }).join('\n');

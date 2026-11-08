@@ -22,16 +22,8 @@
     <section class="hero" id="mission" aria-labelledby="mission-title">
       <div class="hero-stage">
         <div class="hero-intro">
-          <h1 class="hero-headline" id="mission-title"><span class="hero-eyebrow">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-ask">Help me write <span class="hero-ask-number">#<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span></span>.</span></h1>
+          <h1 class="hero-headline" id="mission-title">Help me write <span class="hero-ask-accent">tomorrow’s song.</span></h1>
           <p class="hero-subheader">Hi, I’m Jonathan Mann. I’ve written a song every day since January&nbsp;1,&nbsp;2009. Now I make games and free music software too.</p>
-          <div class="today-song" id="today">
-{{TODAY_SONG}}
-          </div>
-          <div class="hero-actions">
-            <a class="hero-action hero-action-primary" href="#donate">Help write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span></a>
-            <a class="hero-action" href="#every-song">See all of them</a>
-            <a class="hero-action" href="/listen">Listen to every one<span class="nav-out" aria-hidden="true">↗</span></a>
-          </div>
         </div>
 
         <div class="hero-video">
@@ -71,9 +63,9 @@
         </div>
 
         <section class="hero-donate" id="donate" aria-label="Donate to Song A Day Studio" tabindex="-1">
-          <div class="goal">
-            <h2 class="goal-label" id="donate-title">Become a monthly supporter</h2>
-            <p class="goal-line">First goal: $3,000 a month.</p>
+          <div class="donate-intro">
+            <h2 id="donate-title">Become a monthly supporter, or donate.</h2>
+            <p>It’s all tax deductible.</p>
           </div>
           <div class="crypto-donate" id="crypto-donate" hidden>
             <h3>Donate with crypto</h3>
@@ -104,8 +96,11 @@
       <div class="calendar-inner">
         <div class="calendar-heading">
           <h2 id="calendar-title" data-song-day="age">{{SONG_AGE}}</h2>
-          <p>Each square is one day’s song, starting January&nbsp;1,&nbsp;2009.</p>
         </div>
+        <div class="today-song" id="today">
+{{TODAY_SONG}}
+        </div>
+        <p class="calendar-help" id="calendar-help">Each square is one day’s song. Hover to preview; click to watch.<span class="visually-hidden"> Use the arrow keys to choose a day, then Enter to watch.</span></p>
 {{CALENDAR}}
         <a class="calendar-more" href="/all">Explore every song<span class="nav-out" aria-hidden="true">↗</span></a>
       </div>

@@ -49,6 +49,10 @@ return { ${name} };
 })();`;
 const walletGateScript = `${scriptOf(walletDetect, "detectWallet")}
 ${scriptOf(walletGate, "applyWalletGate")}`;
+const calendarPreviewScript = scriptOf(
+  `${(await source("calendar.mjs")).split("export function renderCalendar")[0]}\n${await source("calendar-preview.mjs")}`,
+  "initCalendarPreview"
+);
 const hasLocalAssets = existsSync(path.join(projectRoot, "assets"));
 
 // A snapshot of the newest song on YouTube; the Worker refreshes it from the live feed.
@@ -85,7 +89,8 @@ if (!hasLocalAssets) {
 }
 const js = jsSource.replace("/* SONG_DAY_NUMBER_HELPER */",
   `const songADayNumber = ${songADayNumber.toString()};\n  const songADayAge = ${songADayAge.toString()};`)
-  .replace("/* WALLET_GATE_HELPER */", () => walletGateScript);
+  .replace("/* WALLET_GATE_HELPER */", () => walletGateScript)
+  .replace("/* CALENDAR_PREVIEW_HELPER */", () => calendarPreviewScript);
 
 // A snapshot of the mini-docs playlist; the Worker refreshes it from the live feed.
 async function filmsSnapshot() {

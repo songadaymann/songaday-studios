@@ -556,6 +556,8 @@
   videoTriggers.forEach((trigger) => {
     trigger.addEventListener("click", () => openVideoModal(trigger));
   });
+  /* CALENDAR_PREVIEW_HELPER */
+  initCalendarPreview(openVideoModal);
   videoModal?.querySelectorAll("[data-video-close]").forEach((closeControl) => {
     closeControl.addEventListener("click", closeVideoModal);
   });
