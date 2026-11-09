@@ -22,7 +22,7 @@
     <section class="hero" id="mission" aria-labelledby="mission-title">
       <div class="hero-stage">
         <div class="hero-intro">
-          <h1 class="hero-headline" id="mission-title">Help me write <span class="hero-ask-accent">tomorrow’s song.</span></h1>
+          <h1 class="hero-headline" id="mission-title">I’ve been writing a song a day for <span class="hero-ask-accent hero-day-count"><span data-song-day="count">{{SONG_COUNT}}</span> days.</span></h1>
           <p class="hero-subheader">Hi, I’m Jonathan Mann. I’ve written a song every day since January&nbsp;1,&nbsp;2009. Now I make games and free music software too.</p>
         </div>
 
@@ -89,6 +89,12 @@
             onerror="document.querySelectorAll('[data-zeffy-embed]').forEach(function(el){el.style.display='none';});document.querySelectorAll('[data-zeffy-embed-fallback]').forEach(function(el){el.style.display='block';el.querySelectorAll('iframe[data-zeffy-embed-src]').forEach(function(f){f.src=f.getAttribute('data-zeffy-embed-src');});});">
           </script>
         </section>
+        <div class="hero-ask-row">
+          <a class="hero-ask-link" href="#donate">Help me write <span class="hero-ask-accent">tomorrow’s song.</span></a>
+          <svg class="hero-ask-arrow" viewBox="0 0 240 160" fill="none" aria-hidden="true" focusable="false">
+            <path d="M12 132C112 154 220 134 211 20M186 43L211 16L236 40" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </div>
     </section>
 
