@@ -6,7 +6,7 @@ outside the Fridays at The Park app.
 ## Files
 
 - `profile.html` — editable page markup
-- `profile.css` — editable styles
+- `profile.css` — Studio page styles; `studio-chrome.css` supplies the shared header and type tokens
 - `profile.js` — editable page behavior and catalog stats
 - `assets/` — icons, video, and other page assets
 - `index.html`, `films/index.html`, `everything/index.html`, `now/index.html`, `commission/index.html`,
@@ -84,7 +84,8 @@ real page, later:
 
 | URL | Goes to |
 | --- | --- |
-| `/all`, `/songs` | https://gallery.songaday.world/, every song on one zoomable wall |
+| `/gallery/` | Every song on one zoomable wall with the Studio navigation |
+| `/all`, `/songs` | `/gallery/`, preserving song and view parameters |
 | `/listen` | https://songaday.fan/challenge |
 | `/suggest` | https://songaday.fan/suggestions |
 | `/jamuary` | https://songaday.fan/jamuary |
@@ -124,6 +125,11 @@ delete its line there and add the page under `dist/` in `build-production.mjs`. 
 copied in `profile.html`, `films.html`, `plugins/index.html` and `fumble-page.mjs` (/everything,
 /now and the commission pages reuse the one in `films.html`, the commission pages without its
 Donate button); the tests check they match.
+
+The gallery uses the same header from `films.html`. Studio serves the viewer through
+its service binding to the `songaday-display` Worker. That Worker handles old gallery
+links and keeps existing embeds working. The viewer still reads its tiles and catalog
+from `tiles.songaday.world`.
 
 ## Projects
 
@@ -238,7 +244,7 @@ Under `wrangler dev` the videos come from a local copy of the R2 bucket; fill it
 https redirect loops. An older wrangler that rejects the compatibility date also needs
 `--compatibility-date` set to one it supports.)
 
-After editing `profile.html`, `profile.css`, `profile.js`, `films.html`, `films-page.js`,
+After editing `profile.html`, `profile.css`, `studio-chrome.css`, `profile.js`, `films.html`, `films-page.js`,
 `films.mjs`, `commission.html`, `commission.css`, `commission-page.js` or `commission-config.mjs`,
 run `node build.mjs` again. The static server will serve the refreshed page.
 
@@ -766,7 +772,7 @@ says Google Pay in text.
 
 The donation form asks visitors to become a monthly supporter or donate, with a tax-deductible
 note. The monthly ladder ($3,000 first goal, $20,000 the dream) remains in the Patronage section.
-Shared Studio typography uses `--type-display`, `--type-body`, and `--type-meta` in `profile.css`;
+Shared Studio typography uses `--type-display`, `--type-body`, and `--type-meta` in `studio-chrome.css`;
 third-party embeds control their own type.
 
 ## Production

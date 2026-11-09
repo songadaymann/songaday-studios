@@ -187,7 +187,7 @@ const HEADER = `<header class="site-header">
     <span class="brand-word">SONG A DAY<span class="brand-dot">.</span> STUDIO</span>
   </a>
   <nav class="site-sections" aria-label="Sections">
-    <a href="/all">All songs<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/gallery/">All songs</a>
     <a href="/listen">Listen<span class="nav-out" aria-hidden="true">↗</span></a>
     <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
     <a href="/films/">Films</a>

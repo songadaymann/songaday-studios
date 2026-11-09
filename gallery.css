@@ -1,0 +1,30 @@
+/* Leave the wall and its controls in the space below the shared Studio header. */
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+body > .site-header {
+  flex: none;
+  top: 0;
+  font-family: var(--font);
+  line-height: 1.5;
+}
+
+html.embed body > .site-header { display: none; }
+
+body > #app {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+body #top-bar {
+  background: #111;
+  padding-inline: var(--wrap-edge);
+}
+
+@media (max-width: 639px) {
+  body #top-bar { padding-inline: 12px; }
+}

@@ -18,10 +18,11 @@ const outFlag = process.argv.indexOf("--out");
 const outRoot = outFlag > 0 ? path.resolve(process.argv[outFlag + 1]) : projectRoot;
 const offline = process.env.SONGADAY_OFFLINE === "1";
 const source = (name) => readFile(path.join(projectRoot, name), "utf8");
-const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson, projectsJson, nowSource, everythingSource, walletDetect, walletGate,
+const [htmlSource, filmsSource, chromeCss, profileCss, jsSource, filmsJs, calendarJson, projectsJson, nowSource, everythingSource, walletDetect, walletGate,
   commissionSource, commissionCss, commissionJs] = await Promise.all([
   source("profile.html"),
   source("films.html"),
+  source("studio-chrome.css"),
   source("profile.css"),
   source("profile.js"),
   source("films-page.js"),
@@ -35,6 +36,7 @@ const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson, projectsJs
   source("commission.css"),
   source("commission-page.js"),
 ]);
+const css = `${chromeCss}\n${profileCss}`;
 
 const projects = JSON.parse(projectsJson);
 const problems = validateProjects(projects);
@@ -164,9 +166,11 @@ await writePage("films/index.html", documentHtml({
   script: filmsJs,
 }));
 
-// /everything and /now share the Films page's header and footer.
+// /everything, /now and /gallery share the Films page's header.
 const header = filmsSource.match(/  <header class="site-header">[\s\S]*?<\/header>/)[0].replace(' aria-current="page"', "");
 const footer = filmsSource.match(/  <footer>[\s\S]*?<\/footer>/)[0];
+await writePage("gallery/studio-header.txt", hostedMedia(header.replace('href="/gallery/"', 'href="/gallery/" aria-current="page"')));
+await writePage("gallery/studio.css", `${chromeCss}\n${await source("gallery.css")}`);
 // The commission pages are purchases from Jonathan, so they say nothing about donating: no
 // Donate button or footer link, and a purchase line in place of the fiscal sponsor's.
 const purchaseHeader = header.replace(/\n\s*<a class="nav-donate"[^>]*>[^<]*<\/a>/, "")

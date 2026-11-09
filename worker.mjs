@@ -7,14 +7,15 @@ import { handleCommission, runCommissionDaily } from './commission.mjs';
 import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from './today-song.mjs';
 import { songDate } from './calendar.mjs';
 import { livePress, pressFilters, pressSnapshot, renderPress, renderPressSummary } from './press.mjs';
+import { serveGallery } from './gallery.mjs';
 
 // Short addresses on songaday.studio for every part of Song A Day, so they can be said out
 // loud and become real pages later. Temporary (302, no-store) redirects so browsers don't
 // cache them for good. /songs and /all go to the gallery, every song on one zoomable wall.
 // /commission is a page of its own (commission.mjs); /commissions and /custom land on it.
 const SECTION_REDIRECTS = {
-  '/all': 'https://gallery.songaday.world/',
-  '/songs': 'https://gallery.songaday.world/',
+  '/all': '/gallery/',
+  '/songs': '/gallery/',
   '/listen': 'https://songaday.fan/challenge',
   '/suggest': 'https://songaday.fan/suggestions',
   '/jamuary': 'https://songaday.fan/jamuary',
@@ -125,6 +126,9 @@ export default {
     if (shared) return serveShared(request, env, shared.cache);
 
     const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/, '').toLowerCase() : url.pathname;
+    if (path === '/gallery' || url.pathname.startsWith('/gallery/')) {
+      return serveGallery(request, env, url);
+    }
     const destination = SECTION_REDIRECTS[path];
     if (destination) {
       // Same-site destinations keep the query string (e.g. /donate?utm_source=… → /?utm_source=…#donate).

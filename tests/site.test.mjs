@@ -10,17 +10,22 @@ import { songADayNumber } from '../song-day.mjs';
 const root = new URL('../', import.meta.url);
 
 function fetchPath(path, origin = 'https://songaday.studio') {
+  const staticResponse = async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } });
   const env = {
-    ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) }
+    ASSETS: { fetch: staticResponse },
+    GALLERY: { fetch: staticResponse },
   };
   return worker.fetch(new Request(origin + path), env);
 }
 
 test('section URLs redirect temporarily and are never cached', async () => {
   const cases = {
-    '/all': 'https://gallery.songaday.world/',
-    '/songs': 'https://gallery.songaday.world/',
-    '/songs/': 'https://gallery.songaday.world/',
+    '/all': '/gallery/',
+    '/songs': '/gallery/',
+    '/songs/': '/gallery/',
+    '/all?song=1&zoom=2': '/gallery/?song=1&zoom=2',
+    '/songs/?date=2009-01-01': '/gallery/?date=2009-01-01',
+    '/Gallery?song=1': '/gallery/?song=1',
     '/listen': 'https://songaday.fan/challenge',
     '/suggest': 'https://songaday.fan/suggestions',
     '/Jamuary': 'https://songaday.fan/jamuary',
@@ -44,6 +49,22 @@ test('section URLs redirect temporarily and are never cached', async () => {
     assert.equal(response.headers.get('Location'), location, path);
     assert.equal(response.headers.get('Cache-Control'), 'no-store', path);
   }
+});
+
+test('gallery routing preserves the origin and query without sending Studio credentials', async () => {
+  const env = { GALLERY: { fetch: async (request) => {
+    assert.equal(request.url, 'https://songaday.studio/gallery/api/ens?addresses=0xabc');
+    assert.equal(request.headers.get('Origin'), 'https://songaday.studio');
+    assert.equal(request.headers.get('Sec-Fetch-Site'), 'same-origin');
+    assert.equal(request.headers.get('Cookie'), null);
+    assert.equal(request.headers.get('Authorization'), null);
+    return Response.json({ names: {} });
+  } } };
+  const request = new Request('https://songaday.studio/gallery/api/ens?addresses=0xabc', {
+    headers: { Origin: 'https://songaday.studio', 'Sec-Fetch-Site': 'same-origin', Cookie: 'test=value', Authorization: 'Bearer test' },
+  });
+  assert.deepEqual(await (await worker.fetch(request, env)).json(), { names: {} });
+  assert.equal((await worker.fetch(new Request('https://songaday.studio/gallery/studio-header.txt'), env)).status, 404);
 });
 
 test('/commission is a page here once requests open, and the Bandcamp listings until then', async () => {
@@ -144,7 +165,7 @@ test('every page header links to the same sections', async () => {
   const home = await readFile(new URL('profile.html', root), 'utf8');
   const plugins = await readFile(new URL('plugins/index.html', root), 'utf8');
   const films = await readFile(new URL('films.html', root), 'utf8');
-  assert.deepEqual(navLinks(home), ['/all', '/listen', '/games', '/films/', '/plugins/', '/commission', '/store/']);
+  assert.deepEqual(navLinks(home), ['/gallery/', '/listen', '/games', '/films/', '/plugins/', '/commission', '/store/']);
   assert.deepEqual(navLinks(plugins), navLinks(home));
   assert.deepEqual(navLinks(films), navLinks(home));
   assert.match(plugins, /class="nav-donate" href="\/#donate"/);

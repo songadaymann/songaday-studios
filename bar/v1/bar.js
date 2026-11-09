@@ -16,7 +16,7 @@ const PROJECTS_URL = new URL('/projects.json', import.meta.url);
 // The bar's projects as of the last bar release, for when projects.json can't load.
 export const FALLBACK = [
   { verb: 'listen', label: 'Listen', href: 'https://songaday.studio/listen', crypto: false },
-  { verb: 'see', label: 'See all', href: 'https://songaday.studio/all', crypto: false },
+  { verb: 'see', label: 'See all', href: 'https://songaday.studio/gallery/', crypto: false },
   { verb: 'play', label: 'Play', href: 'https://songaday.studio/games', crypto: false },
   { verb: 'get-a-song', label: 'Get a song', href: 'https://songaday.studio/commission', crypto: false },
   { verb: 'collect', label: 'Collect', href: 'https://songaday.world/', crypto: true }

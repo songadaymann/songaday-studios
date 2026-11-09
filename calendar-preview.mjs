@@ -155,7 +155,7 @@ export function initCalendarPreview(onPlay) {
         map.dataset.videoTitle = `Song A Day #${number}: ${song.t}`;
         onPlay(map);
       } else {
-        window.location.assign(`https://gallery.songaday.world/?song=${number}`);
+        window.location.assign(`/gallery/?song=${number}`);
       }
     });
   }

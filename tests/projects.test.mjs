@@ -41,7 +41,7 @@ test('the validator catches what would break the bar or the pages', () => {
 test('the places the front door promises are listed', () => {
   const expect = {
     'songaday-fan': { verb: 'listen', inBar: true },
-    gallery: { verb: 'see', url: 'https://gallery.songaday.world/', inBar: true },
+    gallery: { verb: 'see', path: '/gallery/', url: 'https://songaday.studio/gallery/', inBar: true },
     'songaday-world': { verb: 'collect', crypto: true, inBar: true },
     'mann-cool': { verb: 'play', inBar: true },
     'mann-cool-lab': { verb: 'play', url: 'https://mann.cool/lab', status: 'soon' },
@@ -78,7 +78,10 @@ test('the places the front door promises are listed', () => {
 });
 
 test('every short address in projects.json answers on songaday.studio', async () => {
-  const env = { ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) } };
+  const env = {
+    ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) },
+    GALLERY: { fetch: async () => new Response('gallery') }
+  };
   for (const project of projects.projects.filter((item) => item.path)) {
     const response = await worker.fetch(new Request('https://songaday.studio' + project.path), env);
     // Without its database (as here) the Fumble page still renders, closed to posts, as a 503.
