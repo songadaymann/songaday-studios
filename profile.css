@@ -76,10 +76,14 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .hero-headline { margin: 0; color: var(--white); font-size: var(--type-display); letter-spacing: -.05em; line-height: 1; text-wrap: balance; }
 .hero-ask-accent { color: var(--red); }
 .hero-day-count { white-space: nowrap; }
-.hero-ask-row { grid-area: ask; display: flex; align-items: flex-end; gap: 1.5rem; min-width: 0; padding-top: 1rem; }
-.hero-ask-link { flex: none; padding-bottom: .5rem; font-size: var(--type-display); font-weight: 700; letter-spacing: -.05em; line-height: 1.1; white-space: nowrap; text-decoration: none; }
+.hero-ask-row { grid-area: ask; display: flex; justify-content: center; align-items: flex-end; min-width: 0; min-height: 176px; padding-top: 1rem; text-align: center; }
+.hero-ask-link { position: relative; flex: none; padding-bottom: .5rem; font-size: var(--type-display); font-weight: 700; letter-spacing: -.05em; line-height: 1.1; white-space: nowrap; text-decoration: none; }
 .hero-ask-link:hover { text-decoration: underline; text-decoration-thickness: 3px; }
-.hero-ask-arrow { flex: 1; width: 240px; max-width: 240px; height: 160px; color: var(--red); }
+.hero-ask-arrow { position: absolute; left: calc(100% + 1rem); bottom: -.5rem; width: 320px; height: 240px; color: var(--red); pointer-events: none; }
+@media (max-width: 1499px) {
+  .hero-ask-arrow { left: auto; right: 0; bottom: calc(100% + .25rem); width: 180px; height: 135px; }
+  .hero-ask-row { min-height: 220px; }
+}
 .hero-subheader { max-width: 60ch; margin: 1rem 0 0; font-size: var(--type-body); line-height: 1.45; }
 
 /* Today's song above the archive. It plays in the video modal; the Worker fills it from YouTube. */
@@ -466,9 +470,9 @@ footer nav a { font-weight: 700; }
 @media (max-width: 960px) {
   .hero-stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "donate" "video" "ask"; grid-template-rows: auto; }
   .hero-donate { width: 100%; max-width: 560px; }
-  .hero-ask-row { align-items: center; gap: .75rem; }
-  .hero-ask-link { flex: 1; white-space: normal; }
-  .hero-ask-arrow { flex: none; width: 72px; height: 96px; }
+  .hero-ask-row { min-height: 240px; }
+  .hero-ask-link { max-width: 100%; white-space: normal; }
+  .hero-ask-arrow { width: 130px; height: 98px; }
 }
 
 /* Compact navigation: links scroll above the logo before the full header would overflow. */
