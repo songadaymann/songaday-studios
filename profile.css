@@ -70,19 +70,19 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
 
 /* The running day count, film and gift form, with the ask across the bottom. */
-.hero { padding: clamp(1.5rem, 3.5vw, 2.75rem) 0 clamp(1.5rem, 3vw, 2rem); background: var(--ink); }
+.hero { padding: clamp(1.5rem, 3.5vw, 2.75rem) 0 1.5rem; background: var(--ink); }
 .hero-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 440px); grid-template-areas: "intro donate" "video donate" "ask ask"; grid-template-rows: auto 1fr auto; align-items: start; column-gap: clamp(2rem, 4.5vw, 4rem); row-gap: clamp(1.25rem, 2.5vw, 1.75rem); width: var(--wrap); margin: 0 auto; }
 .hero-intro { grid-area: intro; min-width: 0; container-type: inline-size; }
 .hero-headline { margin: 0; color: var(--white); font-size: var(--type-display); letter-spacing: -.05em; line-height: 1; text-wrap: balance; }
 .hero-ask-accent { color: var(--red); }
 .hero-day-count { white-space: nowrap; }
-.hero-ask-row { grid-area: ask; display: flex; justify-content: center; align-items: flex-end; min-width: 0; min-height: 128px; padding-top: 1rem; text-align: center; }
+.hero-ask-row { grid-area: ask; display: flex; justify-content: center; align-items: flex-end; min-width: 0; min-height: 104px; padding-top: 1rem; text-align: center; }
 .hero-ask-link { position: relative; flex: none; padding-bottom: .5rem; font-size: var(--type-display); font-weight: 700; letter-spacing: -.05em; line-height: 1.1; white-space: nowrap; text-decoration: none; }
 .hero-ask-link:hover { text-decoration: underline; text-decoration-thickness: 3px; }
 .hero-ask-arrow { position: absolute; left: calc(100% + 1rem); bottom: -.5rem; width: 180px; height: 160px; color: var(--red); pointer-events: none; }
 @media (max-width: 1499px) {
   .hero-ask-arrow { left: auto; right: 0; bottom: calc(100% + .25rem); width: 120px; height: 107px; }
-  .hero-ask-row { min-height: 176px; }
+  .hero-ask-row { min-height: 160px; }
 }
 .hero-subheader { max-width: 60ch; margin: 1rem 0 0; font-size: var(--type-body); line-height: 1.45; }
 
@@ -102,7 +102,7 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .today-song-fallback { font-weight: 700; }
 
 /* The calendar: every song as one picture, an image per year (build-calendar.mjs). */
-.calendar-section { padding: clamp(2.5rem, 5vw, 4rem) 0; border-top: 2px solid var(--hairline); background: var(--ink); }
+.calendar-section { padding: clamp(1.5rem, 3vw, 2rem) 0 clamp(2.5rem, 5vw, 4rem); border-top: 2px solid var(--hairline); background: var(--ink); }
 .calendar-inner { width: var(--wrap); margin: 0 auto; }
 .calendar-heading { max-width: none; }
 .calendar-help { margin: 0; color: var(--white-muted); font-size: var(--type-meta); }
@@ -470,7 +470,7 @@ footer nav a { font-weight: 700; }
 @media (max-width: 960px) {
   .hero-stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "donate" "video" "ask"; grid-template-rows: auto; }
   .hero-donate { width: 100%; max-width: 560px; }
-  .hero-ask-row { min-height: 200px; }
+  .hero-ask-row { min-height: 0; padding-top: 96px; }
   .hero-ask-link { max-width: 100%; white-space: normal; }
   .hero-ask-arrow { width: 108px; height: 96px; }
 }
