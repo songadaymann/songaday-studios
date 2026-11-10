@@ -210,6 +210,31 @@ the page's CSS; the bar fills that element in.
 The studio uses it on the home page, Films, Plugins, Fumble, /everything and /now, above the
 studio header. The bio link page (/links) has no bar.
 
+### The studio header on other sites
+
+`bar/v1/header.js` is the studio's own header (name, the seven sections, Donate) for a site
+that is one of those sections, so going there from the studio doesn't look like leaving. The
+games on mann.cool use it; `/games` in the studio's menu has no "leaving" arrow for that reason.
+A site shows the header or the bar, not both:
+
+```html
+<script type="module" src="https://songaday.studio/bar/v1/header.js" data-here="games" defer></script>
+```
+
+`data-here` is the section's id in `SECTIONS` (songs, listen, games, films, plugins, get-a-song,
+store) and marks it as the current one. For no layout shift, put `<songaday-header></songaday-header>`
+where it goes and reserve its height in the page's CSS: `songaday-header { display: block;
+min-height: 68px; background: #000; }`, and `min-height: 101px` at `max-width: 1100px`.
+
+- Like the bar it draws in its own shadow DOM and is served with CORS and a four-hour cache. It
+  makes no requests; the mark is the studio's own image.
+- `SECTIONS` is a copy of the studio's menu. `tests/header.test.mjs` fails when the two differ,
+  so a change to the menu in `profile.html` (and its copies) has to be made there too. Other
+  sites pick the change up within four hours of the deploy.
+- It stays at the top while the page scrolls, as on the studio. A page that doesn't want that
+  sets `songaday-header { position: static; }`.
+- Donate goes to `https://songaday.studio/?from=<this site's hostname>#donate`, like the bar's.
+
 Requires Node.js 22 or newer. Run the tests with:
 
 ```bash
