@@ -1,0 +1,48 @@
+{
+  "kinds": [
+    {
+      "id": "music",
+      "name": "Music",
+      "about": "Every year of Song A Day is an album. Listen and buy on Bandcamp."
+    },
+    { "id": "custom-song", "name": "A song written for you" },
+    { "id": "posters", "name": "Posters" },
+    { "id": "clothing", "name": "Clothing" }
+  ],
+  "products": [
+    {
+      "id": "albums",
+      "kind": "music",
+      "name": "Music",
+      "note": "{{ALBUM_COUNT}} albums on Bandcamp",
+      "list": "albums"
+    },
+    {
+      "id": "custom-song",
+      "kind": "custom-song",
+      "name": "A song written for you",
+      "note": "From {{PERSONAL_FROM}}, pay when it’s done",
+      "href": "/commission",
+      "image": "/assets/images/jonathan-swing-800.webp"
+    },
+    {
+      "id": "muscle-posters",
+      "kind": "posters",
+      "name": "MUSCLE posters",
+      "note": "{{FIGURE_COUNT}} figures, from {{POSTER_FROM}}",
+      "href": "/store/muscle/",
+      "image": "https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/015.jpg",
+      "fit": "print",
+      "checkout": "posters"
+    },
+    {
+      "id": "songs-hat",
+      "kind": "clothing",
+      "name": "Songs Hat",
+      "note": "On Cotton Bureau",
+      "href": "https://cottonbureau.com/p/NW5ZGT/hat/songs-hat",
+      "image": "https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024",
+      "fit": "contain"
+    }
+  ]
+}

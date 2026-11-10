@@ -78,11 +78,17 @@ export function renderAlbums(releases) {
   const { years, more } = shelveAlbums(releases);
   const others = more.filter((release) => release.kind === 'album');
   return {
-    years: years.map((release) => item(release, String(release.year), release.label)).join('\n'),
-    more: others.map((release) => item(release, release.title.replace(/ \[EP\]$/i, ''))).join('\n'),
     count: years.length + others.length,
-    // The four newest years, for the Music picture at the top of the store. Like the rest of that
-    // row they're on the first screen, so they load and decode right away (no lazy, no async).
-    newestCovers: years.slice(0, 4).map((release) => `<img src="${escapeHtml(release.image)}" alt="" width="350" height="350">`).join(''),
+    // The four newest years, for the Music picture at the top of the store.
+    newestCovers: years.slice(0, 4).map((release) => release.image),
+    // The album list itself, for under the heading with this id.
+    list: (headingId) => ` <ul class="store-albums" aria-labelledby="${headingId}">
+${years.map((release) => item(release, String(release.year), release.label)).join('\n')}
+ </ul>
+ <h3 id="more-albums-heading">More albums</h3>
+ <ul class="store-albums" aria-labelledby="more-albums-heading">
+${others.map((release) => item(release, release.title.replace(/ \[EP\]$/i, ''))).join('\n')}
+ </ul>
+ <a class="store-more" href="/albums" target="_blank" rel="noopener noreferrer">Everything on Bandcamp ↗</a>`,
   };
 }

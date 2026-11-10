@@ -39,25 +39,29 @@
 [hidden] { display:none !important; }
 #store-order-status { border-top:1px solid #777; border-bottom:1px solid #777; padding:1rem 0; margin:0 0 2rem; }
 
-/* The store's front page: everything in the store as one row of pictures on the first screen
-   (two by two on a phone), then the albums, whose covers link to Bandcamp. */
+/* The store's front page (store-products.mjs): one picture per kind of thing on the first
+   screen (two by two on a phone), then a section for each kind that has more to show: its
+   products when it has several, and the albums, whose covers link to Bandcamp. */
 .store-items { list-style:none; padding:0; margin:0 0 5rem; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1.5rem; }
 .store-items a { display:block; text-decoration:none; }
 .store-item-image { position:relative; display:block; aspect-ratio:1; overflow:hidden; margin-bottom:1rem; background:#242424; }
 .store-item-image img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-.store-item-covers { display:grid; grid-template-columns:1fr 1fr; }
-.store-item-covers img { position:static; }
+.store-item-mosaic { display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:1fr; }
+.store-item-mosaic img { position:static; min-height:0; }
 .store-item-print img { inset:1rem; width:calc(100% - 2rem); height:calc(100% - 2rem); object-fit:contain; }
-.store-item-hat { background:none; }
-.store-item-hat img { object-fit:contain; }
+.store-item-contain { background:none; }
+.store-item-contain img { object-fit:contain; }
 .store-item-name,.store-item-note { display:block; }
 .store-item-name { font-size:var(--type-body); font-weight:700; }
 .store-item-note { font-size:var(--type-meta); }
 .store-items a:hover .store-item-name,.store-items a:focus-visible .store-item-name { text-decoration:underline; text-decoration-color:var(--red); text-underline-offset:.3rem; }
-.store-music { scroll-margin-top:calc(var(--header-clearance) + 16px); }
-.store-music h2 { margin:0 0 1.5rem; }
-.store-music > p { font-size:var(--type-body); max-width:34rem; margin:0; }
-.store-music h3 { font-size:var(--type-body); font-weight:700; letter-spacing:0; line-height:1.5; margin:4rem 0 0; }
+.store-kind { scroll-margin-top:calc(var(--header-clearance) + 16px); }
+.store-kind + .store-kind { margin-top:5rem; }
+.store-kind h2 { margin:0 0 1.5rem; }
+.store-kind > p { font-size:var(--type-body); max-width:34rem; margin:0; }
+.store-kind h3 { font-size:var(--type-body); font-weight:700; letter-spacing:0; line-height:1.5; margin:4rem 0 0; }
+.store-kind .store-items { margin:2rem 0 0; }
+.store-kind .store-items + .store-albums { margin-top:4rem; }
 .store-albums { list-style:none; padding:0; margin:2rem 0 0; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:2rem 1rem; }
 .store-albums a { display:block; text-decoration:none; }
 .store-albums img { display:block; width:100%; height:auto; aspect-ratio:1; object-fit:cover; margin-bottom:.75rem; background:#242424; }

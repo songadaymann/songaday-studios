@@ -812,10 +812,23 @@ from the code license; see `ASSETS.md`.
 
 ## Store
 
-`/store/` is the store's front page (`store.html`). It opens with everything in the
-store as one row of pictures, so all of it shows without scrolling (two by two on a
-phone): the music on Bandcamp, a custom song (`/commission`), the MUSCLE posters and the
-Songs Hat, each a link to where it's sold. The albums follow underneath. The 236
+`/store/` is the store's front page. It is built from `store/products.json`, one row
+per thing on sale (`store-products.mjs` explains each field and checks the list;
+`store.html` is only the page around it). The page opens with one picture per kind of
+thing, so everything shows without scrolling (two by two on a phone): today the music on
+Bandcamp, a custom song (`/commission`), the MUSCLE posters and the Songs Hat, each a
+link to where it's sold. The albums follow underneath.
+
+To add something to the store, add a row to `products` in `store/products.json` with
+its kind, name, note, link and picture, then rebuild and deploy. While a kind has one
+product, its picture is that product. From its second product on, the picture carries
+the kind's name ("Posters", "Clothing"), shows the products' pictures together, and
+jumps to a list of them further down the page (above the albums, which always come
+last because there are so many); nothing else needs editing. The first
+screen fits four kinds, and the build stops with an explanation if a fifth gets a
+product. A product sold on another site (Cotton Bureau, Bandcamp) is only a row. One
+sold through the Studio's own poster checkout also needs that checkout to know it:
+today `store.mjs` only sells the MUSCLE figures. The 236
 MUSCLE photographic posters have their own page, `/store/muscle/` (`store-muscle.html`
 and `store-page.js`): the figure, size and frame picker, checkout, and the whole
 collection. Both pages share `store.css`, and `build.mjs` gives them the Studio purchase
@@ -889,8 +902,8 @@ scripts remain in the separate posters project; print binaries stay out of Git.
 
 The Songs Hat links directly to Cotton Bureau for style selection and purchase;
 its official product mockup stays hosted by Cotton Bureau. Add future external
-products to the row at the top of `store.html` with the same explicit purchase link,
-not the Stripe form. Album covers on the Music shelf load from Bandcamp's image host.
+products as rows in `store/products.json` with the same explicit purchase link, not
+the Stripe form. Album covers on the Music shelf load from Bandcamp's image host.
 
 The MUSCLE poster page has Print and In a room thumbnails. `store-preview.mjs` computes
 an illustrative studio placement using the earlier room-photo calibration (14 px/in,

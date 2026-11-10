@@ -1,5 +1,6 @@
 import { roomGeometry } from './store-preview.mjs';
 import { albumProblems, renderAlbums } from './store-albums.mjs';
+import { productProblems, renderStore } from './store-products.mjs';
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -301,29 +302,34 @@ ${labBody}
 `);
 console.log(`Built Song A Day Studio index.html, films/, everything/, now/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
 
-// The store (songaday.studio/store/): a front page that opens with everything in it as one row
-// of pictures (the music on Bandcamp, a custom song, the posters, the hat) and then lists the
-// albums (store/albums.json, store-albums.mjs), and the MUSCLE poster picker on a page of its
-// own (/store/muscle/). Both use the Studio purchase header/footer; no donation claims on
-// merchandise.
-const [storeSource, storeMuscleSource, storeCss, storeJsSource, albumsJson, variantsJson, catalogJson] = await Promise.all([
+// The store (songaday.studio/store/): a front page built from the list of what's on sale
+// (store/products.json, store-products.mjs), which opens with one picture per kind of thing and
+// then lists the albums (store/albums.json, store-albums.mjs), and the MUSCLE poster picker on a
+// page of its own (/store/muscle/). Both use the Studio purchase header/footer; no donation
+// claims on merchandise.
+const [storeSource, storeMuscleSource, storeCss, storeJsSource, productsJson, albumsJson, variantsJson, catalogJson] = await Promise.all([
   source("store.html"), source("store-muscle.html"), source("store.css"), source("store-page.js"),
-  source("store/albums.json"), source("store/variants.json"), source("store/catalog.json")]);
+  source("store/products.json"), source("store/albums.json"), source("store/variants.json"), source("store/catalog.json")]);
 const albums = JSON.parse(albumsJson);
 const albumIssues = albumProblems(albums);
 if (albumIssues.length) {
   throw new Error(`store/albums.json has problems:\n${albumIssues.join("\n")}\nRun node update-albums.mjs to refresh it.`);
 }
 const albumShelf = renderAlbums(albums);
-const storeTokens = {
-  YEAR_ALBUMS: albumShelf.years,
-  MORE_ALBUMS: albumShelf.more,
-  NEWEST_COVERS: albumShelf.newestCovers,
+// The values a product's note can use, each from the place that owns it.
+const storeValues = {
   ALBUM_COUNT: String(albumShelf.count),
   PERSONAL_FROM: money(PRICES.personal.floor),
   POSTER_FROM: money(Math.min(...JSON.parse(variantsJson).variants.map((variant) => variant.priceCents))),
   FIGURE_COUNT: String(JSON.parse(catalogJson).length),
 };
+const storeProducts = JSON.parse(productsJson);
+const productIssues = productProblems(storeProducts, storeValues);
+if (productIssues.length) {
+  throw new Error(`store/products.json has problems:\n${productIssues.join("\n")}`);
+}
+const storeFront = renderStore(storeProducts, { albums: albumShelf, values: storeValues });
+const storeTokens = { ...storeValues, STORE_ITEMS: storeFront.items, STORE_SECTIONS: storeFront.sections };
 const storeHeader = purchaseHeader.replace(' aria-current="page"', '').replace('<a href="/store/">', '<a href="/store/" aria-current="page">');
 const storeFooter = purchaseFooter.replace('Song commissions are purchases', 'Posters and song commissions are purchases');
 const storeBody = (page) => hostedMedia(page.replace("{{HEADER}}", () => storeHeader).replace("{{FOOTER}}", () => storeFooter)
@@ -331,11 +337,11 @@ const storeBody = (page) => hostedMedia(page.replace("{{HEADER}}", () => storeHe
     if (!(name in storeTokens)) throw new Error(`The store pages have an unknown {{${name}}}.`);
     return storeTokens[name];
   }));
-// The front page says "opens soon" under the posters until the Worker says checkout is open.
+// The front page says "opens soon" under what the poster checkout sells until the Worker says it's open.
 const storeFrontJs = `(() => {
  "use strict";
  fetch("/store/config").then((response) => response.ok ? response.json() : null).then((config) => {
-  if (config && config.checkoutEnabled) document.getElementById("store-poster-status").hidden = true;
+  if (config && config.checkoutEnabled) for (const note of document.querySelectorAll("[data-store-opens-soon]")) note.hidden = true;
  }).catch(() => {});
 })();`;
 await writePage("store/index.html", documentHtml({
