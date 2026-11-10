@@ -65,12 +65,13 @@ test('the store front page shows everything up top, then the albums; the poster 
   assert.ok(front.indexOf('class="store-items"')<front.indexOf('id="music"'));
   assert.deepEqual([...items.matchAll(/<li><a href="([^"]+)"[\s\S]*?<span class="store-item-name">([^<]+)<\/span>/g)].map(m=>[m[1],m[2]]),
    [['#music','Music'],['/commission','A song written for you'],['/store/muscle/','MUSCLE posters'],['https://cottonbureau.com/p/NW5ZGT/hat/songs-hat','Songs Hat']]);
-  assert.equal((items.match(/<span class="store-item-image store-item-covers">(?:<img src="https:\/\/f4\.bcbits\.com\/img\/a\d{10}_2\.jpg" alt="" width="350" height="350" decoding="async">){4}<\/span>/g)??[]).length,1);
+  assert.equal((items.match(/<span class="store-item-image store-item-covers">(?:<img src="https:\/\/f4\.bcbits\.com\/img\/a\d{10}_2\.jpg" alt="" width="350" height="350">){4}<\/span>/g)??[]).length,1);
   assert.match(items,/<span class="store-item-note">32 albums on Bandcamp<\/span>/);
   assert.match(items,/<span class="store-item-note">From \$200, pay when it’s done<\/span>/);
   assert.match(items,/<span class="store-item-note">236 figures, from \$29<span id="store-poster-status"> · opens soon<\/span><\/span>/);
   assert.match(items,/<a href="https:\/\/cottonbureau\.com\/p\/NW5ZGT\/hat\/songs-hat" target="_blank" rel="noopener noreferrer">/);
-  assert.doesNotMatch(items,/loading="lazy"/);
+  // The row is on the first screen, so its pictures load and decode right away.
+  assert.doesNotMatch(items,/loading="lazy"|decoding="async"/);
   assert.deepEqual([...front.matchAll(/<section class="[^"]*" id="([^"]+)"/g)].map(m=>m[1]),['music']);
   const years=[...front.matchAll(/<li><a href="https:\/\/jonathanmann\.bandcamp\.com\/album\/song-a-day-year-[a-z0-9-]+" target="_blank" rel="noopener noreferrer"><img src="https:\/\/f4\.bcbits\.com\/img\/a\d{10}_2\.jpg" alt="" width="350" height="350" loading="lazy" decoding="async"><span class="store-album-name">(\d{4})<\/span><span class="store-album-note">(Year [A-Za-z-]+)<\/span>/g)];
   assert.ok(years.length>=18);assert.equal(years[0][1],String(2008+years.length));assert.equal(years.at(-1)[2],'Year One');

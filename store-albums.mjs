@@ -81,7 +81,8 @@ export function renderAlbums(releases) {
     years: years.map((release) => item(release, String(release.year), release.label)).join('\n'),
     more: others.map((release) => item(release, release.title.replace(/ \[EP\]$/i, ''))).join('\n'),
     count: years.length + others.length,
-    // The four newest years, for the Music picture at the top of the store.
-    newestCovers: years.slice(0, 4).map((release) => `<img src="${escapeHtml(release.image)}" alt="" width="350" height="350" decoding="async">`).join(''),
+    // The four newest years, for the Music picture at the top of the store. Like the rest of that
+    // row they're on the first screen, so they load and decode right away (no lazy, no async).
+    newestCovers: years.slice(0, 4).map((release) => `<img src="${escapeHtml(release.image)}" alt="" width="350" height="350">`).join(''),
   };
 }
