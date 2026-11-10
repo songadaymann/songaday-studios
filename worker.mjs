@@ -37,7 +37,11 @@ const SECTION_REDIRECTS = {
 };
 
 // Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
-const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data', '/press', '/store']);
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data', '/press', '/store', '/store/muscle']);
+
+// The poster picker used to be the whole store page. Links people shared to a figure, and the
+// links Stripe sends buyers back on, name one of these; they land on the picker's own page.
+const POSTER_PARAMS = ['figure', 'size', 'frame', 'order'];
 
 // The universe bar and projects.json load on other Song A Day sites too, and module scripts and
 // cross-origin fetches need CORS. The bar is pinned by version folder (bar/v1/), so it can be
@@ -164,6 +168,10 @@ export default {
     // songaday.studio/fumble: anonymous bag-fumble stories (fumble.mjs).
     const fumble = await handleFumble(request, env, url);
     if (fumble) return fumble;
+
+    if (path === '/store' && POSTER_PARAMS.some((name) => url.searchParams.has(name))) {
+      return new Response(null, { status: 302, headers: { Location: '/store/muscle/' + url.search, 'Cache-Control': 'no-store' } });
+    }
 
     // /Films, /LINKS/ etc. land on the page itself (the section redirects above ignore case too).
     if (FOLDER_PAGES.has(path) && url.pathname !== path + '/') {

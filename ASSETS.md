@@ -59,6 +59,12 @@ Replace these references with your own assets for an independent deployment.
   The store overlays the selected artwork in HTML/CSS. Its scale is estimated from
   the earlier room mockups and is explicitly labeled illustrative. No image color
   adjustments or generated room photography are applied.
+- The store's album covers are hotlinked from Bandcamp's image host (`f4.bcbits.com`),
+  at the addresses Jonathan's own Bandcamp page uses for his releases; `store/albums.json`
+  lists them (snapshot of November 9, 2026). No cover binary is copied into Git, and each
+  one links to its album on Bandcamp. The covers are Jonathan's release artwork; some
+  include other artists' illustration or photography, which this repository's licenses
+  don't cover.
 - The Songs Hat image is hotlinked from Cotton Bureau's official product mockup:
   https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024 . It is used
   to link to Jonathan's Songs Hat listing. No image binary is copied into Git, and

@@ -1,4 +1,5 @@
 import { roomGeometry } from './store-preview.mjs';
+import { albumProblems, renderAlbums } from './store-albums.mjs';
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
@@ -300,13 +301,54 @@ ${labBody}
 `);
 console.log(`Built Song A Day Studio index.html, films/, everything/, now/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
 
-// The store uses the Studio purchase header/footer; no donation claims on merchandise.
-const [storeSource, storeCss, storeJsSource] = await Promise.all([source("store.html"), source("store.css"), source("store-page.js")]);
-const storeJs = storeJsSource.replace("/* STORE_ROOM_GEOMETRY */", () => roomGeometry.toString());
+// The store (songaday.studio/store/): a front page that opens with everything in it as one row
+// of pictures (the music on Bandcamp, a custom song, the posters, the hat) and then lists the
+// albums (store/albums.json, store-albums.mjs), and the MUSCLE poster picker on a page of its
+// own (/store/muscle/). Both use the Studio purchase header/footer; no donation claims on
+// merchandise.
+const [storeSource, storeMuscleSource, storeCss, storeJsSource, albumsJson, variantsJson, catalogJson] = await Promise.all([
+  source("store.html"), source("store-muscle.html"), source("store.css"), source("store-page.js"),
+  source("store/albums.json"), source("store/variants.json"), source("store/catalog.json")]);
+const albums = JSON.parse(albumsJson);
+const albumIssues = albumProblems(albums);
+if (albumIssues.length) {
+  throw new Error(`store/albums.json has problems:\n${albumIssues.join("\n")}\nRun node update-albums.mjs to refresh it.`);
+}
+const albumShelf = renderAlbums(albums);
+const storeTokens = {
+  YEAR_ALBUMS: albumShelf.years,
+  MORE_ALBUMS: albumShelf.more,
+  NEWEST_COVERS: albumShelf.newestCovers,
+  ALBUM_COUNT: String(albumShelf.count),
+  PERSONAL_FROM: money(PRICES.personal.floor),
+  POSTER_FROM: money(Math.min(...JSON.parse(variantsJson).variants.map((variant) => variant.priceCents))),
+  FIGURE_COUNT: String(JSON.parse(catalogJson).length),
+};
 const storeHeader = purchaseHeader.replace(' aria-current="page"', '').replace('<a href="/store/">', '<a href="/store/" aria-current="page">');
+const storeFooter = purchaseFooter.replace('Song commissions are purchases', 'Posters and song commissions are purchases');
+const storeBody = (page) => hostedMedia(page.replace("{{HEADER}}", () => storeHeader).replace("{{FOOTER}}", () => storeFooter)
+  .replaceAll(/\{\{([A-Z_]+)\}\}/g, (match, name) => {
+    if (!(name in storeTokens)) throw new Error(`The store pages have an unknown {{${name}}}.`);
+    return storeTokens[name];
+  }));
+// The front page says "opens soon" under the posters until the Worker says checkout is open.
+const storeFrontJs = `(() => {
+ "use strict";
+ fetch("/store/config").then((response) => response.ok ? response.json() : null).then((config) => {
+  if (config && config.checkoutEnabled) document.getElementById("store-poster-status").hidden = true;
+ }).catch(() => {});
+})();`;
 await writePage("store/index.html", documentHtml({
-  title: "Store · Song A Day Studio", description: "All 236 MUSCLE figures as photographic posters. Choose your figure, size and frame.",
+  title: "Store · Song A Day Studio",
+  description: "Song A Day albums on Bandcamp, a song written for you, MUSCLE posters and the Songs Hat.",
   url: "https://songaday.studio/store/",
-  body: hostedMedia(storeSource.replace("{{HEADER}}", () => storeHeader).replace("{{FOOTER}}", () => purchaseFooter.replace('Song commissions are purchases', 'Posters and song commissions are purchases'))),
-  script: storeJs, extraCss: storeCss,
+  body: storeBody(storeSource),
+  script: storeFrontJs, extraCss: storeCss,
+}));
+await writePage("store/muscle/index.html", documentHtml({
+  title: "MUSCLE posters · Song A Day Studio",
+  description: `All ${storeTokens.FIGURE_COUNT} MUSCLE figures as photographic posters. Choose your figure, size and frame.`,
+  url: "https://songaday.studio/store/muscle/",
+  body: storeBody(storeMuscleSource),
+  script: storeJsSource.replace("/* STORE_ROOM_GEOMETRY */", () => roomGeometry.toString()), extraCss: storeCss,
 }));

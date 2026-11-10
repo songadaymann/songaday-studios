@@ -812,8 +812,26 @@ from the code license; see `ASSETS.md`.
 
 ## Store
 
-`/store/` introduces the 236 MUSCLE photographic posters. Edit `store.html`,
-`store.css`, and `store-page.js`; `build.mjs` uses the Studio purchase header/footer.
+`/store/` is the store's front page (`store.html`). It opens with everything in the
+store as one row of pictures, so all of it shows without scrolling (two by two on a
+phone): the music on Bandcamp, a custom song (`/commission`), the MUSCLE posters and the
+Songs Hat, each a link to where it's sold. The albums follow underneath. The 236
+MUSCLE photographic posters have their own page, `/store/muscle/` (`store-muscle.html`
+and `store-page.js`): the figure, size and frame picker, checkout, and the whole
+collection. Both pages share `store.css`, and `build.mjs` gives them the Studio purchase
+header/footer. Links from when the picker was the whole store (`/store/?figure=15…`, and
+Stripe's `/store/?order=…`) are sent on to `/store/muscle/` by the Worker with their
+query intact.
+
+The Music shelf is built from `store/albums.json`, a snapshot of
+https://jonathanmann.bandcamp.com/music (`store-albums.mjs`). The "Song A Day: Year N"
+albums come first, newest first, labelled by calendar year; the other albums follow in
+Bandcamp's order. Singles stay in the snapshot but off the shelf. Bandcamp only sells
+on its own pages, so each cover opens that album there. After a new release, save the
+Bandcamp music page from a browser and run `node update-albums.mjs <that file>`
+(Bandcamp usually answers scripts with a "checking your browser" page, so the script's
+own fetch is a convenience that may not work), then rebuild and deploy.
+
 `store/catalog.json` contains public figure names and approved original-color
 previews; `store/variants.json` maps verified Gelato products to sizes and frames.
 Small is 12 × 16 inches, medium 18 × 24, large 30 × 40. Black/white wooden frames
@@ -871,9 +889,10 @@ scripts remain in the separate posters project; print binaries stay out of Git.
 
 The Songs Hat links directly to Cotton Bureau for style selection and purchase;
 its official product mockup stays hosted by Cotton Bureau. Add future external
-products in `store.html` using the same explicit purchase link, not the Stripe form.
+products to the row at the top of `store.html` with the same explicit purchase link,
+not the Stripe form. Album covers on the Music shelf load from Bandcamp's image host.
 
-The MUSCLE gallery has Print and In a room thumbnails. `store-preview.mjs` computes
+The MUSCLE poster page has Print and In a room thumbnails. `store-preview.mjs` computes
 an illustrative studio placement using the earlier room-photo calibration (14 px/in,
 center 890,610 on the 2016×1512 image). The browser overlays the exact approved preview
 image, without image filters, on Jonathan's original studio photo. Sizes and frame

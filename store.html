@@ -2,65 +2,24 @@
 <a class="skip-link" href="#main">Skip to content</a>
 {{HEADER}}
 <main id="main" tabindex="-1">
-<div class="store-intro"><h1>Store</h1><p>Posters, hats, and things I make.</p></div>
-<nav class="store-collection-links" aria-label="Store collections"><a href="#muscle-posters">MUSCLE posters</a><a href="#songs-hat">Songs Hat</a></nav>
-<p id="store-order-status" role="status" hidden></p>
-<section class="store-product" id="muscle-posters" aria-labelledby="figure-name">
- <div class="store-media">
-  <div class="store-art" id="store-print-view"><img id="figure-image" src="https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/015.jpg" alt="Sunshine poster" width="600" height="800"></div>
-  <div class="store-room" id="store-room-view" hidden>
-   <div class="store-room-scene"><img class="store-room-photo" src="/assets/images/store/studio-wall.jpg" alt="Jonathan in his studio, gesturing toward a poster on the wall" width="2016" height="1512">
-    <div class="store-room-art"><img class="store-room-print" alt="Selected poster in Jonathan’s studio"></div>
-   </div>
-  </div>
-  <div class="store-image-thumbs" role="group" aria-label="Poster images">
-   <button type="button" data-poster-view="print" aria-pressed="true" aria-controls="store-print-view"><span class="store-thumb-print"><img id="store-print-thumb" alt="" width="72" height="96"></span><span>Print</span></button>
-   <button type="button" data-poster-view="room" aria-pressed="false" aria-controls="store-room-view"><span class="store-room-scene" aria-hidden="true"><img class="store-room-photo" src="/assets/images/store/studio-wall.jpg" alt="" width="2016" height="1512"><span class="store-room-art"><img class="store-room-print" alt=""></span></span><span>In a room</span></button>
-  </div>
-  <p class="store-image-caption" id="store-image-caption">Framing preview is illustrative.</p>
- </div>
- <div class="store-choices"><h2 id="figure-name">#015 Sunshine</h2><p>MUSCLE men, photographed up close. All 236 original figures, printed edge to edge on semi-glossy paper.</p>
- <fieldset><legend>Size</legend><div id="store-sizes" class="store-options"></div></fieldset>
- <fieldset><legend>Frame</legend><div id="store-frames" class="store-options"></div></fieldset>
- <p id="store-frame-note">Black or white wooden frame, with plexiglass. Small and medium arrive ready to hang.</p>
- <p class="store-launch"><strong id="store-price">$59</strong><span id="store-launch"> · Purchasing opens soon.</span></p>
- <form id="store-shipping" hidden>
- <p>Shipping within the United States. One poster per order.</p>
- <div class="store-address-grid">
- <label>First name<input name="firstName" autocomplete="given-name" required maxlength="50"></label>
- <label>Last name<input name="lastName" autocomplete="family-name" required maxlength="50"></label>
- </div>
- <label>Email<input name="email" type="email" autocomplete="email" required maxlength="254"></label>
- <label>Phone for delivery<input name="phone" type="tel" autocomplete="tel" required maxlength="30"></label>
- <label>Street address<input name="addressLine1" autocomplete="address-line1" required maxlength="100"></label>
- <label>Apartment, suite, etc. (optional)<input name="addressLine2" autocomplete="address-line2" maxlength="100"></label>
- <label>City<input name="city" autocomplete="address-level2" required maxlength="60"></label>
- <div class="store-address-grid">
- <label>State<input name="state" autocomplete="address-level1" placeholder="NY" required maxlength="2" pattern="[A-Za-z]{2}"></label>
- <label>ZIP code<input name="postCode" autocomplete="postal-code" required pattern="[0-9]{5}(-[0-9]{4})?"></label>
- </div>
- <input type="hidden" name="country" value="US">
- <p>Your delivery details are shared with Stripe and Gelato to process and ship your order.</p>
- <button type="submit" id="store-quote">Get shipping price</button>
- <p id="store-quote-status" role="status" aria-live="polite"></p>
- <button type="button" id="store-checkout" hidden>Continue to secure checkout</button>
- </form>
- <a href="#collection" class="store-browse">Find your figure ↓</a>
- </div>
-</section>
-<section class="store-hat" id="songs-hat" aria-labelledby="songs-hat-heading">
- <a class="store-hat-image" href="https://cottonbureau.com/p/NW5ZGT/hat/songs-hat" target="_blank" rel="noopener noreferrer" aria-label="See the Songs Hat on Cotton Bureau (opens in a new tab)">
-  <img src="https://cottonbureau.com/mockup?default=1&amp;hash=LSmS&amp;pid=115154&amp;w=1024" alt="Black Songs dad hat with white embroidered lettering" width="1024" height="1024" loading="lazy" referrerpolicy="no-referrer">
- </a>
- <div class="store-hat-copy">
-  <h2 id="songs-hat-heading">Songs Hat</h2>
-  <p>A hat that says “songs.”</p>
-  <p>Dad hat, trucker, or snapback. Choose your style and buy directly from Cotton Bureau.</p>
-  <a class="store-hat-buy" href="https://cottonbureau.com/p/NW5ZGT/hat/songs-hat" target="_blank" rel="noopener noreferrer">Shop on Cotton Bureau ↗</a>
- </div>
-</section>
-<section id="collection" aria-labelledby="collection-heading"><div class="store-search-row"><h2 id="collection-heading">The collection</h2><label for="store-search">Find a name or number<input id="store-search" type="search" placeholder="Sunshine, #15…" autocomplete="off"></label></div>
-<p id="store-count" role="status" aria-live="polite">236 figures</p><div id="store-grid" class="store-grid"></div><noscript><p>Enable JavaScript to browse all 236 figures and choose a size and frame.</p></noscript>
+<div class="store-intro"><h1>Store</h1></div>
+<ul class="store-items" aria-label="In the store">
+ <li><a href="#music"><span class="store-item-image store-item-covers">{{NEWEST_COVERS}}</span><span class="store-item-name">Music</span><span class="store-item-note">{{ALBUM_COUNT}} albums on Bandcamp</span></a></li>
+ <li><a href="/commission"><span class="store-item-image"><img src="/assets/images/jonathan-swing-800.webp" alt="" width="800" height="600" decoding="async"></span><span class="store-item-name">A song written for you</span><span class="store-item-note">From {{PERSONAL_FROM}}, pay when it’s done</span></a></li>
+ <li><a href="/store/muscle/"><span class="store-item-image store-item-print"><img src="https://pub-628557d373994774b927858e58ccab6f.r2.dev/centered-v4-original-color/preview/015.jpg" alt="" width="600" height="800" decoding="async"></span><span class="store-item-name">MUSCLE posters</span><span class="store-item-note">{{FIGURE_COUNT}} figures, from {{POSTER_FROM}}<span id="store-poster-status"> · opens soon</span></span></a></li>
+ <li><a href="https://cottonbureau.com/p/NW5ZGT/hat/songs-hat" target="_blank" rel="noopener noreferrer"><span class="store-item-image store-item-hat"><img src="https://cottonbureau.com/mockup?default=1&amp;hash=LSmS&amp;pid=115154&amp;w=1024" alt="" width="1024" height="1024" decoding="async" referrerpolicy="no-referrer"></span><span class="store-item-name">Songs Hat</span><span class="store-item-note">On Cotton Bureau ↗<span class="visually-hidden"> (opens in a new tab)</span></span></a></li>
+</ul>
+<section class="store-music" id="music" aria-labelledby="music-heading">
+ <h2 id="music-heading">Music</h2>
+ <p>Every year of Song A Day is an album. Listen and buy on Bandcamp.</p>
+ <ul class="store-albums" aria-labelledby="music-heading">
+{{YEAR_ALBUMS}}
+ </ul>
+ <h3 id="more-albums-heading">More albums</h3>
+ <ul class="store-albums" aria-labelledby="more-albums-heading">
+{{MORE_ALBUMS}}
+ </ul>
+ <a class="store-more" href="/albums" target="_blank" rel="noopener noreferrer">Everything on Bandcamp ↗</a>
 </section>
 </main>
 {{FOOTER}}

@@ -56,5 +56,6 @@ venv/
 .claude/launch.json
 
 /store/index.html
+/store/muscle/index.html
 /gallery/studio-header.txt
 /gallery/studio.css

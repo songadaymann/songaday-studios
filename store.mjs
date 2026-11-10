@@ -52,7 +52,7 @@ export function checkoutParams(env,row,p,customer){
   shipping_options:[{shipping_rate_data:{display_name:'Shipping',type:'fixed_amount',fixed_amount:{amount:row.shipping_cents,currency:'usd'},tax_behavior:'exclusive'}}],
   payment_intent_data:{receipt_email:r.email,shipping:{name:r.firstName+' '+r.lastName,phone:r.phone,address:addressOf(r)},metadata:{store_order_id:row.id}},metadata:{store_order_id:row.id},
   custom_text:{submit:{message:`Ships to ${r.firstName} ${r.lastName}, ${r.addressLine1}, ${r.city}, ${r.state} ${r.postCode}. Return to the store to change the shipping address.`}},
-  success_url:`${env.SITE_ORIGIN}/store/?order=${row.id}`,cancel_url:`${env.SITE_ORIGIN}/store/?figure=${p.figure}&size=${p.size}&frame=${p.frame}`,
+  success_url:`${env.SITE_ORIGIN}/store/muscle/?order=${row.id}`,cancel_url:`${env.SITE_ORIGIN}/store/muscle/?figure=${p.figure}&size=${p.size}&frame=${p.frame}`,
   expires_at:row.expires_at};
 }
 export async function createStoreCheckout(env,row){
