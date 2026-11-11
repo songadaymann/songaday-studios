@@ -59,6 +59,12 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .calendar-inner { width: var(--wrap); margin: 0 auto; }
 .calendar-heading { max-width: none; }
 .calendar-help { margin: 0; color: var(--white-muted); font-size: var(--type-meta); }
+/* The same test calendar-preview.mjs uses: only a mouse gets the hover preview, so only a mouse is told to hover. */
+.calendar-help-mouse { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .calendar-help-mouse { display: inline; }
+  .calendar-help-touch { display: none; }
+}
 .calendar-section h2 { font-size: var(--type-display); }
 .calendar-heading p { margin: 0; color: var(--white-muted); }
 .calendar-years { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem clamp(1rem, 2vw, 1.75rem); margin: clamp(1.5rem, 3vw, 2.25rem) 0 0; padding: 0; list-style: none; }
@@ -419,9 +425,9 @@ footer nav a { font-weight: 700; }
   .gift-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* One column: introduction, form, film, then the link back to the form. */
+/* One column, in the order the page is written: introduction, film, form, then the link whose arrow points back up at the form. */
 @media (max-width: 960px) {
-  .hero-stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "donate" "video" "ask"; grid-template-rows: auto; }
+  .hero-stage { grid-template-columns: minmax(0, 1fr); grid-template-areas: "intro" "video" "donate" "ask"; grid-template-rows: auto; }
   .hero-donate { width: 100%; max-width: 560px; }
   .hero-ask-row { min-height: 0; padding-top: 96px; }
   .hero-ask-link { max-width: 100%; white-space: normal; }

@@ -394,3 +394,25 @@ test('calendar pointer selection respects scaled cells, leap days, gaps and snap
   assert.equal(calendarSongAtPoint(2009, 526, 4, 526, 119, 6502), 0);
   assert.equal(calendarSongAtPoint(2009, 8, 119, 526, 119, 6502), 0);
 });
+
+test('in one column the hero reads in page order: introduction, film, form, then the link back', async () => {
+  const [html, css] = await Promise.all([readFile(new URL('profile.html', root), 'utf8'), readFile(new URL('profile.css', root), 'utf8')]);
+  const area = { 'hero-intro': 'intro', 'hero-video': 'video', 'hero-donate': 'donate', 'hero-ask-row': 'ask' };
+  const stage = html.slice(html.indexOf('<div class="hero-stage">'), html.indexOf('id="every-song"'));
+  const written = Object.keys(area).sort((a, b) => stage.indexOf(`class="${a}"`) - stage.indexOf(`class="${b}"`)).map((name) => area[name]);
+  assert.deepEqual(written, ['intro', 'video', 'donate', 'ask']);
+  // The film is the reason and the form is the ask, so a phone shows them in that order too.
+  const oneColumn = css.match(/@media \(max-width: 960px\) \{\s*\.hero-stage \{[^}]*grid-template-areas: ([^;]+);/)[1];
+  assert.deepEqual([...oneColumn.matchAll(/"(\w+)"/g)].map((match) => match[1]), written);
+});
+
+test('the calendar only tells a mouse to hover', async () => {
+  const [html, css, preview] = await Promise.all(['profile.html', 'profile.css', 'calendar-preview.mjs'].map((file) => readFile(new URL(file, root), 'utf8')));
+  const help = html.match(/<p class="calendar-help" id="calendar-help">([\s\S]*?)<\/p>/)[1];
+  assert.match(help, /^Each square is one day’s song\. <span class="calendar-help-mouse">Hover to preview; click to watch\.<\/span><span class="calendar-help-touch">Tap one to watch\.<\/span>/);
+  // The page hides the hover wording under the same condition the preview script uses to skip hovering.
+  const condition = preview.match(/matchMedia\('([^']+)'\)/)[1];
+  assert.equal(condition, '(hover: hover) and (pointer: fine)');
+  assert.match(css, /\.calendar-help-mouse \{ display: none; \}/);
+  assert.ok(css.includes(`@media ${condition} {\n  .calendar-help-mouse { display: inline; }\n  .calendar-help-touch { display: none; }\n}`));
+});
