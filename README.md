@@ -214,7 +214,8 @@ studio header. The bio link page (/links) has no bar.
 
 `bar/v1/header.js` is the studio's own header (name, the seven sections, Donate) for a site
 that is one of those sections, so going there from the studio doesn't look like leaving. The
-games on mann.cool use it; `/games` in the studio's menu has no "leaving" arrow for that reason.
+games on mann.cool and listening on songaday.fan use it; `/games` and `/listen` in the studio's
+menu have no "leaving" arrow for that reason.
 A site shows the header or the bar, not both:
 
 ```html

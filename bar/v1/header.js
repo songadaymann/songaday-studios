@@ -1,6 +1,7 @@
 // The Song A Day Studio header for the other Song A Day sites: the same menu songaday.studio's
 // own pages have, so moving from the studio to a site that is one of its sections (the games on
-// mann.cool) doesn't look like leaving. A site adds it with one tag; data-here is its section:
+// mann.cool, listening on songaday.fan) doesn't look like leaving. A site adds it with one tag;
+// data-here is its section:
 //
 //   <script type="module" src="https://songaday.studio/bar/v1/header.js" data-here="games" defer></script>
 //
@@ -19,11 +20,12 @@
 
 const STUDIO = 'https://songaday.studio';
 
-// The studio's menu. `leaves` marks a section that opens a site without this header, which the
-// studio's own menu shows with an arrow.
+// The studio's menu. `leaves: true` marks a section that opens a site without this header, which
+// the studio's own menu shows with an arrow. None does today: mann.cool and songaday.fan both
+// carry the header.
 export const SECTIONS = [
   { id: 'songs', label: 'All songs', path: '/gallery/' },
-  { id: 'listen', label: 'Listen', path: '/listen', leaves: true },
+  { id: 'listen', label: 'Listen', path: '/listen' },
   { id: 'games', label: 'Games', path: '/games' },
   { id: 'films', label: 'Films', path: '/films/' },
   { id: 'plugins', label: 'Plugins', path: '/plugins/' },

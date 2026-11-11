@@ -28,14 +28,16 @@ test("the header for other sites has the studio's own menu, in the same order", 
   }
 });
 
-test('Games carries the menu to mann.cool, so it no longer shows the leaving arrow; Listen still does', async () => {
+test('Games and Listen carry the menu to mann.cool and songaday.fan, so neither shows the leaving arrow', async () => {
   const studio = menu(await read('profile.html'));
   assert.deepEqual(studio.find(([label]) => label === 'Games'), ['Games', '/games', false]);
-  assert.deepEqual(studio.find(([label]) => label === 'Listen'), ['Listen', '/listen', true]);
+  assert.deepEqual(studio.find(([label]) => label === 'Listen'), ['Listen', '/listen', false]);
   for (const file of ['profile.html', 'films.html', 'plugins/index.html', 'fumble-page.mjs']) {
-    assert.doesNotMatch(await read(file), /Games<span class="nav-out"/, file);
+    assert.doesNotMatch(await read(file), /(Games|Listen)<span class="nav-out"/, file);
   }
-  assert.equal(SECTIONS.find((section) => section.id === 'games').leaves, undefined);
+  assert.ok(SECTIONS.every((section) => section.leaves === undefined));
+  // The arrow itself is still there for a future section that does leave.
+  assert.match(source, /section\.leaves && section\.id !== here/);
 });
 
 test('the header can be loaded from any site, cached like the bar', async () => {
