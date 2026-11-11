@@ -6,6 +6,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { songADayAge, songADayNumber } from "./song-day.mjs";
+import { MONTHLY_GOALS, dollars } from "./patronage.mjs";
 import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFilms } from "./films.mjs";
 import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
 import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
@@ -81,6 +82,8 @@ let html = htmlSource.replaceAll("{{SONG_NUMBER}}", String(number))
   .replaceAll("{{NEXT_SONG_NUMBER}}", String(number + 1))
   .replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))
   .replaceAll("{{SONG_AGE}}", songADayAge(number).text)
+  .replaceAll("{{GOAL_FIRST}}", dollars(MONTHLY_GOALS.first))
+  .replaceAll("{{GOAL_DREAM}}", dollars(MONTHLY_GOALS.dream))
   .replace("{{TODAY_SONG}}", () => todaySong)
   .replace("{{CALENDAR}}", () => renderCalendar(JSON.parse(calendarJson)))
   .replace("{{DIRECTORY}}", () => renderDirectory(projects));

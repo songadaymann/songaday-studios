@@ -796,8 +796,12 @@ link above the form to Zeffy's own page, and nobody else does: on iPhones it car
 official Apple Pay mark ("Donate with [Apple Pay] on Zeffy's page"); on Android Chrome it
 says Google Pay in text.
 
-The donation form asks visitors to become a monthly supporter or donate, with a tax-deductible
-note. The monthly ladder ($3,000 first goal, $20,000 the dream) remains in the Patronage section.
+The donation form asks visitors to become a monthly supporter or donate, and names the first
+goal beside it ("First goal: $3,000 a month. It's all tax deductible."). The monthly ladder
+($3,000 first goal, $20,000 the dream) remains in the Patronage section. Both figures come from
+`patronage.mjs`; `tests/patronage.test.mjs` keeps the bio link page's copy in step. The site
+shows the goals only, never how much has come in so far: that is on purpose, so don't add a
+progress bar or a running total without asking Jonathan.
 Shared Studio typography uses `--type-display`, `--type-body`, and `--type-meta` in `studio-chrome.css`;
 third-party embeds control their own type.
 
