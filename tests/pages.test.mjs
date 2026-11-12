@@ -80,8 +80,11 @@ test('the build makes the commission page and the song shell, purchase pages wit
     for (const html of [page, shell]) {
       assert.deepEqual(navLinks(html), navLinks(home));
       assert.match(html, /<a href="\/commission" aria-current="page">Get a song<\/a>/);
-      // No Donate button, footer link or tax-deductible line on a page about buying a song.
-      const markup = html.replace(/<style[\s\S]*?<\/style>/g, '');
+      // The menu keeps its Donate button, as on every page. Nothing else on a page about buying
+      // a song says donate: no footer link, no tax-deductible line.
+      const menuDonate = '<a class="nav-donate" href="/#donate">Donate</a>';
+      assert.ok(html.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(menuDonate));
+      const markup = html.replace(/<style[\s\S]*?<\/style>/g, '').replace(menuDonate, '');
       assert.doesNotMatch(markup, /nav-donate|#donate|tax.deductible|gifts|donat/i);
       assert.match(html, /<p class="sponsor-line">Song commissions are purchases from Jonathan Mann\.<\/p>/);
       assert.match(html, /<footer>[\s\S]*href="\/everything\/"[\s\S]*<\/footer>/);

@@ -165,9 +165,12 @@ test('the store front page shows everything up top, then the albums; the poster 
   for(const id of ['store-order-status','muscle-posters','store-sizes','store-frames','store-shipping','collection','store-grid'])assert.match(muscle,new RegExp(`id="${id}"`),id);
   assert.match(muscle,/function roomGeometry/);assert.doesNotMatch(muscle,/store-albums"|songs-hat/);
   for(const page of [front,muscle]){
-   // Purchase pages: Store is the current section, and nothing about donating.
+   // Purchase pages: Store is the current section. The menu keeps its Donate button, as on every
+   // page, and nothing else says anything about donating.
    assert.match(page,/<a href="\/store\/" aria-current="page">Store<\/a>/);
-   assert.doesNotMatch(page.replace(/<style[\s\S]*?<\/style>/g,''),/nav-donate|#donate|tax.deductible|donat/i);
+   const menuDonate='<a class="nav-donate" href="/#donate">Donate</a>';
+   assert.ok(page.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(menuDonate));
+   assert.doesNotMatch(page.replace(/<style[\s\S]*?<\/style>/g,'').replace(menuDonate,''),/nav-donate|#donate|tax.deductible|donat/i);
    assert.match(page,/<p class="sponsor-line">Posters and song commissions are purchases from Jonathan Mann\.<\/p>/);
    assert.doesNotMatch(page,/\{\{/);
   }

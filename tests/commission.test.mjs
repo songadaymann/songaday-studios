@@ -11,11 +11,16 @@ import {
 const root = new URL('../', import.meta.url);
 const TOKEN = /^\/commission\/s\/([0-9a-f]{32})\?new$/;
 
-// What a reader sees and where its links go: <style>, <script> and every attribute but href
-// are dropped first, since every page inlines profile.css, whose class names include
-// nav-donate, gift-card and patronage-box.
+// The Donate button every page's menu has. Purchase pages keep it (it goes to the form on the
+// home page) and say nothing else about donating.
+export const MENU_DONATE = '<a class="nav-donate" href="/#donate">Donate</a>';
+
+// What a reader sees and where its links go, apart from that one menu button: <style>, <script>
+// and every attribute but href are dropped first, since every page inlines profile.css, whose
+// class names include nav-donate, gift-card and patronage-box.
 export function visible(html) {
   return html.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(MENU_DONATE, '')
     .replace(/<([a-z0-9]+)\b[^>]*?(\shref="[^"]*")?[^>]*>/gi, (match, tag, href) => `<${tag}${href ?? ''}>`);
 }
 const FORBIDDEN = /donat|gift|tax.deductible|patron/i;
@@ -87,7 +92,9 @@ test('the page wears the studio header and footer, with no donate wording or Pat
   const home = await readFile(new URL('profile.html', root), 'utf8');
   assert.deepEqual(navLinks(html), navLinks(home));
   assert.match(html, /<a href="\/commission" aria-current="page">Get a song<\/a>/);
-  assert.doesNotMatch(html.replace(/<style[\s\S]*?<\/style>/g, ''), /class="nav-donate"|href="\/#donate"/);
+  // The menu's Donate button is there, once, in the header; no other link goes to the donation form.
+  assert.ok(html.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(MENU_DONATE));
+  assert.equal(html.replace(/<style[\s\S]*?<\/style>/g, '').split('#donate').length - 1, 1);
   assert.match(html, /<p class="sponsor-line">Song commissions are purchases from Jonathan Mann\.<\/p>/);
   assert.doesNotMatch(visible(html), FORBIDDEN);
   assert.doesNotMatch(html, /patreon\.com/i);

@@ -132,8 +132,8 @@ add `enter.songaday.world` back to `routes` in `wrangler.jsonc` and deploy.
 Change a destination in `SECTION_REDIRECTS` in `worker.mjs`. When a section gets its own page,
 delete its line there and add the page under `dist/` in `build-production.mjs`. The header is
 copied in `profile.html`, `films.html`, `plugins/index.html` and `fumble-page.mjs` (/everything,
-/now and the commission pages reuse the one in `films.html`, the commission pages without its
-Donate button); the tests check they match.
+/now, /story and the commission and store pages reuse the one in `films.html`); the tests check
+they match.
 
 The gallery uses the same header from `films.html`. Studio serves the viewer through
 its service binding to the `songaday-display` Worker. That Worker handles old gallery
@@ -495,8 +495,11 @@ a song.
 
 https://songaday.studio/commission is where people ask Jonathan for a song. It's a purchase
 from Jonathan, on his own Stripe account: nothing on these pages or in these emails says donate,
-gift, tax-deductible or patron, and nothing links to Patreon. The commission pages leave out the
-header's Donate button and the footer's sponsor line for that reason.
+gift, tax-deductible or patron, and nothing links to Patreon. The one exception is the Donate
+button in the menu, which is the same menu every page has and goes to the form on the home page
+(Jonathan asked for it back in November 2026, after noticing these pages had lost it). The
+commission and store pages still leave out the footer's Donate link and its sponsor line, and
+their own text stays free of those words; the tests allow that one button and nothing else.
 
 ### How it works
 

@@ -182,10 +182,11 @@ const header = filmsSource.match(/  <header class="site-header">[\s\S]*?<\/heade
 const footer = filmsSource.match(/  <footer>[\s\S]*?<\/footer>/)[0];
 await writePage("gallery/studio-header.txt", hostedMedia(header.replace('href="/gallery/"', 'href="/gallery/" aria-current="page"')));
 await writePage("gallery/studio.css", `${chromeCss}\n${await source("gallery.css")}`);
-// The commission pages are purchases from Jonathan, so they say nothing about donating: no
-// Donate button or footer link, and a purchase line in place of the fiscal sponsor's.
-const purchaseHeader = header.replace(/\n\s*<a class="nav-donate"[^>]*>[^<]*<\/a>/, "")
-  .replace('<a href="/commission">', '<a href="/commission" aria-current="page">');
+// The commission and store pages are purchases from Jonathan, so their own words say nothing
+// about donating: no footer link, and a purchase line in place of the fiscal sponsor's. They
+// wear the same menu as every other page, Donate button included: it goes to the form on the
+// home page, and a menu that changes from page to page reads as a mistake.
+const purchaseHeader = header.replace('<a href="/commission">', '<a href="/commission" aria-current="page">');
 const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate">Donate<\/a>/, "")
   .replace(/<p class="sponsor-line">[\s\S]*?<\/p>/, '<p class="sponsor-line">Song commissions are purchases from Jonathan Mann.</p>');
 const withChrome = (page, { purchase = false } = {}) => page
