@@ -461,12 +461,6 @@
     }).observe(zeffyHost, { childList: true, subtree: true });
   }
 
-  // The Game A Day montage plays only for people who haven't asked for reduced motion.
-  const gameMontage = document.querySelector(".video-game-card-media video");
-  if (gameMontage && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    void gameMontage.play().catch(() => {});
-  }
-
   // The profile is rendered from srcdoc. Prevent fragment links from resolving
   // against the parent profile URL and recursively loading the public page.
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
@@ -484,84 +478,22 @@
     });
   });
 
-  const videoModal = document.getElementById("video-modal");
-  const videoModalFrame = document.getElementById("video-modal-frame");
-  const videoModalVideo = document.getElementById("video-modal-video");
-  const videoModalTitle = document.getElementById("video-modal-title");
-  const videoTriggers = [...document.querySelectorAll("[data-video-id], [data-video-src]")];
-  let lastVideoTrigger = null;
+  // The video dialog (video-modal.mjs), inlined by build.mjs. One soundtrack at a time: it
+  // pauses the hero film, and brings back the film's muted preview when it closes.
+  /* VIDEO_MODAL_HELPER */
   let resumeHeroPreview = false;
-
-  function closeVideoModal() {
-    if (!videoModal || !videoModalFrame) return;
-    if (resumeHeroPreview) void heroVideo?.play().catch(() => {});
-    resumeHeroPreview = false;
-    videoModal.hidden = true;
-    videoModalFrame.src = "about:blank";
-    videoModalFrame.hidden = false;
-    if (videoModalVideo) {
-      videoModalVideo.pause();
-      videoModalVideo.removeAttribute("src");
-      videoModalVideo.load();
-      videoModalVideo.hidden = true;
-    }
-    document.body.classList.remove("video-modal-open");
-    lastVideoTrigger?.focus();
-    lastVideoTrigger = null;
-  }
-
-  function openVideoModal(trigger) {
-    if (!videoModal || !videoModalFrame) return;
-    const videoId = trigger.dataset.videoId;
-    const videoSrc = trigger.dataset.videoSrc;
-    if (!videoId && !videoSrc) return;
-    const title = trigger.dataset.videoTitle || "Song A Day video";
-
-    if (videoSrc && videoModalVideo) {
-      videoModalFrame.src = "about:blank";
-      videoModalFrame.hidden = true;
-      videoModalVideo.src = videoSrc;
-      videoModalVideo.title = title;
-      videoModalVideo.hidden = false;
-      videoModalVideo.load();
-    } else if (videoId) {
-      const start = Number.parseInt(trigger.dataset.videoStart ?? "0", 10);
-      const startQuery = Number.isFinite(start) && start > 0 ? `&start=${start}` : "";
-      videoModalVideo?.pause();
-      if (videoModalVideo) {
-        videoModalVideo.removeAttribute("src");
-        videoModalVideo.load();
-        videoModalVideo.hidden = true;
+  const openVideoModal = initVideoModal({
+    onOpen() {
+      if (heroVideo && !heroVideo.paused) {
+        resumeHeroPreview = heroVideo.muted;
+        heroVideo.pause();
       }
-      videoModalFrame.hidden = false;
-      videoModalFrame.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1${startQuery}`;
-      videoModalFrame.title = title;
-    } else {
-      return;
+    },
+    onClose() {
+      if (resumeHeroPreview) void heroVideo?.play().catch(() => {});
+      resumeHeroPreview = false;
     }
-
-    // One soundtrack at a time: pause the hero film, and bring back its muted preview on close.
-    if (heroVideo && !heroVideo.paused) {
-      resumeHeroPreview = heroVideo.muted;
-      heroVideo.pause();
-    }
-    if (videoModalTitle) videoModalTitle.textContent = title;
-    lastVideoTrigger = trigger;
-    videoModal.hidden = false;
-    document.body.classList.add("video-modal-open");
-    document.getElementById("video-modal-close")?.focus();
-    if (videoSrc && videoModalVideo) videoModalVideo.play().catch(() => {});
-  }
-
-  videoTriggers.forEach((trigger) => {
-    trigger.addEventListener("click", () => openVideoModal(trigger));
   });
   /* CALENDAR_PREVIEW_HELPER */
   initCalendarPreview(openVideoModal);
-  videoModal?.querySelectorAll("[data-video-close]").forEach((closeControl) => {
-    closeControl.addEventListener("click", closeVideoModal);
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && videoModal && !videoModal.hidden) closeVideoModal();
-  });
 })();

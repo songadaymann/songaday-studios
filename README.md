@@ -5,12 +5,21 @@ outside the Fridays at The Park app.
 
 ## Files
 
-- `profile.html` — editable page markup
+- `profile.html` — the home page's markup: the pitch (film, donation form, calendar, the four
+  sections, the two monthly goals) and the directory. It is kept short on purpose; the long
+  story lives on its own page
+- `story.html`, `story-page.js` — the story page (songaday.studio/story/, and `/about` lands on
+  it): how Song A Day has paid for itself, patronage, the games, and what else the studio makes.
+  These sections were the lower two-thirds of the home page until November 2026. The home page
+  links to it under the goals ("Read the story") and from the footer
+- `video-modal.mjs` — the video dialog both of those pages open (YouTube by id, or a file);
+  `build.mjs` inlines it into each page's script and gives the story page the dialog's markup
+  from `profile.html`, so there is one copy of each
 - `profile.css` — Studio page styles; `studio-chrome.css` supplies the shared header and type tokens
-- `profile.js` — editable page behavior and catalog stats
+- `profile.js` — the home page's behavior and catalog stats
 - `assets/` — icons, video, and other page assets
-- `index.html`, `films/index.html`, `everything/index.html`, `now/index.html`, `commission/index.html`,
-  `commission/song.html` — generated pages
+- `index.html`, `films/index.html`, `everything/index.html`, `now/index.html`, `story/index.html`,
+  `commission/index.html`, `commission/song.html` — generated pages
 - `build.mjs` — builds those pages from the editable files, and bakes in a snapshot of the Films
   playlist and of today's song (needs network; without it those link to YouTube until the
   Worker fills them in). `SONGADAY_OFFLINE=1` skips the snapshots, and `--out <folder>` writes
@@ -270,7 +279,7 @@ Under `wrangler dev` the videos come from a local copy of the R2 bucket; fill it
 https redirect loops. An older wrangler that rejects the compatibility date also needs
 `--compatibility-date` set to one it supports.)
 
-After editing `profile.html`, `profile.css`, `studio-chrome.css`, `profile.js`, `films.html`, `films-page.js`,
+After editing `profile.html`, `story.html`, `story-page.js`, `video-modal.mjs`, `profile.css`, `studio-chrome.css`, `profile.js`, `films.html`, `films-page.js`,
 `films.mjs`, `commission.html`, `commission.css`, `commission-page.js` or `commission-config.mjs`,
 run `node build.mjs` again. The static server will serve the refreshed page.
 
@@ -798,7 +807,8 @@ says Google Pay in text.
 
 The donation form asks visitors to become a monthly supporter or donate, and names the first
 goal beside it ("First goal: $3,000 a month. It's all tax deductible."). The monthly ladder
-($3,000 first goal, $20,000 the dream) remains in the Patronage section. Both figures come from
+($3,000 first goal, $20,000 the dream) is on the home page under the four section cards, and
+again in the story page's Patronage section. Both figures come from
 `patronage.mjs`; `tests/patronage.test.mjs` keeps the bio link page's copy in step. The site
 shows the goals only, never how much has come in so far: that is on purpose, so don't add a
 progress bar or a running total without asking Jonathan.

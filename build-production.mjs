@@ -9,11 +9,12 @@ execFileSync(process.execPath, ['build.mjs'], { stdio: 'inherit' });
 await rm('dist', { recursive: true, force: true });
 await mkdir('dist', { recursive: true });
 await cp('index.html', 'dist/index.html');
-// Films page (songaday.studio/films/), built by build.mjs from films.html, and /everything and
-// /now, built from projects.json and now.html.
+// Films page (songaday.studio/films/), built by build.mjs from films.html, /everything and
+// /now, built from projects.json and now.html, and /story, built from story.html.
 await cp('films/index.html', 'dist/films/index.html');
 await cp('everything/index.html', 'dist/everything/index.html');
 await cp('now/index.html', 'dist/now/index.html');
+await cp('story/index.html', 'dist/story/index.html');
 await cp('gallery/studio-header.txt', 'dist/gallery/studio-header.txt');
 await cp('gallery/studio.css', 'dist/gallery/studio.css');
 await cp('store', 'dist/store', { recursive: true });

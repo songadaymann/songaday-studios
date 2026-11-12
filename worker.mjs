@@ -33,11 +33,13 @@ const SECTION_REDIRECTS = {
   '/podcasts': '/press/',
   '/interviews': '/press/',
   '/media': '/press/',
-  '/donate': '/#donate'
+  '/donate': '/#donate',
+  // The story page, by the word people usually try first.
+  '/about': '/story/'
 };
 
 // Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
-const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/data', '/press', '/store', '/store/muscle']);
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/story', '/data', '/press', '/store', '/store/muscle']);
 
 // The poster picker used to be the whole store page. Links people shared to a figure, and the
 // links Stripe sends buyers back on, name one of these; they land on the picker's own page.

@@ -22,7 +22,7 @@ const outRoot = outFlag > 0 ? path.resolve(process.argv[outFlag + 1]) : projectR
 const offline = process.env.SONGADAY_OFFLINE === "1";
 const source = (name) => readFile(path.join(projectRoot, name), "utf8");
 const [htmlSource, filmsSource, chromeCss, profileCss, jsSource, filmsJs, calendarJson, projectsJson, nowSource, everythingSource, walletDetect, walletGate,
-  commissionSource, commissionCss, commissionJs] = await Promise.all([
+  commissionSource, commissionCss, commissionJs, storySource, storyJs, videoModalSource] = await Promise.all([
   source("profile.html"),
   source("films.html"),
   source("studio-chrome.css"),
@@ -38,6 +38,9 @@ const [htmlSource, filmsSource, chromeCss, profileCss, jsSource, filmsJs, calend
   source("commission.html"),
   source("commission.css"),
   source("commission-page.js"),
+  source("story.html"),
+  source("story-page.js"),
+  source("video-modal.mjs"),
 ]);
 const css = `${chromeCss}\n${profileCss}`;
 
@@ -94,8 +97,11 @@ if (!hasLocalAssets) {
     .replaceAll(/\bsrcset="([^"]*)"/g, (match, list) =>
       `srcset="${list.replaceAll(/(^|,\s*)assets\//g, "$1https://songaday.studio/assets/")}"`);
 }
-const js = jsSource.replace("/* SONG_DAY_NUMBER_HELPER */",
-  `const songADayNumber = ${songADayNumber.toString()};\n  const songADayAge = ${songADayAge.toString()};`)
+// What the home page's script and the story page's share: the day counter and the video dialog.
+const withPageHelpers = (script) => script.replace("/* SONG_DAY_NUMBER_HELPER */",
+  () => `const songADayNumber = ${songADayNumber.toString()};\n  const songADayAge = ${songADayAge.toString()};`)
+  .replace("/* VIDEO_MODAL_HELPER */", () => scriptOf(videoModalSource, "initVideoModal"));
+const js = withPageHelpers(jsSource)
   .replace("/* WALLET_GATE_HELPER */", () => walletGateScript)
   .replace("/* CALENDAR_PREVIEW_HELPER */", () => calendarPreviewScript);
 
@@ -160,7 +166,7 @@ const snapshot = await filmsSnapshot();
 const filmsBody = filmsSource.replace("{{FILMS}}", () => snapshot)
   .replaceAll("{{FILMS_PLAYLIST_URL}}", FILMS_PLAYLIST_URL);
 const hostedMedia = (body) => hasLocalAssets ? body
-  : body.replaceAll(/\bsrc="\/assets\//g, 'src="https://songaday.studio/assets/')
+  : body.replaceAll(/\b(src|poster|data-video-src)="\/assets\//g, '$1="https://songaday.studio/assets/')
     .replaceAll(/\bsrcset="([^"]*)"/g, (match, list) =>
       `srcset="${list.replaceAll(/(^|,\s*)\/assets\//g, "$1https://songaday.studio/assets/")}"`);
 await writePage("films/index.html", documentHtml({
@@ -217,6 +223,29 @@ await writePage("now/index.html", documentHtml({
   description: "What Jonathan Mann is doing now, November 2026.",
   url: "https://songaday.studio/now/",
   body: hostedMedia(withChrome(nowSource).replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))),
+}));
+
+// songaday.studio/story/: how Song A Day has paid for itself, patronage, the games, and what else
+// the studio makes. These sections were the lower two-thirds of the home page; the home page now
+// keeps the goals and a link here. The video dialog's markup comes from profile.html, so the two
+// pages share one copy of it, as they share its script (video-modal.mjs).
+const videoModalMarkup = htmlSource.match(/    <div class="video-modal" id="video-modal"[\s\S]*?\n    <\/div>\n/)?.[0];
+if (!videoModalMarkup) throw new Error("profile.html's video dialog changed; update the match for it in build.mjs.");
+const storyTokens = {
+  VIDEO_MODAL: videoModalMarkup,
+  GOAL_FIRST: dollars(MONTHLY_GOALS.first),
+  GOAL_DREAM: dollars(MONTHLY_GOALS.dream),
+  NEXT_SONG_NUMBER: String(number + 1),
+};
+await writePage("story/index.html", documentHtml({
+  title: "The story · Song A Day Studio",
+  description: "How Jonathan Mann has kept Song A Day going since 2009: video contests, conferences, commissions, patronage, and now games.",
+  url: "https://songaday.studio/story/",
+  body: hostedMedia(withChrome(storySource).replaceAll(/\{\{([A-Z_]+)\}\}/g, (match, name) => {
+    if (!(name in storyTokens)) throw new Error(`story.html has an unknown {{${name}}}.`);
+    return storyTokens[name];
+  })),
+  script: withPageHelpers(storyJs),
 }));
 
 // songaday.studio/commission: the page and request form, and the shell the Worker puts each
@@ -303,7 +332,7 @@ ${labBody}
 </body>
 </html>
 `);
-console.log(`Built Song A Day Studio index.html, films/, everything/, now/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
 
 // The store (songaday.studio/store/): a front page built from the list of what's on sale
 // (store/products.json, store-products.mjs), which opens with one picture per kind of thing and

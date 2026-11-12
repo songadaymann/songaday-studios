@@ -41,7 +41,9 @@ test('section URLs redirect temporarily and are never cached', async () => {
     '/me': 'https://www.jonathanmann.net/',
     '/motba': 'https://motba.art/',
     '/mini-docs': '/films/',
-    '/donate': '/#donate'
+    '/donate': '/#donate',
+    '/about': '/story/',
+    '/About/': '/story/'
   };
   for (const [path, location] of Object.entries(cases)) {
     const response = await fetchPath(path);

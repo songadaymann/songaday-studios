@@ -51,7 +51,7 @@ test('the build makes /everything and /now, and the home page directory and foot
     }
 
     assert.match(home, /<h2 id="directory-title">Where to go next<\/h2>/);
-    assert.ok(home.indexOf('id="where-next"') > home.indexOf('class="thank-you-section"'), 'the directory comes after the existing sections');
+    assert.ok(home.indexOf('id="where-next"') > home.indexOf('<section class="brand-band"'), 'the directory comes after the closing ask');
     assert.ok(home.indexOf('id="where-next"') < home.indexOf('<footer>'), 'and before the footer');
     assert.match(home, /\[data-crypto\] \{ display: none !important; \}/);
     // The gate is inlined once, and the donation check no longer asks wallets on its own.
@@ -112,12 +112,12 @@ test('the build makes the commission page and the song shell, purchase pages wit
 
 test('/everything and /now land on their pages from any spelling', async () => {
   const env = { ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) } };
-  for (const spelling of ['/everything', '/Everything', '/now', '/NOW/']) {
+  for (const spelling of ['/everything', '/Everything', '/now', '/NOW/', '/story', '/Story/']) {
     const response = await worker.fetch(new Request('https://songaday.studio' + spelling), env);
     assert.equal(response.status, 302, spelling);
     assert.equal(response.headers.get('Location'), spelling.replace(/\/$/, '').toLowerCase() + '/', spelling);
   }
-  for (const page of ['/everything/', '/now/']) {
+  for (const page of ['/everything/', '/now/', '/story/']) {
     const response = await worker.fetch(new Request('https://songaday.studio' + page), env);
     assert.equal(response.status, 200, page);
   }
@@ -126,8 +126,58 @@ test('/everything and /now land on their pages from any spelling', async () => {
 test('production copies the new pages, the bar and projects.json into dist/', async () => {
   const script = await readFile(new URL('build-production.mjs', root), 'utf8');
   for (const copy of ["cp('everything/index.html', 'dist/everything/index.html')", "cp('now/index.html', 'dist/now/index.html')",
+    "cp('story/index.html', 'dist/story/index.html')",
     "cp('commission/index.html', 'dist/commission/index.html')", "cp('commission/song.html', 'dist/commission/song.html')",
     "cp('bar', 'dist/bar'", "cp('projects.json', 'dist/projects.json')"]) {
     assert.ok(script.includes(copy), copy);
+  }
+});
+
+test('the story has a page of its own, and the home page keeps the goals and a link to it', async () => {
+  const { out, read } = await build();
+  try {
+    const [home, story] = await Promise.all(['index.html', 'story/index.html'].map(read));
+    const main = (page) => page.match(/<main id="main"[\s\S]*?<\/main>/)[0];
+
+    // The story page: one heading at the top, then the sections that used to be the lower home page.
+    assert.match(story, /<title>The story · Song A Day Studio<\/title>/);
+    assert.match(story, /<meta property="og:url" content="https:\/\/songaday\.studio\/story\/">/);
+    assert.deepEqual([...main(story).matchAll(/<h1[^>]*>([^<]+)<\/h1>/g)].map((match) => match[1]), ['Song A Day has never fit neatly into any business model.']);
+    const moved = ['class="story-block story-patronage"', 'class="story-block video-games-section"', 'class="work-section studios-section"', 'class="thank-you-section"',
+      'class="story-figure story-figure-early"', 'class="story-emphasis"', 'data-video-id="WjEB7W1NSTg"', 'data-video-src="/assets/video/wamp-trailer.mp4"'];
+    for (const part of moved) assert.ok(main(story).includes(part), part);
+    assert.match(main(story), /<h2 id="patronage-title">Patronage<\/h2>[\s\S]*<h2 id="video-games-title">VIDEO GAMES<\/h2>[\s\S]*<h2 id="studios-title">ALSO FROM THE STUDIO<\/h2>[\s\S]*<h2 id="brand-band-title">[\s\S]*<h2 id="thank-you-title">THANK YOU!<\/h2>/);
+    assert.doesNotMatch(main(story), /<h4/);
+    // It sits a folder down, so nothing in it is addressed relative to the home page.
+    assert.doesNotMatch(story, /(?:src|poster|data-video-src|href)="(?:assets\/|#donate)/);
+    assert.match(main(story), /<a class="brand-band-donate" href="\/#donate">Donate<\/a>/);
+    assert.doesNotMatch(story, /\{\{|_HELPER \*\//);
+    // The studio header (nothing marked current) and footer, like /everything and /now.
+    assert.deepEqual(navLinks(story), navLinks(home));
+    assert.doesNotMatch(story.match(/<header class="site-header">[\s\S]*?<\/header>/)[0], /aria-current/);
+    assert.match(story, /Donations are tax deductible\. Commissions and albums are purchases from Jonathan, not donations\.<\/p>/);
+
+    // The home page: none of those sections, the goals and the link under the four cards, then the closing ask.
+    for (const part of moved.concat(['class="editorial-story"'])) assert.ok(!main(home).includes(part.replace('"/assets/', '"assets/')), part);
+    const gift = main(home).match(/<section class="gift-section"[\s\S]*?<\/section>/)[0];
+    assert.match(gift, /<\/a>\s*<\/div>\s*<dl class="patronage-match" id="goal" aria-label="Monthly goals">[\s\S]*?<\/dl>\s*<a class="gift-more" href="\/story\/">Read the story<\/a>/);
+    const order = ['<section class="hero"', '<section class="calendar-section"', '<section class="gift-section"', '<section class="catalog-ticker"', '<section class="brand-band"', '<section class="directory"'];
+    assert.deepEqual([...main(home).matchAll(/<section class="[\w-]+"/g)].map((match) => match[0]).filter((tag) => order.includes(tag)), order);
+
+    // Both pages show the same two goals, and reach the story from the footer.
+    const goals = (page) => [...main(page).match(/<dl class="patronage-match" id="goal"[\s\S]*?<\/dl>/)[0].matchAll(/<dd>(\$[\d,]+)</g)].map((match) => match[1]);
+    assert.deepEqual(goals(story), goals(home));
+    assert.equal(goals(home).length, 2);
+    for (const page of [home, story]) assert.match(page.match(/<footer>[\s\S]*?<\/footer>/)[0], /<a href="\/press\/">Press<\/a>\s*<a href="\/story\/">Story<\/a>/);
+
+    // One video dialog on each page, in the same markup, opened by the same script.
+    const dialog = (page) => page.match(/<div class="video-modal" id="video-modal"[\s\S]*?\n    <\/div>\n/g);
+    assert.equal(dialog(home).length, 1);
+    assert.deepEqual(dialog(story), dialog(home));
+    for (const page of [home, story]) assert.equal((page.match(/function initVideoModal/g) ?? []).length, 1);
+    assert.match(story, /initVideoModal\(\);/);
+    assert.match(home, /initCalendarPreview\(openVideoModal\);/);
+  } finally {
+    await rm(out, { recursive: true, force: true });
   }
 });

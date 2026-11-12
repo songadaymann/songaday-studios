@@ -154,8 +154,10 @@ test('the MEDIA binding in wrangler.jsonc points at the bucket upload-media.mjs 
 });
 
 test('every site video is under /assets/video/, which the Worker sends to R2', async () => {
-  const html = await readFile(new URL('profile.html', root), 'utf8');
-  const videos = [...html.matchAll(/(?:src|data-video-src)="([^"]+\.mp4)"/g)].map((match) => match[1]);
+  // The home page has the film; the story page (a folder down, so its paths start with a slash) has the rest.
+  const pages = await Promise.all(['profile.html', 'story.html'].map((page) => readFile(new URL(page, root), 'utf8')));
+  const videos = pages.flatMap((html) => [...html.matchAll(/(?:src|data-video-src)="([^"]+\.mp4)"/g)].map((match) => match[1]));
   assert.ok(videos.length >= 4, 'found the site videos');
-  for (const video of videos) assert.match(video, /^assets\/video\/[^/]+\.mp4$/, video);
+  for (const video of videos) assert.match(video, /^\/?assets\/video\/[^/]+\.mp4$/, video);
+  assert.ok(videos.some((video) => video.startsWith('assets/')) && videos.some((video) => video.startsWith('/assets/')), 'found videos on both pages');
 });
