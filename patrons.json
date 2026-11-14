@@ -70,9 +70,13 @@
       ]
     },
     {
-      "name": "Samuel Douglass",
+      "name": "Sam Douglass",
+      "bio": "Working from home. Writing code and making music. Updating Song Fight!",
+      "image": "/assets/patrons/sam-douglass.jpg",
       "links": [
-        { "label": "Instagram", "url": "https://www.instagram.com/sampdouglass/" }
+        { "label": "Instagram", "url": "https://www.instagram.com/sampdouglass/" },
+        { "label": "Bandcamp", "url": "https://samdouglass.bandcamp.com/album/kick-rocks" },
+        { "label": "Song Fight!", "url": "https://songfight.org/" }
       ]
     },
     {
