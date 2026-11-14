@@ -15,6 +15,8 @@ await cp('films/index.html', 'dist/films/index.html');
 await cp('everything/index.html', 'dist/everything/index.html');
 await cp('now/index.html', 'dist/now/index.html');
 await cp('story/index.html', 'dist/story/index.html');
+// The patrons page, built by build.mjs from patrons.json.
+await cp('patrons/index.html', 'dist/patrons/index.html');
 await cp('gallery/studio-header.txt', 'dist/gallery/studio-header.txt');
 await cp('gallery/studio.css', 'dist/gallery/studio.css');
 await cp('store', 'dist/store', { recursive: true });

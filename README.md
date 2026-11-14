@@ -12,6 +12,21 @@ outside the Fridays at The Park app.
   it): how Song A Day has paid for itself, patronage, the games, and what else the studio makes.
   These sections were the lower two-thirds of the home page until November 2026. The home page
   links to it under the goals ("Read the story") and from the footer
+- `patrons.json`, `patrons.mjs`, `patrons.html`, `patrons.css`, `patrons-page.js` — the
+  patrons page (songaday.studio/patrons/): the people and organizations who support Song A
+  Day, one row each in `patrons.json`. A row is a name, and optionally a line about them, a
+  square picture and links (X, Instagram, Website…); the page shows them in the order listed,
+  and someone with no picture gets their initial. The pictures are small so many show at once
+  (eight across at full width, three on a phone), with the name and links under each; the
+  line about a patron pops up above their picture when it is pointed at, landed on with the
+  keyboard, or tapped. The home page links to it beside "Read the story", and so does every
+  footer except the commission and store pages', which say nothing about donating. To add a
+  patron, add a row and run `node build.mjs`; it stops with a plain sentence if a row is
+  wrong. Three rules: only list people who have said yes to being shown (this repository is
+  public, so someone who gave anonymously stays out of the file, even as a name, unless they
+  have since said yes themselves); before publishing someone, save a copy of their picture
+  under `assets/patrons/` instead of pointing at another site's address, which can change;
+  and the page never counts patrons or says what anyone gave
 - `video-modal.mjs` — the video dialog both of those pages open (YouTube by id, or a file);
   `build.mjs` inlines it into each page's script and gives the story page the dialog's markup
   from `profile.html`, so there is one copy of each
@@ -19,7 +34,7 @@ outside the Fridays at The Park app.
 - `profile.js` — the home page's behavior and catalog stats
 - `assets/` — icons, video, and other page assets
 - `index.html`, `films/index.html`, `everything/index.html`, `now/index.html`, `story/index.html`,
-  `commission/index.html`, `commission/song.html` — generated pages
+  `patrons/index.html`, `commission/index.html`, `commission/song.html` — generated pages
 - `build.mjs` — builds those pages from the editable files, and bakes in a snapshot of the Films
   playlist and of today's song (needs network; without it those link to YouTube until the
   Worker fills them in). `SONGADAY_OFFLINE=1` skips the snapshots, and `--out <folder>` writes

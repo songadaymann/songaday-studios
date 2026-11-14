@@ -12,6 +12,7 @@ import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from
 import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
+import { patronProblems, renderPatrons } from "./patrons.mjs";
 import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
@@ -183,11 +184,12 @@ const footer = filmsSource.match(/  <footer>[\s\S]*?<\/footer>/)[0];
 await writePage("gallery/studio-header.txt", hostedMedia(header.replace('href="/gallery/"', 'href="/gallery/" aria-current="page"')));
 await writePage("gallery/studio.css", `${chromeCss}\n${await source("gallery.css")}`);
 // The commission and store pages are purchases from Jonathan, so their own words say nothing
-// about donating: no footer link, and a purchase line in place of the fiscal sponsor's. They
-// wear the same menu as every other page, Donate button included: it goes to the form on the
-// home page, and a menu that changes from page to page reads as a mistake.
+// about donating: no footer link to the form or to the patrons, and a purchase line in place of
+// the fiscal sponsor's. They wear the same menu as every other page, Donate button included: it
+// goes to the form on the home page, and a menu that changes from page to page reads as a mistake.
 const purchaseHeader = header.replace('<a href="/commission">', '<a href="/commission" aria-current="page">');
 const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate">Donate<\/a>/, "")
+  .replace(/\n\s*<a href="\/patrons\/">Patrons<\/a>/, "")
   .replace(/<p class="sponsor-line">[\s\S]*?<\/p>/, '<p class="sponsor-line">Song commissions are purchases from Jonathan Mann.</p>');
 const withChrome = (page, { purchase = false } = {}) => page
   .replace("{{HEADER}}", () => purchase ? purchaseHeader : header)
@@ -247,6 +249,23 @@ await writePage("story/index.html", documentHtml({
     return storyTokens[name];
   })),
   script: withPageHelpers(storyJs),
+}));
+
+// songaday.studio/patrons/: the people and organizations who support Song A Day, one row each in
+// patrons.json (patrons.mjs): a small picture, a name and where to find them, with a line about
+// them that pops up above the picture (patrons.css, and patrons-page.js for a finger).
+const patrons = JSON.parse(await source("patrons.json"));
+const patronIssues = patronProblems(patrons);
+if (patronIssues.length) {
+  throw new Error(`patrons.json has problems:\n${patronIssues.join("\n")}`);
+}
+await writePage("patrons/index.html", documentHtml({
+  title: "Patrons · Song A Day Studio",
+  description: "The people and organizations who keep Song A Day going.",
+  url: "https://songaday.studio/patrons/",
+  body: hostedMedia(withChrome(await source("patrons.html")).replace("{{PATRONS}}", () => renderPatrons(patrons))),
+  script: await source("patrons-page.js"),
+  extraCss: await source("patrons.css"),
 }));
 
 // songaday.studio/commission: the page and request form, and the shell the Worker puts each
@@ -333,7 +352,7 @@ ${labBody}
 </body>
 </html>
 `);
-console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, patrons/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
 
 // The store (songaday.studio/store/): a front page built from the list of what's on sale
 // (store/products.json, store-products.mjs), which opens with one picture per kind of thing and

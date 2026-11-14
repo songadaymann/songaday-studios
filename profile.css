@@ -156,9 +156,10 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .gift-card-icon { display: block; width: 56px; height: 56px; object-fit: contain; }
 .gift-card h3 { max-width: none; font-size: var(--type-body); letter-spacing: -.04em; line-height: 1; }
 .gift-card p { margin: 0; font-size: var(--type-body); font-weight: 500; line-height: 1.45; }
-/* Under the cards: what it takes (the two goals, also on the story page), and the way to the story. */
+/* Under the cards: what it takes (the two goals, also on the story page), then the ways to the
+   story and to the people already giving, side by side. */
 .gift-section .patronage-match { margin-top: clamp(2rem, 4vw, 3rem); }
-.gift-more { display: inline-flex; align-items: center; min-height: 44px; margin-top: 1.5rem; font-weight: 700; text-decoration-thickness: 2px; }
+.gift-more { display: inline-flex; align-items: center; min-height: 44px; margin: 1.5rem 1.5rem 0 0; font-weight: 700; text-decoration-thickness: 2px; }
 
 .catalog-ticker { border-top: 4px solid var(--red); border-bottom: 4px solid var(--red); background: var(--ink); color: var(--white); overflow: hidden; }
 .catalog-ticker-viewport { width: 100%; overflow: hidden; }

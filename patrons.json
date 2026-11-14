@@ -1,0 +1,102 @@
+{
+  "patrons": [
+    {
+      "name": "C.Y. Lee",
+      "bio": "Executive producer of Song A Day Studio. An early Microsoft and RealPlayer employee who now funds dozens of artists.",
+      "image": "/assets/images/cy-lee.webp",
+      "links": [
+        { "label": "Website", "url": "https://executiveproducing.com/" }
+      ]
+    },
+    {
+      "name": "Laprii DeKanto",
+      "bio": "Immersion maximalist. A puzzle made of recursion.",
+      "image": "/assets/patrons/laprii-dekanto.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/lapdoteth" }
+      ]
+    },
+    {
+      "name": "Justin Leroux",
+      "bio": "CEO of GridPlus, the hardware wallet company. Boston.",
+      "image": "/assets/patrons/justin-leroux.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/0xMidnight" },
+        { "label": "Website", "url": "https://gridplus.io" }
+      ]
+    },
+    {
+      "name": "Jesse Holden",
+      "bio": "Co-creator of the graphic novel series Incredible Doom. Now building mechanical art.",
+      "image": "/assets/patrons/jesse-holden.jpg",
+      "links": [
+        { "label": "Instagram", "url": "https://www.instagram.com/churl/" },
+        { "label": "Website", "url": "https://scumbly.com/" }
+      ]
+    },
+    {
+      "name": "Ric Seaberg",
+      "bio": "Singer-songwriter, baker and dog lover. Writing songs since 1968.",
+      "image": "/assets/patrons/ric-seaberg.jpg",
+      "links": [
+        { "label": "Instagram", "url": "https://www.instagram.com/rsseaberg/" },
+        { "label": "Website", "url": "https://ricseaberg.com/" }
+      ]
+    },
+    {
+      "name": "Whitney Pinger",
+      "bio": "Midwife in Washington, DC. Jesse Pollak’s mom.",
+      "image": "/assets/patrons/whitney-pinger.jpg",
+      "links": [
+        { "label": "Facebook", "url": "https://www.facebook.com/wpinger" }
+      ]
+    },
+    {
+      "name": "Accidental Tech Podcast",
+      "bio": "A tech podcast by Marco Arment, Casey Liss and John Siracusa.",
+      "image": "/assets/patrons/accidental-tech-podcast.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/atpfm" },
+        { "label": "Website", "url": "https://atp.fm" }
+      ]
+    },
+    {
+      "name": "Zachary Herring",
+      "bio": "Designer. A founder of BasePaint, and on product at Splits.",
+      "image": "/assets/patrons/zachary-herring.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/zherring" },
+        { "label": "Website", "url": "https://zachherring.com" }
+      ]
+    },
+    {
+      "name": "Fridays at The Park",
+      "bio": "A nonprofit that helps artists keep making, out of one room every Friday. Song A Day’s fiscal sponsor.",
+      "image": "/assets/patrons/fridays-at-the-park.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/thepark" },
+        { "label": "Instagram", "url": "https://www.instagram.com/fridaysatthepark/" },
+        { "label": "Website", "url": "https://fridaysatthepark.org" }
+      ]
+    },
+    {
+      "name": "Flick Dev",
+      "bio": "Builder working at the intersection of AI, games, and interactive experiences. Creating The House, where AI characters compete in social strategy games, alongside projects in crypto and digital communities.",
+      "image": "/assets/patrons/flick-dev.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/0xFlick" },
+        { "label": "Website", "url": "https://thehouse.game/" }
+      ]
+    },
+    {
+      "name": "0xDEAFBEEF",
+      "bio": "Artist. Sound, animation and forged metal, made with code.",
+      "image": "/assets/patrons/0xdeafbeef.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/_deafbeef" },
+        { "label": "Instagram", "url": "https://www.instagram.com/_deafbeef/" },
+        { "label": "Website", "url": "https://deafbeef.com" }
+      ]
+    }
+  ]
+}

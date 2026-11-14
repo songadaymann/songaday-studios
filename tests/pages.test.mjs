@@ -163,7 +163,7 @@ test('the story has a page of its own, and the home page keeps the goals and a l
     // The home page: none of those sections, the goals and the link under the four cards, then the closing ask.
     for (const part of moved.concat(['class="editorial-story"'])) assert.ok(!main(home).includes(part.replace('"/assets/', '"assets/')), part);
     const gift = main(home).match(/<section class="gift-section"[\s\S]*?<\/section>/)[0];
-    assert.match(gift, /<\/a>\s*<\/div>\s*<dl class="patronage-match" id="goal" aria-label="Monthly goals">[\s\S]*?<\/dl>\s*<a class="gift-more" href="\/story\/">Read the story<\/a>/);
+    assert.match(gift, /<\/a>\s*<\/div>\s*<dl class="patronage-match" id="goal" aria-label="Monthly goals">[\s\S]*?<\/dl>\s*<a class="gift-more" href="\/story\/">Read the story<\/a>\s*<a class="gift-more" href="\/patrons\/">Meet the patrons<\/a>\s*<\/div>/);
     const order = ['<section class="hero"', '<section class="calendar-section"', '<section class="gift-section"', '<section class="catalog-ticker"', '<section class="brand-band"', '<section class="directory"'];
     assert.deepEqual([...main(home).matchAll(/<section class="[\w-]+"/g)].map((match) => match[0]).filter((tag) => order.includes(tag)), order);
 
@@ -171,7 +171,7 @@ test('the story has a page of its own, and the home page keeps the goals and a l
     const goals = (page) => [...main(page).match(/<dl class="patronage-match" id="goal"[\s\S]*?<\/dl>/)[0].matchAll(/<dd>(\$[\d,]+)</g)].map((match) => match[1]);
     assert.deepEqual(goals(story), goals(home));
     assert.equal(goals(home).length, 2);
-    for (const page of [home, story]) assert.match(page.match(/<footer>[\s\S]*?<\/footer>/)[0], /<a href="\/press\/">Press<\/a>\s*<a href="\/story\/">Story<\/a>/);
+    for (const page of [home, story]) assert.match(page.match(/<footer>[\s\S]*?<\/footer>/)[0], /<a href="\/press\/">Press<\/a>\s*<a href="\/story\/">Story<\/a>\s*<a href="\/patrons\/">Patrons<\/a>/);
 
     // One video dialog on each page, in the same markup, opened by the same script.
     const dialog = (page) => page.match(/<div class="video-modal" id="video-modal"[\s\S]*?\n    <\/div>\n/g);
