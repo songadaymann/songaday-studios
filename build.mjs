@@ -12,7 +12,7 @@ import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from
 import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
-import { patronProblems, renderPatrons } from "./patrons.mjs";
+import { patronProblems, renderPatronFaces, renderPatrons } from "./patrons.mjs";
 import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
@@ -81,6 +81,13 @@ async function todaySongSnapshot() {
 
 const number = songADayNumber();
 const todaySong = await todaySongSnapshot();
+// The patrons (patrons.json, checked by patrons.mjs): the home page shows a row of their faces
+// under the goals, and /patrons/ further down shows everyone.
+const patrons = JSON.parse(await source("patrons.json"));
+const patronIssues = patronProblems(patrons);
+if (patronIssues.length) {
+  throw new Error(`patrons.json has problems:\n${patronIssues.join("\n")}`);
+}
 // Function replacements, so a "$" in a song title isn't read as a replacement pattern.
 let html = htmlSource.replaceAll("{{SONG_NUMBER}}", String(number))
   .replaceAll("{{NEXT_SONG_NUMBER}}", String(number + 1))
@@ -89,6 +96,8 @@ let html = htmlSource.replaceAll("{{SONG_NUMBER}}", String(number))
   .replaceAll("{{GOAL_FIRST}}", dollars(MONTHLY_GOALS.first))
   .replaceAll("{{GOAL_DREAM}}", dollars(MONTHLY_GOALS.dream))
   .replace("{{TODAY_SONG}}", () => todaySong)
+  // The home page addresses its pictures from its own folder ("assets/…"), like the rest of it.
+  .replace("{{PATRON_FACES}}", () => renderPatronFaces(patrons).replaceAll('src="/assets/', 'src="assets/'))
   .replace("{{CALENDAR}}", () => renderCalendar(JSON.parse(calendarJson)))
   .replace("{{DIRECTORY}}", () => renderDirectory(projects));
 // Public checkouts use hosted media when the private local asset bundle is absent.
@@ -254,11 +263,6 @@ await writePage("story/index.html", documentHtml({
 // songaday.studio/patrons/: the people and organizations who support Song A Day, one row each in
 // patrons.json (patrons.mjs): a small picture, a name and where to find them, with a line about
 // them that pops up above the picture (patrons.css, and patrons-page.js for a finger).
-const patrons = JSON.parse(await source("patrons.json"));
-const patronIssues = patronProblems(patrons);
-if (patronIssues.length) {
-  throw new Error(`patrons.json has problems:\n${patronIssues.join("\n")}`);
-}
 await writePage("patrons/index.html", documentHtml({
   title: "Patrons · Song A Day Studio",
   description: "The people and organizations who keep Song A Day going.",

@@ -7,7 +7,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import worker from '../worker.mjs';
-import { PATRONS_PER_ROW, initialOf, patronProblems, renderPatrons } from '../patrons.mjs';
+import { HOME_FACES, PATRONS_PER_ROW, initialOf, patronProblems, renderPatronFaces, renderPatrons } from '../patrons.mjs';
 
 const root = new URL('../', import.meta.url);
 // Made-up patrons, so the tests don't depend on who is in the real list.
@@ -118,7 +118,7 @@ test('the build makes /patrons/ from patrons.json, with the studio header and a 
     assert.match(page, /<title>Patrons · Song A Day Studio<\/title>/);
     assert.match(page, /<h1>Patrons<\/h1>/);
     assert.equal(page.split('<li class="patron">').length - 1, list.patrons.length);
-    assert.match(page, /<p class="patrons-join"><a href="\/#donate">Become a monthly supporter<\/a><\/p>/);
+    assert.match(page, /<p class="patrons-join"><a href="\/#donate">Become a monthly patron<\/a><\/p>/);
     assert.doesNotMatch(page, /\{\{/);
     // The same menu as the home page, Donate button included, and the page's own styles.
     const nav = (html) => [...html.match(/<nav class="site-sections"[\s\S]*?<\/nav>/)[0].matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
@@ -131,6 +131,46 @@ test('the build makes /patrons/ from patrons.json, with the studio header and a 
     // Goals, not progress: the page lists people, and never counts them or what they gave.
     const visible = page.replace(/<style[\s\S]*?<\/style>/g, '');
     assert.doesNotMatch(visible, /\$\d|\b\d+ (patrons|supporters|people)\b|<progress/i);
+  } finally {
+    await rm(out, { recursive: true, force: true });
+  }
+});
+
+test('the home page shows a row of patron faces under the goals, as one link to the patrons page', async () => {
+  // Only patrons with a picture, in the order listed, and no more than fill the row.
+  const row = renderPatronFaces(sample());
+  assert.match(row, /^<a class="patron-faces" href="\/patrons\/" tabindex="-1" aria-hidden="true">/);
+  assert.deepEqual([...row.matchAll(/<img src="([^"]+)" alt="" width="400" height="400" loading="lazy" decoding="async"/g)].map((match) => match[1]),
+    ['/assets/patrons/ada.webp', 'https://example.com/logo.png', 'https://example.com/eve.jpg']);
+  assert.doesNotMatch(row, /Example/);
+  const many = { patrons: Array.from({ length: HOME_FACES + 5 }, (_, i) => ({ name: `Patron ${i}`, image: `https://example.com/${i}.jpg` })) };
+  assert.equal(renderPatronFaces(many).split('<img ').length - 1, HOME_FACES);
+  assert.equal(renderPatronFaces({ patrons: [{ name: 'No Picture' }] }), '');
+
+  // One row at full width and two on a phone, in step with HOME_FACES; solid squares, no frame.
+  const css = await readFile(new URL('profile.css', root), 'utf8');
+  assert.ok(css.includes(`.patron-faces { display: grid; grid-template-columns: repeat(${HOME_FACES}, minmax(0, 1fr));`));
+  assert.ok(css.includes(`.patron-faces { grid-template-columns: repeat(${HOME_FACES / 2}, minmax(0, 1fr)); }`));
+  const rules = css.match(/\.patron-faces[^{]*\{[^}]*\}/g).join('\n');
+  assert.doesNotMatch(rules, /opacity|rgba\(|border-radius|border:|box-shadow/);
+
+  const out = await mkdtemp(path.join(tmpdir(), 'songaday-studio-faces-'));
+  try {
+    await promisify(execFile)(process.execPath, [fileURLToPath(new URL('build.mjs', root)), '--out', out], {
+      env: { ...process.env, SONGADAY_OFFLINE: '1' }
+    });
+    const home = await readFile(path.join(out, 'index.html'), 'utf8');
+    const list = JSON.parse(await readFile(new URL('patrons.json', root), 'utf8'));
+    const gift = home.match(/<section class="gift-section"[\s\S]*?<\/section>/)[0];
+    const faces = gift.match(/<a class="patron-faces" href="\/patrons\/" tabindex="-1" aria-hidden="true">[\s\S]*?<\/a>/)[0];
+    assert.equal(faces.split('<img ').length - 1, Math.min(HOME_FACES, list.patrons.filter((patron) => patron.image).length));
+    // Addressed from the home page's own folder, or the hosted copy in a checkout without pictures.
+    assert.doesNotMatch(faces, /src="\/assets\//);
+    assert.match(faces, /src="(?:https:\/\/songaday\.studio\/)?assets\//);
+    // After the goals, before the two links; and no names, counts or amounts in the row.
+    assert.ok(gift.indexOf('id="goal"') < gift.indexOf('class="patron-faces"') && gift.indexOf('class="patron-faces"') < gift.indexOf('class="gift-more"'));
+    assert.doesNotMatch(faces, />[^<\s]/);
+    assert.doesNotMatch(home, /\{\{PATRON_FACES\}\}/);
   } finally {
     await rm(out, { recursive: true, force: true });
   }

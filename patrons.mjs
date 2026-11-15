@@ -18,6 +18,10 @@
 // The most squares in one row (the page at full width; --patrons-across in patrons.css).
 export const PATRONS_PER_ROW = 8;
 
+// How many patrons' faces the home page shows under its goals: one row at full width, two on a
+// phone (.patron-faces in profile.css takes its columns from this number, so keep them in step).
+export const HOME_FACES = 12;
+
 // Long enough for a couple of sentences in a patron's own words; the pop-up grows to fit.
 const BIO_MAX = 240;
 const LABEL_MAX = 20;
@@ -83,4 +87,15 @@ export function renderPatrons(data) {
         </div>${links}
       </li>`;
   }).join('\n');
+}
+
+// The home page's row of faces: the first patrons who have a picture, in the order listed, as
+// one link to the patrons page. It repeats the "Meet the patrons" link beside it, so it is
+// kept out of the keyboard's path and hidden from screen readers. Nothing at all with no faces.
+export function renderPatronFaces(data, limit = HOME_FACES) {
+  const faces = data.patrons.filter((patron) => patron.image).slice(0, limit);
+  if (!faces.length) return '';
+  return `<a class="patron-faces" href="/patrons/" tabindex="-1" aria-hidden="true">
+${faces.map((patron) => `          <img src="${escapeHtml(patron.image)}" alt="" width="400" height="400" loading="lazy" decoding="async" referrerpolicy="no-referrer">`).join('\n')}
+        </a>`;
 }

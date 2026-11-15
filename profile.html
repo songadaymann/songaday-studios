@@ -64,7 +64,7 @@
 
         <section class="hero-donate" id="donate" aria-label="Donate to Song A Day Studio" tabindex="-1">
           <div class="donate-intro">
-            <h2 id="donate-title">Become a monthly supporter, or donate.</h2>
+            <h2 id="donate-title">Become a monthly <a href="/patrons/">patron</a>, or donate.</h2>
             <p>First goal: {{GOAL_FIRST}} a month. <span id="charitable-tax-note">Eligible donations are tax-deductible in the U.S.</span></p>
           </div>
           <div class="crypto-donate" id="crypto-donate" hidden>
@@ -159,7 +159,7 @@
         </div>
         <dl class="patronage-match" id="goal" aria-label="Monthly goals">
           <div>
-            <dt>The first goal, from monthly supporters</dt>
+            <dt>The first goal, from monthly patrons</dt>
             <dd>{{GOAL_FIRST}}<span class="patronage-match-unit">/month</span></dd>
           </div>
           <div>
@@ -167,6 +167,7 @@
             <dd>{{GOAL_DREAM}}<span class="patronage-match-unit">/month</span></dd>
           </div>
         </dl>
+        {{PATRON_FACES}}
         <a class="gift-more" href="/story/">Read the story</a>
         <a class="gift-more" href="/patrons/">Meet the patrons</a>
       </div>
