@@ -108,7 +108,7 @@ test('same-site redirects keep the query string', async () => {
   assert.equal(games.headers.get('Location'), 'https://mann.cool/');
 });
 
-test('HTML pages answer GET and HEAD with fresh, uncached headers', async () => {
+test('HTML pages revalidate, and only the personalized home page is private and uncached', async () => {
   // Node has no HTMLRewriter; this stand-in returns a response with immutable headers,
   // like the real one does for HEAD requests.
   globalThis.HTMLRewriter = class {
@@ -126,16 +126,67 @@ test('HTML pages answer GET and HEAD with fresh, uncached headers', async () => 
     }
   };
   try {
-    for (const method of ['GET', 'HEAD']) {
-      const env = { ASSETS: { fetch: async () => new Response(method === 'HEAD' ? null : '<p>hi</p>', {
-        headers: { 'Content-Type': 'text/html; charset=utf-8', ETag: '"abc"' }
-      }) } };
-      const response = await worker.fetch(new Request('https://songaday.studio/', { method }), env);
-      assert.equal(response.status, 200, method);
-      assert.equal(response.headers.get('Cache-Control'), 'no-cache', method);
-      assert.equal(response.headers.get('ETag'), null, method);
+    for (const [path, cache] of [['/', 'private, no-store'], ['/index.html', 'private, no-store'], ['/plugins/', 'no-cache']]) {
+      for (const method of ['GET', 'HEAD']) {
+        const label = `${method} ${path}`;
+        const env = { ASSETS: { fetch: async () => new Response(method === 'HEAD' ? null : '<p>hi</p>', {
+          headers: { 'Content-Type': 'text/html; charset=utf-8', ETag: '"abc"' }
+        }) } };
+        const response = await worker.fetch(new Request(`https://songaday.studio${path}`, { method }), env);
+        assert.equal(response.status, 200, label);
+        assert.equal(response.headers.get('Cache-Control'), cache, label);
+        assert.equal(response.headers.get('ETag'), null, label);
+      }
     }
   } finally {
+    delete globalThis.HTMLRewriter;
+  }
+});
+
+test('the home page shows only the crypto method for the visitor’s country', async () => {
+  const realFetch = globalThis.fetch;
+  let cryptoMethodHandler;
+  globalThis.fetch = async () => new Response(null, { status: 503 });
+  globalThis.HTMLRewriter = class {
+    on(selector, handler) {
+      if (selector === '[data-crypto-method]') cryptoMethodHandler = handler;
+      return this;
+    }
+    transform(response) { return response; }
+  };
+  const env = { ASSETS: { fetch: async () => new Response('<main></main>', { headers: { 'Content-Type': 'text/html' } }) } };
+  const cases = [
+    ['/', 'US', 'endaoment'],
+    ['/', 'CA', 'direct'],
+    ['/index.html', 'GB', 'direct'],
+    ['/', undefined, 'endaoment'],
+    ['/', null, 'endaoment'],
+    ['/', 'XX', 'endaoment'],
+    ['/', 'T1', 'endaoment']
+  ];
+  try {
+    for (const [path, country, expected] of cases) {
+      cryptoMethodHandler = undefined;
+      const request = new Request(`https://songaday.studio${path}`);
+      if (country !== undefined) Object.defineProperty(request, 'cf', { value: { country } });
+      await worker.fetch(request, env);
+      assert.ok(cryptoMethodHandler, `${path} ${country}`);
+
+      for (const method of ['endaoment', 'direct']) {
+        const actions = [];
+        cryptoMethodHandler.element({
+          getAttribute(name) {
+            assert.equal(name, 'data-crypto-method');
+            return method;
+          },
+          removeAttribute(name) { actions.push(`remove ${name} attribute`); },
+          remove() { actions.push('remove element'); }
+        });
+        assert.deepEqual(actions, [method === expected ? 'remove hidden attribute' : 'remove element'], `${country} ${method}`);
+      }
+    }
+  } finally {
+    globalThis.fetch = realFetch;
     delete globalThis.HTMLRewriter;
   }
 });

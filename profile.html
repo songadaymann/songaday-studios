@@ -65,11 +65,30 @@
         <section class="hero-donate" id="donate" aria-label="Donate to Song A Day Studio" tabindex="-1">
           <div class="donate-intro">
             <h2 id="donate-title">Become a monthly supporter, or donate.</h2>
-            <p>First goal: {{GOAL_FIRST}} a month. It’s all tax deductible.</p>
+            <p>First goal: {{GOAL_FIRST}} a month. <span id="charitable-tax-note">Eligible donations are tax-deductible in the U.S.</span></p>
           </div>
           <div class="crypto-donate" id="crypto-donate" hidden>
-            <h3>Donate with crypto</h3>
-            <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
+            <div class="crypto-donate-method" data-crypto-method="endaoment">
+              <h3>Donate with crypto</h3>
+              <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
+            </div>
+            <form class="crypto-donate-method" id="direct-usdc" data-crypto-method="direct" hidden>
+              <h3>Support Jonathan with USDC</h3>
+              <p class="usdc-note">This one-time payment goes directly to Jonathan and is not tax-deductible.</p>
+              <div class="usdc-fields">
+                <label>Amount in USDC
+                  <input id="usdc-amount" type="text" inputmode="decimal" autocomplete="off" pattern="[0-9]+([.,][0-9]{1,6})?" required>
+                </label>
+                <label>Network
+                  <select id="usdc-network">
+                    <option value="base">Base</option>
+                    <option value="ethereum">Ethereum</option>
+                  </select>
+                </label>
+              </div>
+              <button class="donation-link" id="open-usdc-wallet" type="submit">Open wallet to send</button>
+              <p class="usdc-note" id="usdc-status" role="status"></p>
+            </form>
             <button class="crypto-donate-alternative" id="donate-by-card" type="button">Donate by card or bank</button>
           </div>
           <div class="zeffy-embed-shell" id="zeffy-donate" tabindex="-1">
@@ -233,6 +252,6 @@
         <a href="https://wamp.land" target="_blank" rel="noreferrer">WAMP</a>
       </nav>
     </div>
-    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park, and executive produced by C.Y. Lee. Donations are tax deductible. Commissions and albums are purchases from Jonathan, not donations.</p>
+    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park, and executive produced by C.Y. Lee. Eligible charitable donations are tax-deductible in the U.S. Commissions and albums are purchases from Jonathan, not donations.</p>
   </footer>
 </div>

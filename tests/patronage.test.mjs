@@ -25,7 +25,7 @@ test('the donation ask names the first goal beside the form, and the goals come 
 
     // Beside the form: the ask, then the goal with the tax line, then the form itself.
     const donate = home.match(/<section class="hero-donate" id="donate"[\s\S]*?<\/section>/)[0];
-    assert.match(donate, /<h2 id="donate-title">Become a monthly supporter, or donate\.<\/h2>\s*<p>First goal: \$3,000 a month\. It’s all tax deductible\.<\/p>/);
+    assert.match(donate, /<h2 id="donate-title">Become a monthly supporter, or donate\.<\/h2>\s*<p>First goal: \$3,000 a month\. <span id="charitable-tax-note">Eligible donations are tax-deductible in the U\.S\.<\/span><\/p>/);
     assert.ok(donate.indexOf('First goal:') < donate.indexOf('data-zeffy-embed'), 'the goal comes before the form');
 
     // The Patronage section's ladder shows the same two figures.

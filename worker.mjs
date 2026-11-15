@@ -187,6 +187,7 @@ export default {
     const response = await env.ASSETS.fetch(request);
     if (!response.headers.get('Content-Type')?.includes('text/html')) return response;
 
+    const isHome = path === '/' || path === '/index.html';
     const number = songADayNumber();
     const rewriter = new HTMLRewriter()
       .on('[data-song-day="today"]', {
@@ -201,6 +202,16 @@ export default {
       .on('[data-song-day="age"]', {
         element(element) { element.setInnerContent(songADayAge(number).text); }
       });
+    if (isHome) {
+      const country = request.cf?.country;
+      const method = /^[A-Z]{2}$/.test(country) && country !== 'US' && country !== 'XX' ? 'direct' : 'endaoment';
+      rewriter.on('[data-crypto-method]', {
+        element(element) {
+          if (element.getAttribute('data-crypto-method') === method) element.removeAttribute('hidden');
+          else element.remove();
+        }
+      });
+    }
     if (filmsPromise) {
       rewriter.on('#films-list', {
         async element(element) {
@@ -239,7 +250,7 @@ export default {
     const rewritten = rewriter.transform(response);
     // A fresh Response: the transformed one can have immutable headers (HEAD requests returned 500).
     const page = new Response(rewritten.body, rewritten);
-    page.headers.set('Cache-Control', 'no-cache');
+    page.headers.set('Cache-Control', isHome ? 'private, no-store' : 'no-cache');
     page.headers.delete('ETag');
     page.headers.delete('Last-Modified');
     return page;

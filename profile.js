@@ -38,7 +38,11 @@
 
   const cryptoDonate = document.getElementById("crypto-donate");
   const zeffyDonate = document.getElementById("zeffy-donate");
+  const directUsdc = document.getElementById("direct-usdc");
+  const charitableTaxNote = document.getElementById("charitable-tax-note");
+  const hasDirectUsdc = directUsdc && !directUsdc.hidden;
   let prefersZeffy = false;
+  let donationWallet;
 
   if (cryptoDonate && zeffyDonate) {
     window.addEventListener("eip6963:announceProvider", (event) => {
@@ -46,15 +50,70 @@
       void hasStrongWalletSignal(event.detail).then((hasWallet) => {
         // ?crypto=0 (the wallet gate's "no") keeps the card and bank form too.
         if (!hasWallet || prefersZeffy || document.documentElement.dataset.wallet === "no") return;
+        donationWallet ??= event.detail.provider;
         zeffyDonate.hidden = true;
         cryptoDonate.hidden = false;
+        charitableTaxNote.hidden = Boolean(hasDirectUsdc);
       });
     });
     document.getElementById("donate-by-card")?.addEventListener("click", () => {
       prefersZeffy = true;
       cryptoDonate.hidden = true;
       zeffyDonate.hidden = false;
+      charitableTaxNote.hidden = false;
       zeffyDonate.focus({ preventScroll: true });
+    });
+  }
+
+  if (hasDirectUsdc) {
+    const recipient = "0x42469B0A89cE1215E72AD1f8f5D03aD4776c1fcb";
+    const networks = new Map([
+      ["base", { name: "Base", chainId: "0x2105", usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" }],
+      ["ethereum", { name: "Ethereum", chainId: "0x1", usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" }]
+    ]);
+    const amount = document.getElementById("usdc-amount");
+    const network = document.getElementById("usdc-network");
+    const button = document.getElementById("open-usdc-wallet");
+    const status = document.getElementById("usdc-status");
+
+    directUsdc.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!donationWallet || button.disabled) return;
+
+      const match = /^(\d+)(?:[.,](\d{1,6}))?$/.exec(amount.value.trim());
+      const units = match ? BigInt(match[1] + (match[2] ?? "").padEnd(6, "0")) : 0n;
+      if (units === 0n || units >= 2n ** 256n) {
+        status.textContent = "Enter a positive USDC amount with up to six decimal places.";
+        amount.focus();
+        return;
+      }
+      const selectedNetwork = networks.get(network.value);
+      if (!selectedNetwork) return;
+
+      button.disabled = true;
+      status.textContent = "Check your wallet to continue.";
+      try {
+        const [from] = await donationWallet.request({ method: "eth_requestAccounts" });
+        if (!/^0x[a-fA-F0-9]{40}$/.test(from)) throw new Error("Missing wallet account");
+
+        const { chainId, usdc } = selectedNetwork;
+        if (await donationWallet.request({ method: "eth_chainId" }) !== chainId) {
+          await donationWallet.request({ method: "wallet_switchEthereumChain", params: [{ chainId }] });
+          if (await donationWallet.request({ method: "eth_chainId" }) !== chainId) {
+            throw new Error("Wallet stayed on another network");
+          }
+        }
+        // ERC-20 transfer(address,uint256). USDC has six decimal places on both networks.
+        const data = "0xa9059cbb" + recipient.slice(2).toLowerCase().padStart(64, "0") + units.toString(16).padStart(64, "0");
+        await donationWallet.request({ method: "eth_sendTransaction", params: [{ from, to: usdc, data }] });
+        amount.value = "";
+        status.textContent = "Transfer submitted. Check your wallet for confirmation.";
+      } catch (error) {
+        status.textContent = error?.code === 4001 ? "Canceled in your wallet."
+          : `Your wallet couldn’t submit the transfer. Check that it’s connected to ${selectedNetwork.name} and try again.`;
+      } finally {
+        button.disabled = false;
+      }
     });
   }
 

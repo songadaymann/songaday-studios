@@ -60,7 +60,7 @@ test('the build makes /everything and /now, and the home page directory and foot
     assert.doesNotMatch(home, /WALLET_GATE_HELPER|\{\{DIRECTORY\}\}/);
     for (const page of [home, films]) {
       assert.match(page, /<a href="\/everything\/">Everything<\/a>\s*<a href="\/now\/">Now<\/a>/);
-      assert.match(page, /Donations are tax deductible\. Commissions and albums are purchases from Jonathan, not donations\.<\/p>/);
+      assert.match(page, /(?:Donations are tax deductible|Eligible charitable donations are tax-deductible in the U\.S)\. Commissions and albums are purchases from Jonathan, not donations\.<\/p>/);
       assert.doesNotMatch(page, /collectible/i);
       // Local previews run over http, so the page's own scripts and fetches are allowed by 'self'.
       assert.match(page, /script-src 'self' 'unsafe-inline' https:;.*connect-src 'self' https:;/);

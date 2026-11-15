@@ -806,16 +806,21 @@ a lower-bitrate preview for unpaid songs is the real fix.
 
 Zeffy is the default donation form, including when JavaScript or wallet detection
 is unavailable. EIP-6963 announcements from recognized installed wallets switch
-the donation area to the Endaoment donation deeplink. Unknown providers
+the donation area to a crypto option. The Worker uses Cloudflare's country signal:
+visitors outside the U.S. get one-time direct USDC support for Jonathan, while
+visitors in the U.S. or with an unknown country get the Endaoment link. The
+homepage response is private and uncached so the two versions don't get mixed.
+Unknown providers
 must already expose an authorized account through the passive `eth_accounts`
-method. Detection never requests wallet access. Wallet visitors can choose
+method. Detection never requests wallet access. The direct USDC form offers Base
+and Ethereum, and requests a single transfer for wallet confirmation after the
+visitor submits the form. Wallet visitors can choose
 "Donate by card or bank" to return to Zeffy for the rest of the page visit. The wallet gate
 (`wallet/`) asks installed wallets to announce themselves once, and this check hears the same
 announcements; `?crypto=0` keeps Zeffy too.
 
-The footer says it plainly: donations are tax deductible through Fridays at The Park, and
-commissions and albums are purchases from Jonathan, not donations. (The commission pages' footer
-says only that song commissions are purchases from Jonathan Mann.)
+The homepage labels eligible charitable donations as tax-deductible in the U.S.
+The direct USDC form says the payment goes to Jonathan and is not tax-deductible.
 
 Zeffy doesn't offer Apple Pay or Google Pay inside embedded forms, and its own page
 only shows them below 900px wide in Safari. So phones that can use a wallet see one
@@ -824,7 +829,7 @@ official Apple Pay mark ("Donate with [Apple Pay] on Zeffy's page"); on Android 
 says Google Pay in text.
 
 The donation form asks visitors to become a monthly supporter or donate, and names the first
-goal beside it ("First goal: $3,000 a month. It's all tax deductible."). The monthly ladder
+goal beside it ("First goal: $3,000 a month."). The monthly ladder
 ($3,000 first goal, $20,000 the dream) is on the home page under the four section cards, and
 again in the story page's Patronage section. Both figures come from
 `patronage.mjs`; `tests/patronage.test.mjs` keeps the bio link page's copy in step. The site
