@@ -1,4 +1,5 @@
 import {handleStore, runStoreOrders} from './store.mjs';
+import { handleMonthlyGiving } from './monthly-giving.mjs';
 import { songADayAge, songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
@@ -164,6 +165,9 @@ export default {
     // songaday.studio/commission: song commissions, the buyer pages and the admin (commission.mjs).
     const store = await handleStore(request, env, url);
     if (store) return store;
+    // What monthly patrons give each month, for Jonathan only (monthly-giving.mjs).
+    const monthly = await handleMonthlyGiving(request, env, url);
+    if (monthly) return monthly;
     const commission = await handleCommission(request, env, url, ctx);
     if (commission) return commission;
 

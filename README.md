@@ -19,7 +19,9 @@ outside the Fridays at The Park app.
   and someone with no picture gets their initial. The pictures are small so many show at once
   (eight across at full width, three on a phone), with the name and links under each; the
   line about a patron pops up above their picture when it is pointed at, landed on with the
-  keyboard, or tapped. The home page links to it beside "Read the story", and so does every
+  keyboard, or tapped. The home page shows the first twelve faces in a row under its goals
+  (`renderPatronFaces`, `HOME_FACES`; `.patron-faces` in `profile.css`), the whole row a link
+  to the page, links to it again beside "Read the story", and so does every
   footer except the commission and store pages', which say nothing about donating. To add a
   patron, add a row and run `node build.mjs`; it stops with a plain sentence if a row is
   wrong. Three rules: only list people who have said yes to being shown (this repository is
@@ -625,6 +627,7 @@ Secrets, set with `wrangler secret put <NAME>` (locally, in `.dev.vars`):
 | `COMMISSION_REPLY_TO` | where buyers' replies go: Jonathan's own inbox. A secret for the same reason. |
 | `COMMISSION_NOTIFY_TO` | where the daily summary goes: Jonathan's own inbox. |
 | `TURNSTILE_SECRET_KEY` | already set for Fumble |
+| `ZEFFY_API_KEY` | Zeffy's API key (Zeffy dashboard: Settings, Integrations; set 2026-11-15). `monthly-giving.mjs` reads the last 32 days of payments with it and adds up one charge from each monthly gift still running, for the form in `ZEFFY_CAMPAIGN_ID` (`wrangler.jsonc`). Only `/commission/admin/monthly` shows the total, behind Access; no public page does, and nothing about who gave is kept. Generating a new key in Zeffy stops the old one at once. |
 
 Missing pieces fail soft: until `COMMISSION_REQUESTS` is `"open"`, `/commission` goes to the
 Bandcamp listings; without the database or the Turnstile secret the form is closed; without a
@@ -828,7 +831,8 @@ link above the form to Zeffy's own page, and nobody else does: on iPhones it car
 official Apple Pay mark ("Donate with [Apple Pay] on Zeffy's page"); on Android Chrome it
 says Google Pay in text.
 
-The donation form asks visitors to become a monthly supporter or donate, and names the first
+The donation form asks visitors to become a monthly patron or donate ("patron" links to the
+patrons page; the site says "patron" throughout, not "supporter"), and names the first
 goal beside it ("First goal: $3,000 a month."). The monthly ladder
 ($3,000 first goal, $20,000 the dream) is on the home page under the four section cards, and
 again in the story page's Patronage section. Both figures come from

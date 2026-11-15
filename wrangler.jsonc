@@ -98,7 +98,10 @@
     "ACCESS_AUD": "994d526df3d9a41441aee974324d327f151dbb8942d030f1e73a46d28967de0f",
     // songaday.studio/press/ (press.mjs): the press sheet's Public tab, published to the web as
     // CSV. Empty keeps the snapshot in press/press.json (README, "Press").
-    "PRESS_CSV_URL": ""
+    "PRESS_CSV_URL": "",
+    // The Zeffy donation form whose monthly gifts /commission/admin/monthly adds up
+    // (monthly-giving.mjs). Empty counts every campaign in the Zeffy account.
+    "ZEFFY_CAMPAIGN_ID": "cd57284e-9612-488a-9dcf-7380cc4dc29c"
   },
   "routes": [
     {
