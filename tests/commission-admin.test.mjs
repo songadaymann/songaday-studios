@@ -1,6 +1,7 @@
 // Jonathan's admin at /commission/admin: the Access check, the queue, delivering, marking paid,
 // every move a request can make, and the outbox.
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
   LOCAL, accessKeys, accessToken, audio, call, commissionEnv, deliver, fakeEmail, fakeFetch, form, makeRequest, urlencoded
@@ -511,4 +512,57 @@ test('after delivering, the admin offers the next in line; Start writing on the 
   assert.match(await (await asAdmin(env, '/commission/admin')).text(), /name="back" value="line"/);
   const fromLine = await asAdmin(env, `/commission/admin/${second.id}`, urlencoded({ action: 'writing', back: 'line' }, { Origin: LOCAL }));
   assert.equal(fromLine.headers.get('Location'), `/commission/admin#r${second.id}`);
+});
+
+test('a button press can follow Access to its sign-in: form-action names the team domain beside the admin', async () => {
+  const { env, team, certs, token } = await withAccess();
+  const headers = { 'Cf-Access-Jwt-Assertion': await token() };
+  const withSignIn = ADMIN_CSP.replace("form-action 'self'", `form-action 'self' ${team}`);
+  assert.notEqual(withSignIn, ADMIN_CSP);
+  const response = await call(env, '/commission/admin', { headers }, certs);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Content-Security-Policy'), withSignIn);
+  // However the team domain was pasted in, the policy gets its plain address.
+  const pasted = { ...env, ACCESS_TEAM_DOMAIN: `${team.replace('https://', '')}/` };
+  assert.equal((await call(pasted, '/commission/admin', { headers }, certs)).headers.get('Content-Security-Policy'), withSignIn);
+  // The page that turns someone away carries it too, and nothing else is let in.
+  const refused = await call(env, '/commission/admin', {}, certs);
+  assert.equal(refused.status, 403);
+  assert.equal(refused.headers.get('Content-Security-Policy'), withSignIn);
+  // Without Access (localhost), forms go to the admin and nowhere else.
+  assert.equal((await asAdmin(await commissionEnv(), '/commission/admin')).headers.get('Content-Security-Policy'), ADMIN_CSP);
+});
+
+test('a button press lost to a sign-in comes back to a page that says so, and changes nothing', async () => {
+  // Every form posts to an address ending in ?again, which is how the admin can tell.
+  const source = await readFile(new URL('../commission-admin.mjs', import.meta.url), 'utf8');
+  const forms = source.match(/<form[^>]*method="post"[^>]*>/g);
+  assert.ok(forms.length >= 10, `found ${forms.length} forms`);
+  for (const tag of forms) assert.match(tag, /action="[^"]*\?again"/, tag);
+
+  const env = await commissionEnv();
+  const { id } = await makeRequest(env);
+  const status = () => env.COMMISSIONS_DB.one('SELECT status FROM requests WHERE id = ?', id).status;
+  const detail = await (await asAdmin(env, `/commission/admin/${id}`)).text();
+  assert.match(detail, /<form method="post" action="\?again"><input type="hidden" name="action" value="writing"><button type="submit" class="quiet">Start writing<\/button><\/form>/);
+  assert.match(await (await asAdmin(env, '/commission/admin')).text(), new RegExp(`<form method="post" action="/commission/admin/${id}\\?again">`));
+
+  // Access turns the press into a plain GET of the form's address once the sign-in is done.
+  const lost = await asAdmin(env, `/commission/admin/${id}?again`);
+  assert.equal(lost.status, 200);
+  assert.equal(lost.headers.get('Cache-Control'), 'no-store');
+  const page = await lost.text();
+  assert.match(page, /<p class="problem" role="alert">Your sign-in had run out, so that didn’t go through\. You’re signed in again now\.<\/p>/);
+  assert.match(page, new RegExp(`<a href="/commission/admin/${id}">Go back and do it again</a>`));
+  assert.doesNotMatch(page, /<form/);
+  assert.equal(status(), 'requested');
+  // The held requests' buttons post to an address that isn't a page; going back is to the list.
+  assert.match(await (await asAdmin(env, '/commission/admin/held?again')).text(), /<a href="\/commission\/admin\?show=held">Go back and do it again<\/a>/);
+  assert.match(await (await asAdmin(env, '/commission/admin/emails/1?again')).text(), /<a href="\/commission\/admin\/emails\/1">Go back and do it again<\/a>/);
+
+  // The same address, posted with its form, does what the button says.
+  const pressed = await asAdmin(env, `/commission/admin/${id}?again`, urlencoded({ action: 'writing' }, { Origin: LOCAL }));
+  assert.equal(pressed.status, 303);
+  assert.equal(pressed.headers.get('Location'), `/commission/admin/${id}?done=writing`);
+  assert.equal(status(), 'writing');
 });

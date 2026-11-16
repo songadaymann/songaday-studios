@@ -681,6 +681,15 @@ emails wait in the outbox; without Access the admin answers only on localhost wi
      `curl -sI https://songaday.studio/commission/admin` answers 302 to
      `https://<team>.cloudflareaccess.com/...?kid=<AUD tag>`.
    - `wrangler secret put ADMIN_EMAILS` with the same address.
+   - A request page often stays open longer than an Access session lasts (the application's
+     Session Duration, in Zero Trust). Access answers a button pressed after that with a
+     redirect to its sign-in on the team domain, so the admin's `form-action` names the team
+     domain beside the admin itself (`adminPolicy` in `commission-admin.mjs`). Under `'self'`
+     alone the browser blocks that redirect and the button does nothing, with the reason only
+     in the console (found 2026-11-16). Once signed in, Access comes back with a plain GET of
+     the form's address, the form lost. Every admin form posts to an address ending in
+     `?again`, and the admin answers that GET by saying the press didn't go through, with a
+     link back. A new form in the admin needs the same ending (a test checks).
 5. **Stripe** — Jonathan's own account, not the fiscal sponsor's: the **jonathanmann.bandcamp**
    account. Do all of it in test mode (a sandbox) first.
    - **Done in the sandbox (2026-10-25):** Smart Retries, the webhook below, a restricted key

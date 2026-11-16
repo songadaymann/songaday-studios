@@ -85,15 +85,31 @@ export async function verifyAccessJwt(token, team, audience) {
   }
 }
 
+// Access's team domain as an address, or '' when Access isn't set up.
+function accessTeam(env) {
+  let team = String(env.ACCESS_TEAM_DOMAIN ?? '').trim().replace(/\/+$/, '');
+  // Zero Trust's settings show the team domain without https://.
+  if (team && !/^https:\/\//i.test(team)) team = `https://${team.replace(/^[a-z]+:\/\//i, '')}`;
+  return team;
+}
+
+// Where Access sends a browser to sign in (https://<team>.cloudflareaccess.com), or ''.
+function signInOrigin(env) {
+  try {
+    const team = new URL(accessTeam(env));
+    return team.protocol === 'https:' ? team.origin : '';
+  } catch {
+    return '';
+  }
+}
+
 // Who is signed in, or null. The email must also be in ADMIN_EMAILS: an Access policy that's
 // wider than meant (an "Everyone" rule with one-time PINs) would pass every check above.
 // Without Access, localhost alone isn't enough: `wrangler dev --local-upstream localhost`
 // presents every request as localhost, whoever sent it (a phone on the Wi-Fi, a tunnel), so it
 // also takes COMMISSION_ADMIN_LOCAL=yes, which only .dev.vars sets.
 export async function accessIdentity(request, env, url) {
-  let team = String(env.ACCESS_TEAM_DOMAIN ?? '').trim().replace(/\/+$/, '');
-  // Zero Trust's settings show the team domain without https://.
-  if (team && !/^https:\/\//i.test(team)) team = `https://${team.replace(/^[a-z]+:\/\//i, '')}`;
+  const team = accessTeam(env);
   const audience = String(env.ACCESS_AUD ?? '').trim();
   if (!team || !audience) {
     return env.COMMISSION_ADMIN_LOCAL === 'yes' && url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname) ? 'local' : null;
@@ -107,6 +123,13 @@ export async function accessIdentity(request, env, url) {
 
 // ---- Responses ------------------------------------------------------------------------------
 
+// form-action names the admin itself and, in handleAdmin, Access's sign-in. A browser checks
+// every hop of a form post against it. Once the Access session has run out, Access answers a
+// button press with a redirect to its sign-in on the team domain; under 'self' alone the
+// browser blocks that hop, the button does nothing, and the only clue is in the console
+// (2026-11-16, on a request page left open while the song was written).
+const adminPolicy = (signIn = '') => `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; media-src 'self'; form-action 'self'${signIn ? ` ${signIn}` : ''}; base-uri 'none'; frame-ancestors 'none'`;
+
 const ADMIN_HEADERS = {
   'Content-Type': 'text/html; charset=utf-8',
   'Cache-Control': 'no-store',
@@ -115,7 +138,7 @@ const ADMIN_HEADERS = {
   // the CSRF check below would refuse every one of them.
   'Referrer-Policy': 'same-origin',
   'X-Content-Type-Options': 'nosniff',
-  'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; media-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+  'Content-Security-Policy': adminPolicy()
 };
 
 const PRIVATE_MEDIA = {
@@ -264,8 +287,8 @@ function card(request, { position = null, today, now, full = false }) {
     ['My note', text(request.admin_note)]
   ].filter(([, value]) => value);
   const actions = full ? '' : `<div class="actions">
-    ${request.status === 'held' ? `<form method="post" action="/commission/admin/${request.id}"><input type="hidden" name="action" value="let-in"><button type="submit" class="quiet">Let in</button></form>` : ''}
-    ${request.status === 'requested' ? `<form method="post" action="/commission/admin/${request.id}"><input type="hidden" name="action" value="writing"><input type="hidden" name="back" value="line"><button type="submit" class="quiet">Start writing</button></form>` : ''}
+    ${request.status === 'held' ? `<form method="post" action="/commission/admin/${request.id}?again"><input type="hidden" name="action" value="let-in"><button type="submit" class="quiet">Let in</button></form>` : ''}
+    ${request.status === 'requested' ? `<form method="post" action="/commission/admin/${request.id}?again"><input type="hidden" name="action" value="writing"><input type="hidden" name="back" value="line"><button type="submit" class="quiet">Start writing</button></form>` : ''}
     <a class="button" href="/commission/admin/${request.id}">Open &amp; deliver →</a>
   </div>`;
   return `<article class="card" id="r${request.id}">
@@ -393,10 +416,10 @@ ${rows.map((row) => `  <li><a href="/commission/admin/${row.id}">#${row.position
   }
   const bulk = show === 'held' && list.includes('<article') ? `<p>These came in past ${INTAKE_ALARM_PER_DAY} requests in 24 hours, so they’re not in line yet and their buyers haven’t been told a place.</p>
 <div class="actions">
-  <form method="post" action="/commission/admin/held">${hidden('action', 'let-in-all')}<button type="submit">Let the oldest ${HELD_BATCH} in</button></form>
+  <form method="post" action="/commission/admin/held?again">${hidden('action', 'let-in-all')}<button type="submit">Let the oldest ${HELD_BATCH} in</button></form>
 </div>
 <details><summary>Cancel every held request</summary>
-<form class="panel" method="post" action="/commission/admin/held">
+<form class="panel" method="post" action="/commission/admin/held?again">
   ${hidden('action', 'cancel-all')}
   <p>For a flood of fakes. No email goes out, and they’re deleted after ${CANCELLED_KEEP_DAYS} days.</p>
   <label class="check"><input type="checkbox" name="confirm" value="yes" required> Yes, cancel them all</label>
@@ -432,8 +455,11 @@ function timeline(request, now) {
   return `<ul>${events.map(([label, at]) => `<li>${escapeHtml(label)} ${escapeHtml(shortDate(at, now))}</li>`).join('')}</ul>`;
 }
 
+// Every form here posts to an address ending in ?again. A button press that meets Access's
+// sign-in instead of the admin comes back as a plain GET of the form's address, the form itself
+// lost; the marker lets handleAdmin say so (see `again` there).
 const hidden = (name, value) => `<input type="hidden" name="${name}" value="${escapeHtml(value)}">`;
-const button = (action, label, className = '', fields = '') => `<form method="post" action="?">${hidden('action', action)}${fields}<button type="submit"${className ? ` class="${className}"` : ''}>${label}</button></form>`;
+const button = (action, label, className = '', fields = '') => `<form method="post" action="?again">${hidden('action', action)}${fields}<button type="submit"${className ? ` class="${className}"` : ''}>${label}</button></form>`;
 
 async function detailPage(request, env, url, identity, now, id) {
   const db = env.COMMISSIONS_DB;
@@ -460,7 +486,7 @@ async function detailPage(request, env, url, identity, now, id) {
 ${delivered ? `<p>Now playing for them: “${escapeHtml(r.title)}”</p>
 <audio controls preload="none" src="/commission/admin/${r.id}/audio"></audio>
 ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song delivered to the wrong request: deletes the file and puts this one back in line, being written. No email goes out; if they already got the link, write to them yourself.</p>${button('undeliver', 'Undo delivery', 'danger')}</details>` : ''}` : ''}
-<form class="panel" method="post" action="?" enctype="multipart/form-data">
+<form class="panel" method="post" action="?again" enctype="multipart/form-data">
   ${hidden('action', 'deliver')}${hidden('form_id', randomHex(16))}
   <label>Title<input type="text" name="title" maxlength="${LIMITS.title}" required value="${escapeHtml(r.title ?? '')}"></label>
   <label>Song file <span>MP3, M4A or WAV, up to ${SONG_MAX_BYTES / 1024 / 1024} MB${delivered ? '. Leave it empty to keep the current one.' : '.'}</span><input type="file" name="song" accept="audio/*"${delivered ? '' : ' required'}></label>
@@ -471,7 +497,7 @@ ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song
 </form>` : '';
 
   const markPaid = allowed('paid') ? `<h2>Mark paid</h2>
-<form class="panel" method="post" action="?">
+<form class="panel" method="post" action="?again">
   ${hidden('action', 'paid')}${hidden('form_id', randomHex(16))}
   <label>Amount in dollars<input type="text" name="amount" inputmode="numeric" required></label>
   <label>How<select name="method"><option value="venmo">Venmo</option><option value="paypal">PayPal</option><option value="other">Other</option></select></label>
@@ -484,7 +510,7 @@ ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song
   const planLines = plans.map((plan) => `<li>${payments.filter((payment) => payment.subscription_id === plan.subscription_id).length} of ${plan.months} monthly payments of ${escapeHtml(dollars(plan.monthly_cents))} · ${escapeHtml(plan.status)}</li>`).join('');
 
   const edit = `<h2>Edit</h2>
-<form class="panel" method="post" action="?">
+<form class="panel" method="post" action="?again">
   ${hidden('action', 'edit')}
   <label>The least they can pay, in dollars<input type="text" name="floor" inputmode="numeric" required value="${r.floor_cents / 100}"></label>
   <label>OK to be that day’s Song A Day?<select name="may_publish"><option value="yes"${r.may_publish ? ' selected' : ''}>Yes</option><option value="no"${r.may_publish ? '' : ' selected'}>No, private</option></select></label>
@@ -501,20 +527,20 @@ ${allowed('undeliver') ? `<details><summary>Undo delivery</summary><p>For a song
     allowed('unarchive') ? button('unarchive', 'Unarchive', 'quiet') : ''
   ].filter(Boolean).join('\n');
   const forget = allowed('delete') ? `<details><summary>Delete for good</summary>
-<form class="panel" method="post" action="?">
+<form class="panel" method="post" action="?again">
   ${hidden('action', 'delete')}
   <p>For someone who asks to be forgotten. This deletes everything they told me, the voice memo, the song file and every email, and their links stop working. Payments stay as money records, with no name or note. It can’t be undone.</p>
   <label class="check"><input type="checkbox" name="confirm" value="yes" required> Yes, delete everything about this request</label>
   <button type="submit" class="danger">Delete for good</button>
 </form></details>` : '';
   const cancel = allowed('cancel') ? `<details><summary>Cancel this request</summary>
-<form class="panel" method="post" action="?">
+<form class="panel" method="post" action="?again">
   ${hidden('action', 'cancel')}
   <label>Message to them <span>Optional. It goes into the email.</span><textarea name="message" maxlength="${LIMITS.message}" rows="3"></textarea></label>
   <button type="submit" class="danger">Cancel it</button>
 </form></details>` : '';
 
-  const emailRows = emails.map((email) => `<tr><td>${escapeHtml(email.kind)}</td><td>${escapeHtml(email.subject)}</td><td>${emailStatus(email, now)}</td><td><a href="/commission/admin/emails/${email.id}">View</a></td><td><form method="post" action="/commission/admin/emails/${email.id}">${hidden('action', 'send')}<button type="submit" class="quiet">${email.sent_at || email.failed_at ? 'Resend' : 'Send now'}</button></form></td></tr>`).join('');
+  const emailRows = emails.map((email) => `<tr><td>${escapeHtml(email.kind)}</td><td>${escapeHtml(email.subject)}</td><td>${emailStatus(email, now)}</td><td><a href="/commission/admin/emails/${email.id}">View</a></td><td><form method="post" action="/commission/admin/emails/${email.id}?again">${hidden('action', 'send')}<button type="submit" class="quiet">${email.sent_at || email.failed_at ? 'Resend' : 'Send now'}</button></form></td></tr>`).join('');
 
   return html(request, layout(`Request ${r.id}`, identity, `<p><a href="/commission/admin">← The line</a></p>
 ${done ? `<p class="done" role="status">${escapeHtml(done)}${next ? ` <a href="/commission/admin/${next}">Next in line →</a>` : ''}</p>` : ''}
@@ -548,7 +574,7 @@ async function emailsPage(request, env, url, identity, now) {
   const pageNumber = Math.max(1, Math.min(10_000, Number.parseInt(url.searchParams.get('page'), 10) || 1));
   const { results } = await db.prepare(`SELECT id, request_id, kind, to_email, subject, created_at, sent_at, failed_at, attempts, last_error
     FROM outbox ORDER BY (sent_at IS NOT NULL), id DESC LIMIT ? OFFSET ?`).bind(51, (pageNumber - 1) * 50).all();
-  const rows = results.slice(0, 50).map((email) => `<tr><td>${escapeHtml(email.to_email)}</td><td>${escapeHtml(email.subject)}</td><td>${escapeHtml(email.kind)}</td><td>${email.request_id ? `<a href="/commission/admin/${email.request_id}">#${email.request_id}</a>` : ''}</td><td>${emailStatus(email, now)}</td><td><a href="/commission/admin/emails/${email.id}">View</a></td><td><form method="post" action="/commission/admin/emails/${email.id}">${hidden('action', 'send')}<button type="submit" class="quiet">${email.sent_at || email.failed_at ? 'Resend' : 'Send now'}</button></form></td></tr>`).join('');
+  const rows = results.slice(0, 50).map((email) => `<tr><td>${escapeHtml(email.to_email)}</td><td>${escapeHtml(email.subject)}</td><td>${escapeHtml(email.kind)}</td><td>${email.request_id ? `<a href="/commission/admin/${email.request_id}">#${email.request_id}</a>` : ''}</td><td>${emailStatus(email, now)}</td><td><a href="/commission/admin/emails/${email.id}">View</a></td><td><form method="post" action="/commission/admin/emails/${email.id}?again">${hidden('action', 'send')}<button type="submit" class="quiet">${email.sent_at || email.failed_at ? 'Resend' : 'Send now'}</button></form></td></tr>`).join('');
   const sending = env.COMMISSION_EMAIL && env.COMMISSION_FROM_EMAIL ? '' : '<p class="problem">Email isn’t set up here, so every email waits. Open one to read it and follow its link.</p>';
   return html(request, layout('Emails', identity, `${await top(db, now, 'emails')}
 <h1>Emails</h1>
@@ -565,7 +591,7 @@ async function emailPage(request, env, identity, now, id) {
 <h1>${escapeHtml(email.subject)}</h1>
 <p>To ${escapeHtml(email.to_email)} · ${escapeHtml(email.kind)} · ${emailStatus(email, now)}${email.request_id ? ` · <a href="/commission/admin/${email.request_id}">#${email.request_id}</a>` : ''}</p>
 <pre>${escapeHtml(email.text)}</pre>
-<form method="post" action="/commission/admin/emails/${email.id}">${hidden('action', 'send')}<button type="submit">${email.sent_at || email.failed_at ? 'Resend' : 'Send now'}</button></form>`));
+<form method="post" action="/commission/admin/emails/${email.id}?again">${hidden('action', 'send')}<button type="submit">${email.sent_at || email.failed_at ? 'Resend' : 'Send now'}</button></form>`));
 }
 
 // ---- Actions --------------------------------------------------------------------------------
@@ -803,6 +829,16 @@ async function sendEmail(request, env, url, ctx, identity, now, id) {
 // admin, and only after the Access check, so a spelling Access doesn't cover can only lock
 // Jonathan out, never let someone in.
 export async function handleAdmin(request, env, url, ctx) {
+  const response = await admin(request, env, url, ctx);
+  // Let a form post follow Access to its sign-in (adminPolicy says why).
+  const signIn = signInOrigin(env);
+  if (signIn && response.headers.get('Content-Security-Policy') === adminPolicy()) {
+    response.headers.set('Content-Security-Policy', adminPolicy(signIn));
+  }
+  return response;
+}
+
+async function admin(request, env, url, ctx) {
   const identity = await accessIdentity(request, env, url);
   if (!identity) return forbidden();
   if (!env.COMMISSIONS_DB) return problemPage(request, identity, 'The commissions database isn’t set up (COMMISSIONS_DB).', 503);
@@ -812,6 +848,12 @@ export async function handleAdmin(request, env, url, ctx) {
   const read = method === 'GET' || method === 'HEAD';
   // CSRF: Access's cookie could otherwise ride along on a POST from another site.
   if (method === 'POST' && request.headers.get('Origin') !== url.origin) return forbidden('That came from somewhere else.');
+  // A button press that went to Access's sign-in and came back without its form.
+  if (read && url.searchParams.has('again')) {
+    const where = path === '/commission/admin/held' ? '/commission/admin?show=held' : path;
+    return html(request, layout('That didn’t go through', identity, `<p class="problem" role="alert">Your sign-in had run out, so that didn’t go through. You’re signed in again now.</p>
+<p><a href="${escapeHtml(where)}">Go back and do it again</a></p>`));
+  }
 
   if (path === '/commission/admin' || path === '/commission/admin/') {
     if (read) return queuePage(request, env, url, identity, now);
