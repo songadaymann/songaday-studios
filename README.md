@@ -19,7 +19,7 @@ outside the Fridays at The Park app.
   and someone with no picture gets their initial. The pictures are small so many show at once
   (eight across at full width, three on a phone), with the name and links under each; the
   line about a patron pops up above their picture when it is pointed at, landed on with the
-  keyboard, or tapped. The home page shows the first twelve faces in a row under its goals
+  keyboard, or tapped. The home page shows the first fourteen faces in a row under its goals
   (`renderPatronFaces`, `HOME_FACES`; `.patron-faces` in `profile.css`), the whole row a link
   to the page, links to it again beside "Read the story", and so does every
   footer except the commission and store pages', which say nothing about donating. To add a

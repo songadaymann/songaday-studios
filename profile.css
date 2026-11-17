@@ -170,7 +170,7 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .gift-section .patronage-match { margin-top: clamp(2rem, 4vw, 3rem); }
 /* One row of small square faces (patrons.mjs's HOME_FACES of them), the whole row a link to the
    patrons page. No frame: the pictures are the only shapes. Two rows of six on a phone. */
-.patron-faces { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: .5rem; margin-top: clamp(2rem, 4vw, 3rem); }
+.patron-faces { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: .5rem; margin-top: clamp(2rem, 4vw, 3rem); }
 .patron-faces img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: #242424; }
 .gift-more { display: inline-flex; align-items: center; min-height: 44px; margin: 1.5rem 1.5rem 0 0; font-weight: 700; text-decoration-thickness: 2px; }
 
@@ -470,7 +470,7 @@ footer nav a { font-weight: 700; }
   .patronage-box-media { aspect-ratio: 4 / 3; }
   .patronage-match { grid-template-columns: minmax(0, 1fr); margin-top: 1.6rem; padding: 1.6rem 1rem; }
   .patronage-match dd { font-size: var(--type-display); }
-  .patron-faces { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .patron-faces { grid-template-columns: repeat(7, minmax(0, 1fr)); }
   .video-games-heading { grid-template-columns: 52px minmax(0, 1fr); gap: .75rem; }
   .video-games-heading-icon { width: 52px; height: 52px; }
   .video-games-heading h2 { max-width: none; font-size: var(--type-display); }

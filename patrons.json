@@ -107,6 +107,24 @@
         { "label": "Instagram", "url": "https://www.instagram.com/_deafbeef/" },
         { "label": "Website", "url": "https://deafbeef.com" }
       ]
+    },
+    {
+      "name": "Halving Fun",
+      "bio": "All that remains. wassie - RLD - 🌕🚀 - @rektcoin - 🐧 - 🌎☮️ - 👀 - 🛜 - 🦭 - // - 🦔 - 🅿A - M.O.B.",
+      "image": "/assets/patrons/halving-fun.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/halving_fun" }
+      ]
+    },
+    {
+      "name": "C. Adam Stallard",
+      "bio": "Founder of Updraft: get paid to fund public goods. Founder of BrightID: verifiable uniqueness.",
+      "image": "/assets/patrons/c-adam-stallard.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/cadamstallard" },
+        { "label": "Updraft", "url": "https://updraft.fund" },
+        { "label": "BrightID", "url": "https://brightid.org" }
+      ]
     }
   ]
 }
