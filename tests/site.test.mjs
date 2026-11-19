@@ -218,7 +218,13 @@ test('every page header links to the same sections', async () => {
   const home = await readFile(new URL('profile.html', root), 'utf8');
   const plugins = await readFile(new URL('plugins/index.html', root), 'utf8');
   const films = await readFile(new URL('films.html', root), 'utf8');
-  assert.deepEqual(navLinks(home), ['/gallery/', '/listen', '/games', '/films/', '/plugins/', '/commission', '/store/']);
+  // Songs (Listen, See) · Films · Games · Software (Apps, Plugins) · Hire me (Personal,
+  // Business, Conference troubadour) · Store.
+  assert.deepEqual(navLinks(home), ['/listen', '/gallery/', '/films/', '/games', '/everything/', '/plugins/',
+    '/commission?kind=personal', '/commission?kind=business', '/story/', '/store/']);
+  // The groups are <details> sharing a name, so one opens at a time and none needs a script.
+  assert.deepEqual([...home.matchAll(/<details class="nav-group" name="site-nav">\s*<summary>([^<]+)<\/summary>/g)].map((match) => match[1]), ['Songs', 'Software', 'Hire me']);
+  assert.match(plugins, /<a href="\/plugins\/" aria-current="page">Plugins<\/a>/);
   assert.deepEqual(navLinks(plugins), navLinks(home));
   assert.deepEqual(navLinks(films), navLinks(home));
   assert.match(plugins, /class="nav-donate" href="\/#donate"/);

@@ -43,6 +43,10 @@ test('the build makes /everything and /now, and the home page directory and foot
     }
     assert.doesNotMatch(now, /\{\{|<script>/);
 
+    // The gallery wears it too, with See marked as where you are (its group's word is underlined
+    // by the styles).
+    assert.match(await read('gallery/studio-header.txt'), /<summary>Songs<\/summary>[\s\S]*?<a href="\/gallery\/" aria-current="page">See<\/a>/);
+
     // Both new pages wear the studio header (nothing marked current) and footer.
     for (const page of [everything, now]) {
       assert.deepEqual(navLinks(page), navLinks(home));
@@ -79,7 +83,13 @@ test('the build makes the commission page and the song shell, purchase pages wit
     const [home, page, shell] = await Promise.all(['index.html', 'commission/index.html', 'commission/song.html'].map(read));
     for (const html of [page, shell]) {
       assert.deepEqual(navLinks(html), navLinks(home));
-      assert.match(html, /<a href="\/commission" aria-current="page">Get a song<\/a>/);
+      assert.match(html, /<summary aria-current="true">Hire me<\/summary>/);
+      // The menu's Personal and Business links arrive with the form's first question answered.
+      assert.match(html, /<a href="\/commission\?kind=personal">Personal<\/a>\s*<a href="\/commission\?kind=business">Business<\/a>/);
+    }
+    assert.match(page, /new URLSearchParams\(location\.search\)\.get\("kind"\)/);
+    assert.match(page, /if \(kind === "personal" \|\| kind === "business"\)/);
+    for (const html of [page, shell]) {
       // The menu keeps its Donate button, as on every page. Nothing else on a page about buying
       // a song says donate: no footer link, no tax-deductible line.
       const menuDonate = '<a class="nav-donate" href="/#donate">Donate</a>';

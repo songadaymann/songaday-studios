@@ -189,14 +189,21 @@ await writePage("films/index.html", documentHtml({
 
 // /everything, /now and /gallery share the Films page's header.
 const header = filmsSource.match(/  <header class="site-header">[\s\S]*?<\/header>/)[0].replace(' aria-current="page"', "");
+// Marks where a page is in the menu. A link is the page itself; a group's word (Hire me) stands
+// for a page that more than one of its links lead to. It refuses to do nothing, so a menu that
+// changes can't quietly leave a page unmarked.
+const markMenu = (html, from, to) => {
+  if (!html.includes(from)) throw new Error(`The menu has no ${from}`);
+  return html.replace(from, to);
+};
 const footer = filmsSource.match(/  <footer>[\s\S]*?<\/footer>/)[0];
-await writePage("gallery/studio-header.txt", hostedMedia(header.replace('href="/gallery/"', 'href="/gallery/" aria-current="page"')));
+await writePage("gallery/studio-header.txt", hostedMedia(markMenu(header, 'href="/gallery/"', 'href="/gallery/" aria-current="page"')));
 await writePage("gallery/studio.css", `${chromeCss}\n${await source("gallery.css")}`);
 // The commission and store pages are purchases from Jonathan, so their own words say nothing
 // about donating: no footer link to the form or to the patrons, and a purchase line in place of
 // the fiscal sponsor's. They wear the same menu as every other page, Donate button included: it
 // goes to the form on the home page, and a menu that changes from page to page reads as a mistake.
-const purchaseHeader = header.replace('<a href="/commission">', '<a href="/commission" aria-current="page">');
+const purchaseHeader = markMenu(header, '<summary>Hire me</summary>', '<summary aria-current="true">Hire me</summary>');
 const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate">Donate<\/a>/, "")
   .replace(/\n\s*<a href="\/patrons\/">Patrons<\/a>/, "")
   .replace(/<p class="sponsor-line">[\s\S]*?<\/p>/, '<p class="sponsor-line">Song commissions are purchases from Jonathan Mann.</p>');
@@ -386,7 +393,7 @@ if (productIssues.length) {
 }
 const storeFront = renderStore(storeProducts, { albums: albumShelf, values: storeValues });
 const storeTokens = { ...storeValues, STORE_ITEMS: storeFront.items, STORE_SECTIONS: storeFront.sections };
-const storeHeader = purchaseHeader.replace(' aria-current="page"', '').replace('<a href="/store/">', '<a href="/store/" aria-current="page">');
+const storeHeader = markMenu(header, '<a href="/store/">', '<a href="/store/" aria-current="page">');
 const storeFooter = purchaseFooter.replace('Song commissions are purchases', 'Posters and song commissions are purchases');
 const storeBody = (page) => hostedMedia(page.replace("{{HEADER}}", () => storeHeader).replace("{{FOOTER}}", () => storeFooter)
   .replaceAll(/\{\{([A-Z_]+)\}\}/g, (match, name) => {

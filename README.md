@@ -236,10 +236,37 @@ the page's CSS; the bar fills that element in.
 The studio uses it on the home page, Films, Plugins, Fumble, /everything and /now, above the
 studio header. The bio link page (/links) has no bar.
 
+### The studio's menu
+
+Every page's header has the same menu: **Songs** (Listen, See) · **Films** · **Games** ·
+**Software** (Apps, Plugins) · **Hire me** (Personal, Business, Conference troubadour) ·
+**Store**, and the Donate button.
+
+- A section with more than one place to go is a group: a word that opens its links underneath.
+  Groups are `<details name="site-nav">`, so opening one closes the others and nothing needs a
+  script (the commission pages allow almost none). The styles are in `studio-chrome.css`
+  (`.nav-group`, `.nav-sub`).
+- On a wide screen the list hangs from the header's red line, and a click anywhere else closes
+  it: the open word spreads an unseen layer over the page, under the rest of the header. At
+  1100px and narrower the links are a second row under the sections and the name moves down a
+  row; there is no layer, since nothing is covered.
+- The menu is written out in four places that must agree: `profile.html`, `films.html` (the
+  build copies its header onto every other built page), `plugins/index.html` and
+  `fumble-page.mjs`. The last two also keep their own copy of the styles. `SECTIONS` in
+  `bar/v1/header.js` is the fifth (below). `tests/header.test.mjs` and `tests/site.test.mjs`
+  fail when they differ.
+- The build marks where a page is (`markMenu` in `build.mjs`): the link itself
+  (`aria-current="page"`), whose group's word the styles underline too, or the group's word
+  (`aria-current="true"` on Hire me) on the commission pages, which two links lead to.
+- Personal and Business go to `/commission?kind=personal` and `?kind=business`;
+  `commission-page.js` picks that answer to the form's first question.
+- **Stand-ins as of 2026-11-19:** Apps goes to `/everything/` and Conference troubadour to
+  `/story/`, because neither has a page of its own yet.
+
 ### The studio header on other sites
 
-`bar/v1/header.js` is the studio's own header (name, the seven sections, Donate) for a site
-that is one of those sections, so going there from the studio doesn't look like leaving. The
+`bar/v1/header.js` is the studio's own header (name, the menu above, Donate) for a site
+that is one of its sections, so going there from the studio doesn't look like leaving. The
 games on mann.cool and listening on songaday.fan use it; `/games` and `/listen` in the studio's
 menu have no "leaving" arrow for that reason.
 A site shows the header or the bar, not both:
@@ -248,8 +275,9 @@ A site shows the header or the bar, not both:
 <script type="module" src="https://songaday.studio/bar/v1/header.js" data-here="games" defer></script>
 ```
 
-`data-here` is the section's id in `SECTIONS` (songs, listen, games, films, plugins, get-a-song,
-store) and marks it as the current one. For no layout shift, put `<songaday-header></songaday-header>`
+`data-here` is an id in `SECTIONS` and marks it as the current one: a link (listen, see, films,
+games, apps, plugins, personal, business, conference-troubadour, store) or a whole group (songs,
+software, hire-me). For no layout shift, put `<songaday-header></songaday-header>`
 where it goes and reserve its height in the page's CSS: `songaday-header { display: block;
 min-height: 68px; background: #000; }`, and `min-height: 101px` at `max-width: 1100px`.
 
@@ -258,6 +286,8 @@ min-height: 68px; background: #000; }`, and `min-height: 101px` at `max-width: 1
 - `SECTIONS` is a copy of the studio's menu. `tests/header.test.mjs` fails when the two differ,
   so a change to the menu in `profile.html` (and its copies) has to be made there too. Other
   sites pick the change up within four hours of the deploy.
+- While a group is open on a narrow screen the header is a row taller (145px, not 101px). The
+  heights above are minimums, so a host page that reserves them still works.
 - It stays at the top while the page scrolls, as on the studio. A page that doesn't want that
   sets `songaday-header { position: static; }`.
 - Donate goes to `https://songaday.studio/?from=<this site's hostname>#donate`, like the bar's.

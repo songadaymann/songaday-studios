@@ -20,16 +20,26 @@
 
 const STUDIO = 'https://songaday.studio';
 
-// The studio's menu. `leaves: true` marks a section that opens a site without this header, which
-// the studio's own menu shows with an arrow. None does today: mann.cool and songaday.fan both
-// carry the header.
+// The studio's menu. A section is one link (`path`), or a group: a word that opens its `items`
+// underneath. data-here names a link's id, or a group's when the site is the whole group.
+// `leaves: true` marks a link that opens a site without this header, which the studio's own menu
+// shows with an arrow. None does today: mann.cool and songaday.fan both carry the header.
 export const SECTIONS = [
-  { id: 'songs', label: 'All songs', path: '/gallery/' },
-  { id: 'listen', label: 'Listen', path: '/listen' },
-  { id: 'games', label: 'Games', path: '/games' },
+  { id: 'songs', label: 'Songs', items: [
+    { id: 'listen', label: 'Listen', path: '/listen' },
+    { id: 'see', label: 'See', path: '/gallery/' }
+  ] },
   { id: 'films', label: 'Films', path: '/films/' },
-  { id: 'plugins', label: 'Plugins', path: '/plugins/' },
-  { id: 'get-a-song', label: 'Get a song', path: '/commission' },
+  { id: 'games', label: 'Games', path: '/games' },
+  { id: 'software', label: 'Software', items: [
+    { id: 'apps', label: 'Apps', path: '/everything/' },
+    { id: 'plugins', label: 'Plugins', path: '/plugins/' }
+  ] },
+  { id: 'hire-me', label: 'Hire me', items: [
+    { id: 'personal', label: 'Personal', path: '/commission?kind=personal' },
+    { id: 'business', label: 'Business', path: '/commission?kind=business' },
+    { id: 'conference-troubadour', label: 'Conference troubadour', path: '/story/' }
+  ] },
   { id: 'store', label: 'Store', path: '/store/' }
 ];
 
@@ -52,6 +62,18 @@ nav { display: flex; align-items: center; gap: clamp(16px, 2.2vw, 28px); }
 nav a { display: inline-flex; align-items: center; min-height: 44px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 nav a:hover, nav a[aria-current="page"] { border-bottom-color: #ff2445; }
 .out { margin-left: .25em; color: #999; font-weight: 400; }
+/* Groups, as on the studio (studio-chrome.css says how they work). */
+details { position: relative; }
+summary { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; border-bottom: 2px solid transparent; font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; list-style: none; cursor: pointer; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: ""; border: 4px solid transparent; border-top: 5px solid currentColor; border-bottom: 0; }
+summary:hover, details[open] > summary, summary[aria-current], details:has(a[aria-current]) > summary { border-bottom-color: #ff2445; }
+summary:focus-visible { outline: 4px solid #ff2445; outline-offset: 4px; }
+.sub { position: absolute; z-index: 2; top: calc(100% + 14px); left: -18px; display: grid; min-width: max-content; padding: 6px 18px 10px; border: 4px solid #ff2445; border-top: 0; background: #000; }
+@media (min-width: 1101px) {
+  details[open] > summary::before { content: ""; position: fixed; inset: 0; z-index: 1; cursor: default; }
+  nav > a, details:not([open]) > summary, .brand, .donate { position: relative; z-index: 2; }
+}
 .donate { flex: none; padding: 13px 18px; background: #e6203f; font-size: 14px; font-weight: 700; letter-spacing: .06em; line-height: 1; text-transform: uppercase; }
 .donate:hover { background: #fff; color: #000; }
 /* Compact, as on the studio: the sections scroll sideways above the name, and scroll away. */
@@ -62,6 +84,13 @@ nav a:hover, nav a[aria-current="page"] { border-bottom-color: #ff2445; }
   nav { grid-area: sections; gap: 18px; height: 41px; margin: 0 calc(-1 * var(--gutter)) 9px; padding: 0 var(--gutter); border-bottom: 1px solid #2a2a2a; overflow-x: auto; scrollbar-width: none; }
   nav::-webkit-scrollbar { display: none; }
   nav a { flex: none; min-height: 40px; letter-spacing: .05em; }
+  header { position: relative; }
+  details { position: static; flex: none; }
+  summary { gap: 6px; min-height: 40px; letter-spacing: .05em; }
+  nav:has(details[open]) { margin-bottom: 53px; }
+  .sub { top: 41px; left: 0; right: 0; display: flex; gap: 18px; min-width: 0; height: 44px; padding: 0 var(--gutter); border: 0; border-bottom: 1px solid #2a2a2a; overflow-x: auto; scrollbar-width: none; }
+  .sub::-webkit-scrollbar { display: none; }
+  .sub a { min-height: 43px; }
   .brand { grid-area: brand; min-width: 0; gap: 9px; font-size: 14px; }
   .brand img { width: 34px; height: 34px; }
   .donate { grid-area: donate; align-self: center; padding: 12px 15px; }
@@ -104,18 +133,30 @@ function define() {
       word.append(element('span', 'dot', '.'), ' STUDIO');
       brand.append(mark, word);
 
-      const nav = element('nav');
-      nav.setAttribute('aria-label', 'Song A Day Studio sections');
-      nav.append(...SECTIONS.map((section) => {
-        const link = element('a', '', section.label);
-        link.href = STUDIO + section.path;
-        if (section.id === here) link.setAttribute('aria-current', 'page');
+      const link = (section) => {
+        const node = element('a', '', section.label);
+        node.href = STUDIO + section.path;
+        if (section.id === here) node.setAttribute('aria-current', 'page');
         if (section.leaves && section.id !== here) {
           const arrow = element('span', 'out', '↗');
           arrow.setAttribute('aria-hidden', 'true');
-          link.append(arrow);
+          node.append(arrow);
         }
-        return link;
+        return node;
+      };
+      const nav = element('nav');
+      nav.setAttribute('aria-label', 'Song A Day Studio sections');
+      nav.append(...SECTIONS.map((section) => {
+        if (!section.items) return link(section);
+        // The shared name closes the other groups when one opens.
+        const group = element('details');
+        group.setAttribute('name', 'site-nav');
+        const word = element('summary', '', section.label);
+        if (section.id === here) word.setAttribute('aria-current', 'true');
+        const list = element('div', 'sub');
+        list.append(...section.items.map(link));
+        group.append(word, list);
+        return group;
       }));
 
       const donate = element('a', 'donate', 'Donate');

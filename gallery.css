@@ -8,6 +8,8 @@ body {
 body > .site-header {
   flex: none;
   top: 0;
+  /* An open menu group hangs over the wall, whose own bars and search results go up to 200. */
+  z-index: 300;
   font-family: var(--font);
   line-height: 1.5;
 }

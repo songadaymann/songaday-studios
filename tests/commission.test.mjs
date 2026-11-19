@@ -91,7 +91,7 @@ test('the page wears the studio header and footer, with no donate wording or Pat
   const html = await response.text();
   const home = await readFile(new URL('profile.html', root), 'utf8');
   assert.deepEqual(navLinks(html), navLinks(home));
-  assert.match(html, /<a href="\/commission" aria-current="page">Get a song<\/a>/);
+  assert.match(html, /<summary aria-current="true">Hire me<\/summary>/);
   // The menu's Donate button is there, once, in the header; no other link goes to the donation form.
   assert.ok(html.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(MENU_DONATE));
   assert.equal(html.replace(/<style[\s\S]*?<\/style>/g, '').split('#donate').length - 1, 1);
