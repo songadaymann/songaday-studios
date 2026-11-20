@@ -1,0 +1,41 @@
+/* songaday.studio/conference-troubadour/: what the Conference Troubadour is, a video of it, how
+   it works, what people said, more videos, and every conference by year. The videos are the
+   films page's cards (.film, in profile.css) and play in place with its script.
+
+   Three sizes only, as everywhere: display for the name, the section headings and the step
+   numbers; body for everything read; meta for the button and who said a thing. */
+.troubadour-page main { width: var(--wrap); margin: 0 auto; padding: 3rem 0 5rem; }
+.troubadour-page main:focus { outline: none; }
+.troubadour-top { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 3rem; align-items: center; }
+.troubadour-intro p { max-width: 34ch; margin: 1.5rem 0 0; font-size: var(--type-body); line-height: 1.5; }
+.troubadour-intro .troubadour-book, .troubadour-book { margin: 2rem 0 0; }
+/* The menu's Donate button, for the one thing this page asks, tall enough for a thumb. */
+.troubadour-book a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1.15rem; background: var(--red-button); color: var(--white); font-size: var(--type-meta); font-weight: 700; letter-spacing: .06em; line-height: 1; text-decoration: none; text-transform: uppercase; }
+.troubadour-book a:hover { background: var(--white); color: var(--ink); }
+.troubadour-section { margin-top: 5rem; }
+.troubadour-section > h2 { margin-bottom: 2rem; }
+.troubadour-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2rem; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.troubadour-steps li { padding-top: 1rem; border-top: 4px solid var(--red); font-size: var(--type-body); line-height: 1.5; counter-increment: step; }
+.troubadour-steps li::before { content: counter(step); display: block; margin-bottom: .75rem; font-size: var(--type-display); font-weight: 700; letter-spacing: -.052em; line-height: .9; }
+.troubadour-said { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+.troubadour-said figure, .troubadour-said blockquote { margin: 0; }
+.troubadour-said blockquote p { margin: 0; font-size: var(--type-body); line-height: 1.5; }
+.troubadour-said figcaption { margin-top: 1rem; font-size: var(--type-meta); font-weight: 700; line-height: 1.4; }
+.troubadour-examples { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
+.troubadour-history { max-width: 62ch; margin: 0 0 2rem; font-size: var(--type-body); line-height: 1.5; }
+.troubadour-years { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: .6rem 1.5rem; margin: 0; font-size: var(--type-body); line-height: 1.5; }
+.troubadour-years dt { font-weight: 700; }
+.troubadour-years dd { margin: 0; }
+/* The line that leads into the last Book me. */
+.troubadour-back { margin: 3rem 0 0; font-size: var(--type-body); font-weight: 700; line-height: 1.5; }
+.troubadour-back + .troubadour-book { margin-top: 1rem; }
+
+@media (max-width: 900px) {
+  .troubadour-top { grid-template-columns: 1fr; gap: 2rem; }
+  .troubadour-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .troubadour-said, .troubadour-examples { grid-template-columns: 1fr; }
+  .troubadour-section { margin-top: 3.5rem; }
+}
+@media (max-width: 520px) {
+  .troubadour-steps { grid-template-columns: 1fr; }
+}

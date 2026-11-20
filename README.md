@@ -260,8 +260,32 @@ Every page's header has the same menu: **Songs** (Listen, See) · **Films** · *
   (`aria-current="true"` on Hire me) on the commission pages, which two links lead to.
 - Personal and Business go to `/commission?kind=personal` and `?kind=business`;
   `commission-page.js` picks that answer to the form's first question.
-- **Stand-ins as of 2026-11-19:** Apps goes to `/everything/` and Conference troubadour to
-  `/story/`, because neither has a page of its own yet.
+- The footer's first row is the menu again, flat: a group's word, then its links
+  (`.footer-menu`, `.footer-group` in `profile.css`). It is written out in `films.html` (which
+  the build copies everywhere) and `profile.html`, and a test holds it equal to the menu. The
+  pages the menu doesn't have (Everything, Now, Press, Story, Patrons, Donate) follow in a row
+  of their own.
+- **Stand-in as of 2026-11-19:** Apps goes to `/everything/`, because it has no page of its
+  own yet.
+
+### The Conference Troubadour page
+
+`/conference-troubadour/` is what Hire me > Conference troubadour leads to: what it is, a video
+of it, how it works, what three people said, three more videos, and every conference by year.
+
+- The words are from the old jonathanmann.net pages (`/conf` and `/conf-troubadour`), which were
+  still readable at `jonathanmann.squarespace.com` on 2026-11-19, after the domain began
+  redirecting to the studio.
+- `conference-troubadour.html` is the page and `conference-troubadour.css` its styles. The
+  videos are the films page's cards (`.film` in `profile.css`) and play in place with its script
+  (`films-page.js`), so the page loads four pictures and no players.
+- **Book me** is one address, `TROUBADOUR_BOOK_HREF` in `build.mjs` (an email link today). The
+  old page also had a booking form on Squarespace; a form here would need its own endpoint.
+- A booking is a purchase from Jonathan, so like the commission and store pages its own words
+  say nothing about donating.
+- The old logos picture is left out on purpose: the list of conferences has one "Watchmaker
+  that wishes to be anonymous", and the picture showed a watchmaker's logo.
+- `/troubadour`, `/conf` and `/conf-troubadour` (the old address) land on it (`worker.mjs`).
 
 ### The studio header on other sites
 

@@ -53,6 +53,22 @@ test('section URLs redirect temporarily and are never cached', async () => {
   }
 });
 
+test('the footer’s first row is the menu again: a group’s word, then its links', async () => {
+  const hrefs = (block) => [...block.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
+  for (const file of ['profile.html', 'films.html']) {
+    const html = await readFile(new URL(file, root), 'utf8');
+    const menu = html.match(/<nav class="site-sections"[\s\S]*?<\/nav>/)[0];
+    const footer = html.match(/<footer>[\s\S]*?<\/footer>/)[0];
+    const row = footer.match(/<nav class="footer-menu" aria-label="Footer sections">[\s\S]*?<\/nav>/)[0];
+    assert.deepEqual(hrefs(row), hrefs(menu), file);
+    assert.deepEqual([...row.matchAll(/<span class="footer-group"><span>([^<]+)<\/span>/g)].map((match) => match[1]), ['Songs', 'Software', 'Hire me'], file);
+    // The pages the menu doesn't have follow in a row of their own, and the old names are gone.
+    assert.deepEqual([...footer.match(/<nav aria-label="More pages">[\s\S]*?<\/nav>/)[0].matchAll(/>([^<]+)<\/a>/g)].map((match) => match[1]),
+      ['Everything', 'Now', 'Press', 'Story', 'Patrons', 'Donate'], file);
+    assert.doesNotMatch(footer, /All songs|Get a song/, file);
+  }
+});
+
 test('gallery routing preserves the origin and query without sending Studio credentials', async () => {
   const env = { GALLERY: { fetch: async (request) => {
     assert.equal(request.url, 'https://songaday.studio/gallery/api/ens?addresses=0xabc');
@@ -221,7 +237,7 @@ test('every page header links to the same sections', async () => {
   // Songs (Listen, See) · Films · Games · Software (Apps, Plugins) · Hire me (Personal,
   // Business, Conference troubadour) · Store.
   assert.deepEqual(navLinks(home), ['/listen', '/gallery/', '/films/', '/games', '/everything/', '/plugins/',
-    '/commission?kind=personal', '/commission?kind=business', '/story/', '/store/']);
+    '/commission?kind=personal', '/commission?kind=business', '/conference-troubadour/', '/store/']);
   // The groups are <details> sharing a name, so one opens at a time and none needs a script.
   assert.deepEqual([...home.matchAll(/<details class="nav-group" name="site-nav">\s*<summary>([^<]+)<\/summary>/g)].map((match) => match[1]), ['Songs', 'Software', 'Hire me']);
   assert.match(plugins, /<a href="\/plugins\/" aria-current="page">Plugins<\/a>/);

@@ -36,11 +36,15 @@ const SECTION_REDIRECTS = {
   '/media': '/press/',
   '/donate': '/#donate',
   // The story page, by the word people usually try first.
-  '/about': '/story/'
+  '/about': '/story/',
+  // The Conference Troubadour, by a shorter word and by its address on the old jonathanmann.net.
+  '/troubadour': '/conference-troubadour/',
+  '/conf': '/conference-troubadour/',
+  '/conf-troubadour': '/conference-troubadour/'
 };
 
 // Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
-const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/story', '/patrons', '/data', '/press', '/store', '/store/muscle']);
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/story', '/patrons', '/conference-troubadour', '/data', '/press', '/store', '/store/muscle']);
 
 // The poster picker used to be the whole store page. Links people shared to a figure, and the
 // links Stripe sends buyers back on, name one of these; they land on the picker's own page.

@@ -35,7 +35,7 @@ test("the header for other sites has the studio's own menu, in the same order", 
   assert.equal(new Set(everySection.map((section) => section.id)).size, everySection.length);
   assert.ok(everySection.every((section) => /^[a-z][a-z-]*$/.test(section.id)));
   // A group has links and no address of its own; a link has an address on the studio.
-  assert.ok(everySection.every((section) => section.items ? section.path === undefined && section.items.length > 1 : /^\/[a-z/]+(\?kind=[a-z]+)?$/.test(section.path)));
+  assert.ok(everySection.every((section) => section.items ? section.path === undefined && section.items.length > 1 : /^\/[a-z/-]+(\?kind=[a-z]+)?$/.test(section.path)));
   // The ids mann.cool and songaday.fan already name in data-here still mean those links.
   assert.deepEqual(['games', 'listen'].map((id) => everySection.find((section) => section.id === id)?.path), ['/games', '/listen']);
   // Every copy of the studio header agrees, so the one check above covers them all.

@@ -226,7 +226,7 @@ const HEADER = `<header class="site-header">
       <div class="nav-sub">
         <a href="/commission?kind=personal">Personal</a>
         <a href="/commission?kind=business">Business</a>
-        <a href="/story/">Conference troubadour</a>
+        <a href="/conference-troubadour/">Conference troubadour</a>
       </div>
     </details>
     <a href="/store/">Store</a>

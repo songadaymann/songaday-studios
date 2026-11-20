@@ -279,6 +279,25 @@ await writePage("patrons/index.html", documentHtml({
   extraCss: await source("patrons.css"),
 }));
 
+// songaday.studio/conference-troubadour/: the Conference Troubadour, a keynote that ends the day
+// with a song about it. The words are from the old jonathanmann.net pages (/conf and
+// /conf-troubadour). Its videos are the films page's cards and play in place with its script.
+// A booking is a purchase from Jonathan, like a commission, so the page's own words say nothing
+// about donating (purchaseFooter). "Book me" is the one address below.
+const TROUBADOUR_BOOK_HREF = "mailto:jonathan@jonathanmann.net?subject=The%20Conference%20Troubadour";
+const troubadourHeader = markMenu(header, '<a href="/conference-troubadour/">', '<a href="/conference-troubadour/" aria-current="page">');
+const troubadourFooter = markMenu(purchaseFooter, 'Song commissions are purchases', 'Conference bookings and song commissions are purchases');
+await writePage("conference-troubadour/index.html", documentHtml({
+  title: "The Conference Troubadour · Song A Day Studio",
+  description: "Jonathan Mann watches every talk at your conference and ends the day with a song about it.",
+  url: "https://songaday.studio/conference-troubadour/",
+  body: hostedMedia((await source("conference-troubadour.html"))
+    .replace("{{HEADER}}", () => troubadourHeader).replace("{{FOOTER}}", () => troubadourFooter)
+    .replaceAll("{{BOOK_HREF}}", TROUBADOUR_BOOK_HREF)),
+  script: filmsJs,
+  extraCss: await source("conference-troubadour.css"),
+}));
+
 // songaday.studio/commission: the page and request form, and the shell the Worker puts each
 // buyer's private song page into (commission.mjs). The prices and limits come from
 // commission-config.mjs, the same values the Worker checks. The Worker fills the
@@ -363,7 +382,7 @@ ${labBody}
 </body>
 </html>
 `);
-console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, patrons/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, patrons/, conference-troubadour/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
 
 // The store (songaday.studio/store/): a front page built from the list of what's on sale
 // (store/products.json, store-products.mjs), which opens with one picture per kind of thing and

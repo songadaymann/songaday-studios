@@ -422,12 +422,15 @@ body.video-modal-open { overflow: hidden; }
   .everything-row { grid-template-columns: minmax(0, 1fr); }
 }
 
-footer { display: grid; grid-template-columns: 1fr auto; gap: 2rem; padding: 2.5rem var(--wrap-edge); border-top: 4px solid var(--red); background: var(--ink); color: var(--white); }
+footer { display: grid; grid-template-columns: minmax(18rem, 1fr) auto; gap: 2rem; padding: 2.5rem var(--wrap-edge); border-top: 4px solid var(--red); background: var(--ink); color: var(--white); }
 .footer-word { font-size: var(--type-body); font-weight: 700; letter-spacing: .02em; }
 footer p { margin: .35rem 0 0; }
 .footer-links { display: grid; justify-items: end; align-content: start; gap: .9rem; }
 footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .7rem 1.1rem; }
 footer nav a { font-weight: 700; }
+/* The footer's first row is the menu again: a group's word, then its links. */
+.footer-menu { column-gap: 1.75rem; }
+.footer-group { display: flex; flex-wrap: wrap; gap: .7rem .8rem; }
 .sponsor-line { grid-column: 1 / -1; padding-top: 1.25rem; border-top: 2px solid var(--red); color: var(--white); font-size: var(--type-meta); }
 
 @media (max-width: 1100px) {
