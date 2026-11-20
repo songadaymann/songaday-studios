@@ -146,12 +146,15 @@ test('unverified email, changed delivery email and forged discount fields cannot
 test('a Zeffy outage stops a verified patron quote instead of silently charging full price', () => withSetup(async s => {
   const v = await verify(s); s.setUnavailable(true);
   const response = await quote(s, v.cookie); assert.notEqual(response.status, 200); assert.match((await response.json()).error, /patron discount/); assert.equal(s.db.rows('store_orders').length, 0);
+  s.env.ZEFFY_API_KEY = '';
+  assert.notEqual((await quote(s, v.cookie)).status, 200); assert.equal(s.db.rows('store_orders').length, 0);
 }));
 test('logout revokes the session, cleanup removes expired private records, and redirects stay local', () => withSetup(async s => {
   const v = await verify(s);
   const response = await route(s, request('/store/patron/logout', {}, v.cookie)); assert.match(response.headers.get('Set-Cookie'), /Max-Age=0/);
   assert.equal((await (await route(s, request('/store/patron/status', undefined, v.cookie))).json()).verified, false);
   await route(s, request('/store/patron/request', { email, returnTo: 'https://evil.invalid/' })); assert.equal(s.db.rows('patron_links')[0].return_path, '/store/muscle/#patron-discount');
+  s.env.PATRON_DISCOUNT_PERCENT = '0';
   await cleanupPatrons(s.env, at() + 31 * 86400);
   assert.equal(s.db.rows('patron_links').length, 0); assert.equal(s.db.rows('patron_sessions').length, 0); assert.equal(s.db.rows('patron_limits').length, 0);
 }));

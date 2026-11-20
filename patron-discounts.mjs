@@ -96,9 +96,10 @@ export async function patronSession(request, env, at = seconds()) {
 }
 export async function patronPrice(request, env, email, priceCents) {
   const none = { discountCents: 0, discountPercent: 0, patronEmailHash: null };
-  if (!patronReady(env)) return none;
+  if (!patronPercent(env)) return none;
   const session = await patronSession(request, env);
   if (!session || session.email !== patronEmail(email)) return none;
+  if (!patronReady(env)) throw Error('membership_unavailable');
   const membership = await findPatron(env, session.email);
   if (!membership.eligible) return none;
   const percent = patronPercent(env);
@@ -137,7 +138,11 @@ function html(title, content, status = 200) {
   return new Response(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)} · Song A Day Studio</title><style>body{font:18px/1.5 system-ui,sans-serif;background:#080808;color:#fff;max-width:34rem;margin:4rem auto;padding:0 1.5rem}h1{line-height:1.15}a{color:inherit}button{font:inherit;padding:.8rem 1rem;cursor:pointer}p{overflow-wrap:anywhere}</style></head><body><a href="/store/muscle/">Song A Day Studio</a><h1>${escapeHtml(title)}</h1>${content}</body></html>`, { status, headers: { ...headers, 'Content-Type': 'text/html;charset=utf-8' } });
 }
 export async function cleanupPatrons(env, at = seconds()) {
-  if (!env.COMMISSIONS_DB || !patronPercent(env)) return;
+  if (!env.COMMISSIONS_DB) return;
+  // Expiry must still run when the discount is disabled. Older databases used by
+  // local commission-only previews may not have the patron migration yet.
+  const exists = await env.COMMISSIONS_DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='patron_sessions'").first();
+  if (!exists) return;
   await env.COMMISSIONS_DB.batch(['patron_links', 'patron_sessions', 'patron_limits'].map(table => env.COMMISSIONS_DB.prepare(`DELETE FROM ${table} WHERE expires_at<=?`).bind(at)));
 }
 export async function handlePatron(request, env, url) {
