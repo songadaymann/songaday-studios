@@ -45,6 +45,7 @@
   // Per visitor IP (Fumble posts, commission requests) and per buyer link (starting a payment),
   // counted but never stored: 3 a minute.
   "ratelimits": [
+    {"name": "PATRON_LIMIT", "namespace_id": "20261120", "simple": {"limit": 6, "period": 60}},
     {"name": "STORE_LIMIT", "namespace_id": "20261105", "simple": {"limit": 6, "period": 60}},
     {
       "name": "FUMBLE_LIMIT",
@@ -88,6 +89,8 @@
     // day, so payments are real money (README, Commissions).
     "COMMISSION_REQUESTS": "open",
     "STORE_OPEN": "no",
+    // Any current monthly Zeffy patron gets this percent off posters; shipping is separate.
+    "PATRON_DISCOUNT_PERCENT": "20",
     // songaday.studio has Email Sending on (since 2026-10-24); its mail is still iCloud's.
     "COMMISSION_FROM_EMAIL": "songs@songaday.studio",
     "COMMISSION_FROM_NAME": "Jonathan Mann",

@@ -25,6 +25,10 @@ export function fakeD1(sql = migration) {
   const execute = (text, args) => {
     const statement = sqlite.prepare(text);
     if (/^\s*(SELECT|WITH)\b/i.test(text)) return { results: statement.all(...args), success: true, meta: { changes: 0 } };
+    if (/\bRETURNING\b/i.test(text)) {
+      const results = statement.all(...args);
+      return { results, success: true, meta: { changes: results.length } };
+    }
     const info = statement.run(...args);
     return { results: [], success: true, meta: { changes: Number(info.changes), last_row_id: Number(info.lastInsertRowid) } };
   };

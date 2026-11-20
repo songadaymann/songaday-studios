@@ -1069,3 +1069,51 @@ The earlier all-of-Song-A-Day poster project was recovered in the separate local
 blocks), 40×30 inches, with 300-dpi print assets and historical room mockups. Imagery
 currently stops at song 6505 (October 23, 2026), although its anticipated completed
 2026 title says 6574. Finish that edition before adding it as a complete poster for sale.
+
+
+### Monthly patron poster discount
+
+Monthly Zeffy patrons at any positive monthly amount receive 20% off posters,
+including framed posters. Shipping stays full price and Stripe calculates tax on
+the discounted price. `PATRON_DISCOUNT_PERCENT` in `wrangler.jsonc` controls the
+percentage; omit it or set it to 0 to disable the feature. This does not change
+Bandcamp or Cotton Bureau codes, the donation form, or the `STORE_OPEN` launch gate.
+
+On `/store/muscle/`, patrons enter the same email they used for their monthly
+Zeffy gift and request a verification link. The link lasts 15 minutes, is single
+use, and asks for confirmation before signing in (email scanners cannot consume
+it with a GET). The site remembers the verified email on that device for 30 days
+in a Secure, HttpOnly, host-only cookie. Use “Use a different email” to sign out.
+No password or shared coupon is needed. Delivery email must match the verified
+email for the discount to apply.
+
+Zeffy remains the source of truth: `patron-discounts.mjs` looks up the verified
+email and checks successful online monthly payments for `ZEFFY_CAMPAIGN_ID` on
+each status check and quote. This works for existing and new patrons without an
+import or webhook configuration. A paid month continues to qualify after
+cancellation. Eligibility ends at the earlier of Zeffy's period end and one
+calendar month after the successful charge, so an unpaid renewal cannot extend
+it. Fully refunded or disputed gifts, one-time gifts and yearly gifts do not
+qualify. A verified patron's quote fails visibly if Zeffy cannot be reached,
+instead of silently charging the regular price.
+
+The existing `ZEFFY_API_KEY`, `COMMISSION_EMAIL` and sender configuration are used.
+Apply migration `0004_patron_discounts.sql` before deploying:
+
+```sh
+wrangler d1 migrations apply songaday-commissions --remote
+```
+
+Private D1 records contain expiring verification links and sessions, with emails
+and token hashes (never raw tokens), plus hashed rate-limit keys. There is no
+public donor email list. Rate limits apply by visitor IP and by email. Expired
+records are deleted by the existing five-minute scheduled job. The separate
+monthly-total page still keeps no donor details. Orders snapshot regular price,
+discount and verified email hash; Stripe receives the final poster price and
+full shipping. Payment verification checks that exact net price before fulfillment.
+No Stripe coupon API permission is required.
+
+Suggested Zeffy thank-you copy once poster purchasing is open:
+“For posters, use the same email you used to become a patron. Verify it with the
+link we email you, and your 20% patron discount will apply at checkout. No code
+needed!”

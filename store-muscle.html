@@ -23,6 +23,18 @@
  <fieldset><legend>Frame</legend><div id="store-frames" class="store-options"></div></fieldset>
  <p id="store-frame-note">Black or white wooden frame, with plexiglass. Small and medium arrive ready to hang.</p>
  <p class="store-launch"><strong id="store-price">$59</strong><span id="store-launch"> · Purchasing opens soon.</span></p>
+ <section id="patron-discount" class="store-patron" aria-labelledby="store-patron-title" hidden>
+ <h3 id="store-patron-title">Monthly patron discount</h3>
+ <p id="store-patron-intro">Verify the email you used for your monthly Zeffy gift to get your poster discount. Shipping is charged separately.</p>
+ <form id="store-patron-form">
+ <label for="store-patron-email">Your donation email</label>
+ <input id="store-patron-email" name="email" type="email" autocomplete="email" required maxlength="254">
+ <button type="submit" id="store-patron-request">Email me a verification link</button>
+ </form>
+ <p id="store-patron-status" role="status" aria-live="polite"></p>
+ <div class="store-patron-actions"><button type="button" id="store-patron-refresh" hidden>Check again</button><button type="button" id="store-patron-logout" hidden>Use a different email</button></div>
+ <p id="store-patron-savings" hidden></p>
+ </section>
  <form id="store-shipping" hidden>
  <p>Shipping within the United States. One poster per order.</p>
  <div class="store-address-grid">

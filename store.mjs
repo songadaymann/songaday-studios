@@ -4,6 +4,7 @@ import config from './store/variants.json' with {type:'json'};
 import {stripe} from './commission-stripe.mjs';
 import {accessIdentity} from './commission-admin.mjs';
 import {escapeHtml} from './fumble-page.mjs';
+import {handlePatron,patronReady,patronPercent,patronPrice} from './patron-discounts.mjs';
 const TOKEN=/^[a-f0-9]{32}$/;
 const now=()=>Math.floor(Date.now()/1000);
 const id=()=>[...crypto.getRandomValues(new Uint8Array(16))].map(n=>n.toString(16).padStart(2,'0')).join('');
@@ -48,7 +49,7 @@ const addressOf=r=>({line1:r.addressLine1,line2:r.addressLine2,city:r.city,state
 export function checkoutParams(env,row,p,customer){
  const r=JSON.parse(row.recipient_json);
  return {mode:'payment',customer,client_reference_id:row.id,payment_method_types:['card'],automatic_tax:{enabled:true},billing_address_collection:'required',
-  line_items:[{quantity:1,price_data:{currency:'usd',unit_amount:row.price_cents,tax_behavior:'exclusive',product_data:{tax_code:'txcd_99999999',name:`MUSCLE #${String(p.figure).padStart(3,'0')} ${p.name}`,description:`${p.size.replace('x',' × ')} inches · ${p.frame==='none'?'Unframed':p.frame+' wooden frame, ready to hang'}`,images:[p.image]}}}],
+  line_items:[{quantity:1,price_data:{currency:'usd',unit_amount:row.price_cents-(row.discount_cents??0),tax_behavior:'exclusive',product_data:{tax_code:'txcd_99999999',name:`MUSCLE #${String(p.figure).padStart(3,'0')} ${p.name}`,description:`${p.size.replace('x',' × ')} inches · ${p.frame==='none'?'Unframed':p.frame+' wooden frame, ready to hang'}${row.discount_percent?' · '+row.discount_percent+'% monthly patron discount applied':''}`,images:[p.image]}}}],
   shipping_options:[{shipping_rate_data:{display_name:'Shipping',type:'fixed_amount',fixed_amount:{amount:row.shipping_cents,currency:'usd'},tax_behavior:'exclusive'}}],
   payment_intent_data:{receipt_email:r.email,shipping:{name:r.firstName+' '+r.lastName,phone:r.phone,address:addressOf(r)},metadata:{store_order_id:row.id}},metadata:{store_order_id:row.id},
   custom_text:{submit:{message:`Ships to ${r.firstName} ${r.lastName}, ${r.addressLine1}, ${r.city}, ${r.state} ${r.postCode}. Return to the store to change the shipping address.`}},
@@ -75,7 +76,8 @@ export async function settleStoreCheckout(env,session){
  const expectedLive=/^(?:sk|rk)_live_/.test(stripeKey(env)??'');
  if(!expectedLive||session.livemode!==true)return 'ignored';
  const tax=session.total_details?.amount_tax;
- if(session.amount_subtotal!==row.price_cents||session.total_details?.amount_shipping!==row.shipping_cents||session.total_details?.amount_discount!==0||!Number.isInteger(tax)||tax<0||session.amount_total!==row.price_cents+row.shipping_cents+tax||session.automatic_tax?.status!=='complete')throw Error('payment_mismatch');
+ const posterCents=row.price_cents-(row.discount_cents??0);
+ if(session.amount_subtotal!==posterCents||session.total_details?.amount_shipping!==row.shipping_cents||session.total_details?.amount_discount!==0||!Number.isInteger(tax)||tax<0||session.amount_total!==posterCents+row.shipping_cents+tax||session.automatic_tax?.status!=='complete')throw Error('payment_mismatch');
  const changed=await env.COMMISSIONS_DB.prepare("UPDATE store_orders SET status='paid',payment_intent=?,paid_total_cents=?,updated_at=? WHERE id=? AND status='checkout'").bind(typeof session.payment_intent==='string'?session.payment_intent:session.payment_intent?.id,session.amount_total,now(),token).run();
  if(changed.meta.changes)await fulfillStoreOrder(env,token);
  return 'store_paid';
@@ -120,7 +122,8 @@ export async function runStoreOrders(env){
 }
 export async function handleStore(request,env,url){
  const path=url.pathname;
- if(path==='/store/config')return reply({checkoutEnabled:storeReady(env)});
+ const patron=await handlePatron(request,env,url);if(patron)return patron;
+ if(path==='/store/config')return reply({checkoutEnabled:storeReady(env),patronDiscountPercent:patronReady(env)?patronPercent(env):0});
  const admin=path==='/commission/admin/store';
  if(admin){
   if(!await accessIdentity(request,env,url))return new Response('Unauthorized',{status:401});
@@ -143,9 +146,10 @@ export async function handleStore(request,env,url){
   requestToken=data.token;
   if(path==='/store/quote'){
    const p=product(data.figure,data.variant),r=recipient(data.recipient),token=id();
+   const discount=await patronPrice(request,env,r.email,p.priceCents);
    const q=await quoteOrder(env,p,r,token);
-   await env.COMMISSIONS_DB.prepare('INSERT INTO store_orders(id,figure,variant,price_cents,shipping_cents,recipient_json,shipping_method,expires_at,created_at,updated_at,product_json) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(token,p.figure,p.id,p.priceCents,q.shipping,JSON.stringify(r),q.method,now()+2700,now(),now(),JSON.stringify(p)).run();
-   return reply({token,priceCents:p.priceCents,shippingCents:q.shipping,shippingName:q.methodName,minDays:q.minDays,maxDays:q.maxDays});
+   await env.COMMISSIONS_DB.prepare('INSERT INTO store_orders(id,figure,variant,price_cents,shipping_cents,recipient_json,shipping_method,expires_at,created_at,updated_at,product_json,discount_cents,discount_percent,patron_email_hash) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(token,p.figure,p.id,p.priceCents,q.shipping,JSON.stringify(r),q.method,now()+2700,now(),now(),JSON.stringify(p),discount.discountCents,discount.discountPercent,discount.patronEmailHash).run();
+   return reply({token,priceCents:p.priceCents-discount.discountCents,originalPriceCents:p.priceCents,discountCents:discount.discountCents,discountPercent:discount.discountPercent,shippingCents:q.shipping,shippingName:q.methodName,minDays:q.minDays,maxDays:q.maxDays});
   }
   if(!TOKEN.test(data.token??''))throw Error('quote_expired');
   const row=await load(env,data.token);if(!row)throw Error('quote_expired');
@@ -153,7 +157,7 @@ export async function handleStore(request,env,url){
  }catch(error){
   console.log('store request failed',path,error?.status??error?.name??'error',error?.code??'');
   if(path==='/store/checkout'&&TOKEN.test(requestToken??''))await env.COMMISSIONS_DB.prepare('UPDATE store_orders SET error_code=? WHERE id=?').bind(String(error?.code??error?.name??'checkout_error').slice(0,80),requestToken).run();
-  const messages={invalid_product:'Please choose a figure and available size/frame.',invalid_address:'Check your US shipping address, email and phone number.',quote_expired:'Your quote expired. Please get a new shipping quote.',unavailable:'That option cannot ship to this address right now.'};
+  const messages={invalid_product:'Please choose a figure and available size/frame.',invalid_address:'Check your US shipping address, email and phone number.',quote_expired:'Your quote expired. Please get a new shipping quote.',unavailable:'That option cannot ship to this address right now.',membership_unavailable:'We couldn’t check your patron discount. Please try again before checking out.'};
   return reply({error:messages[error.message]??'Unable to prepare checkout right now. Please try again.'},error.message in messages?400:502);
  }
 }

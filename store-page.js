@@ -5,6 +5,7 @@
  const query = new URLSearchParams(location.search);
  let figures = [], config, figure, size = query.get("size") || "30x40", frame = query.get("frame") || "none";
  let quoteToken=null, buying=false, revision=0, imageView="print";
+ let patronState=null, patronDiscountPercent=0, patronChecking=false, patronCheckedAt=0;
  const money=cents=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(cents/100);
  const labels = {none:"Unframed",black:"Black wood",white:"White wood"};
  function chooseButton(text,small,pressed,disabled,callback) {
@@ -19,7 +20,7 @@
   $("store-frames").replaceChildren(...Object.entries(labels).map(([value,label])=>chooseButton(label,"",frame===value,!config.variants.some(v=>v.size===size&&v.frame===value),()=>{frame=value;renderOptions();})));
   document.querySelector(".store-art").dataset.frame=frame;
   $("store-frame-note").textContent=size==="30x40"?"30 × 40″ is available unframed. Choose small or medium for a ready-to-hang wooden frame.":frame==="none"?"Printed edge to edge on semi-glossy paper. Frame it your way.":"Wooden frame with plexiglass, assembled and ready to hang. Frame preview is illustrative.";
-  $("store-price").textContent=money(config.variants.find(v=>v.size===size&&v.frame===frame).priceCents);
+  renderPrice();
   renderMedia(); clearQuote(); updateUrl();
  }
  function updateUrl(){if(!figure)return;const u=new URL(location.href);u.searchParams.set("figure",figure.id);u.searchParams.set("size",size);u.searchParams.set("frame",frame);history.replaceState(null,"",u);}
@@ -60,13 +61,53 @@
  }
  function clearQuote(){revision++;quoteToken=null;$("store-checkout").hidden=true;$("store-quote-status").textContent="";}
  async function post(path,data){const r=await fetch(path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw Error(d.error||"Please try again.");return d;}
+ function renderPrice(){
+  if(!config)return;
+  const cents=config.variants.find(v=>v.size===size&&v.frame===frame).priceCents;
+  const email=$("store-shipping").elements.email.value.trim().toLowerCase();
+  const eligible=patronState?.eligible&&email===patronState.email;
+  $("store-price").textContent=money(eligible?cents-Math.round(cents*patronState.percent/100):cents);
+  $("store-patron-savings").hidden=!eligible;
+  $("store-patron-savings").textContent=eligible?`${patronState.percent}% patron discount applied. Regular poster price: ${money(cents)}.`:"";
+ }
+ async function refreshPatron(){
+  if(!patronDiscountPercent||patronChecking)return;
+  patronChecking=true;patronCheckedAt=Date.now();
+  try{
+   const r=await fetch("/store/patron/status",{cache:"no-store"}),d=await r.json();
+   if(!r.ok)throw Error(d.error||"We couldn’t check your patron discount. Please try again.");
+   const previousEmail=patronState?.email;patronState=d;
+   $("store-patron-form").hidden=d.verified;
+   $("store-patron-logout").hidden=!d.verified;$("store-patron-refresh").hidden=!d.verified;
+   if(d.verified){
+    const input=$("store-shipping").elements.email;
+    if(!input.value||input.value.trim().toLowerCase()===previousEmail)input.value=d.email;
+    $("store-patron-status").textContent=d.eligible?`Verified as ${d.email}. Your ${d.percent}% poster discount will apply at checkout.`:`Verified as ${d.email}. We couldn’t find a current monthly Zeffy gift for this email. If you just joined, please check again shortly.`;
+   }else $("store-patron-status").textContent="";
+  }catch(e){patronState=null;$("store-patron-status").textContent=e.message;}
+  finally{patronChecking=false;clearQuote();renderPrice();}
+ }
+ $("store-patron-form").addEventListener("submit",async event=>{
+  event.preventDefault();$("store-patron-request").disabled=true;
+  try{const d=await post("/store/patron/request",{email:$("store-patron-email").value,returnTo:location.pathname+location.search});$("store-patron-status").textContent=d.message;}
+  catch(e){$("store-patron-status").textContent=e.message;}
+  finally{$("store-patron-request").disabled=false;}
+ });
+ $("store-patron-logout").addEventListener("click",async()=>{
+  try{await post("/store/patron/logout",{});patronState=null;clearQuote();await refreshPatron();}
+  catch(e){$("store-patron-status").textContent=e.message;}
+ });
+ $("store-patron-refresh").addEventListener("click",refreshPatron);
+ window.addEventListener("focus",()=>{if(Date.now()-patronCheckedAt>10000&&!buying)refreshPatron();});
+ $("store-shipping").elements.email.addEventListener("input",renderPrice);
  $("store-shipping").addEventListener("input",clearQuote);
  $("store-shipping").addEventListener("submit",async event=>{
   event.preventDefault();if(buying)return;buying=true;clearQuote();$("store-quote").disabled=true;$("store-quote-status").textContent="Checking shipping…";
   const chosen={figure:figure.id,size,frame,revision};
   try{const recipient=Object.fromEntries(new FormData(event.currentTarget));const variant=config.variants.find(v=>v.size===size&&v.frame===frame);const q=await post("/store/quote",{figure:figure.id,variant:variant.id,recipient});
    if(figure.id!==chosen.figure||size!==chosen.size||frame!==chosen.frame||revision!==chosen.revision)return;
-   quoteToken=q.token;$("store-quote-status").textContent=`Poster ${money(q.priceCents)} + shipping ${money(q.shippingCents)} = ${money(q.priceCents+q.shippingCents)} before tax. ${q.shippingName}. Tax is calculated at checkout.`;$("store-checkout").hidden=false;
+   quoteToken=q.token;$("store-quote-status").textContent=`${q.discountPercent?q.discountPercent+"% patron discount applied. ":""}Poster ${money(q.priceCents)} + shipping ${money(q.shippingCents)} = ${money(q.priceCents+q.shippingCents)} before tax. ${q.shippingName}. Tax is calculated at checkout.`;$("store-checkout").hidden=false;
+   $("store-price").textContent=money(q.priceCents);$("store-patron-savings").hidden=!q.discountPercent;$("store-patron-savings").textContent=q.discountPercent?`${q.discountPercent}% patron discount applied. Regular poster price: ${money(q.originalPriceCents)}.`:"";
   }catch(e){$("store-quote-status").textContent=e.message;}finally{buying=false;$("store-quote").disabled=false;}
  });
  $("store-checkout").addEventListener("click",async()=>{
@@ -84,5 +125,5 @@
  }
  orderStatus();
  $("store-search").addEventListener("input",renderGrid);
- Promise.all([fetch("/store/catalog.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/variants.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/config").then(r=>r.ok?r.json():{checkoutEnabled:false}).catch(()=>({checkoutEnabled:false}))]).then(([items,options,availability])=>{figures=items;config=options;$("store-shipping").hidden=!availability.checkoutEnabled;$("store-launch").textContent=availability.checkoutEnabled?" · Shipping and tax added at checkout.":" · Purchasing opens soon.";renderOptions();select(figures.find(f=>f.id===Number(query.get("figure")))||figures.find(f=>f.id===15));}).catch(()=>{$("store-count").textContent="The collection couldn’t load. Please refresh to try again.";});
+ Promise.all([fetch("/store/catalog.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/variants.json").then(r=>{if(!r.ok)throw Error();return r.json();}),fetch("/store/config").then(r=>r.ok?r.json():{checkoutEnabled:false}).catch(()=>({checkoutEnabled:false}))]).then(([items,options,availability])=>{figures=items;config=options;patronDiscountPercent=availability.patronDiscountPercent||0;$("patron-discount").hidden=!patronDiscountPercent;$("store-patron-intro").textContent=`Monthly Zeffy patrons get ${patronDiscountPercent}% off posters, at any monthly amount. Verify your donation email below. Shipping is charged separately.`;$("store-shipping").hidden=!availability.checkoutEnabled;$("store-launch").textContent=availability.checkoutEnabled?" · Shipping and tax added at checkout.":" · Purchasing opens soon.";renderOptions();select(figures.find(f=>f.id===Number(query.get("figure")))||figures.find(f=>f.id===15));refreshPatron();}).catch(()=>{$("store-count").textContent="The collection couldn’t load. Please refresh to try again.";});
 })();

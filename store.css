@@ -37,6 +37,16 @@
 #store-shipping button:disabled { background:#555; color:#fff; cursor:wait; }
 #store-shipping p { font-size:var(--type-meta); }
 [hidden] { display:none !important; }
+.store-patron { border:1px solid #666; padding:1rem; margin:1.5rem 0; scroll-margin-top:8rem; }
+.store-patron h3 { font-size:1.125rem; margin:0 0 .75rem; }
+.store-patron p,.store-patron label { font-size:1rem; }
+.store-patron label { display:block; }
+.store-patron input { display:block; width:100%; font:inherit; border:1px solid #777; border-radius:0; background:#080808; color:#fff; padding:.75rem; margin:.5rem 0 .75rem; }
+.store-patron button { font:inherit; min-height:44px; border:1px solid #aaa; border-radius:0; background:#fff; color:#000; padding:.65rem .75rem; cursor:pointer; }
+.store-patron button:disabled { opacity:.6; cursor:wait; }
+.store-patron-actions { display:flex; flex-wrap:wrap; gap:.75rem; }
+.store-patron-actions button { background:transparent; color:#fff; }
+#store-patron-savings { font-weight:700; }
 #store-order-status { border-top:1px solid #777; border-bottom:1px solid #777; padding:1rem 0; margin:0 0 2rem; }
 
 /* The store's front page (store-products.mjs): one picture per kind of thing on the first

@@ -166,11 +166,14 @@ test('the store front page shows everything up top, then the albums; the poster 
   assert.match(muscle,/function roomGeometry/);assert.doesNotMatch(muscle,/store-albums"|songs-hat/);
   for(const page of [front,muscle]){
    // Purchase pages: Store is the current section. The menu keeps its Donate button, as on every
-   // page, and nothing else says anything about donating.
+   // page. The patron eligibility panel can refer to an existing donation; the
+   // purchase pages never ask for a donation or describe the purchase as tax-deductible.
    assert.match(page,/<a href="\/store\/" aria-current="page">Store<\/a>/);
    const menuDonate='<a class="nav-donate" href="/#donate">Donate</a>';
    assert.ok(page.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(menuDonate));
-   assert.doesNotMatch(page.replace(/<style[\s\S]*?<\/style>/g,'').replace(menuDonate,''),/nav-donate|#donate|tax.deductible|donat/i);
+   assert.doesNotMatch(page,/tax.deductible/i);
+   const purchaseCopy=page.replace(/<style[\s\S]*?<\/style>/g,'').replace(/<script[\s\S]*?<\/script>/g,'').replace(/<section id="patron-discount"[\s\S]*?<\/section>/,'').replace(menuDonate,'');
+   assert.doesNotMatch(purchaseCopy,/nav-donate|#donate|donat/i);
    assert.match(page,/<p class="sponsor-line">Posters and song commissions are purchases from Jonathan Mann\.<\/p>/);
    assert.doesNotMatch(page,/\{\{/);
   }

@@ -1,4 +1,5 @@
 import {handleStore, runStoreOrders} from './store.mjs';
+import { cleanupPatrons } from './patron-discounts.mjs';
 import { handleMonthlyGiving } from './monthly-giving.mjs';
 import { handleTroubadour } from './troubadour.mjs';
 import { songADayAge, songADayNumber } from './song-day.mjs';
@@ -272,6 +273,7 @@ export default {
   // Jonathan's summary, and any email that didn't go out.
   async scheduled(controller, env, ctx) {
     ctx.waitUntil(runStoreOrders(env));
+    ctx.waitUntil(cleanupPatrons(env));
     if (!controller.cron || controller.cron === '0 14 * * *') ctx.waitUntil(runCommissionDaily(env, new Date(controller.scheduledTime)));
   }
 };

@@ -5,7 +5,7 @@ import {createHmac} from 'node:crypto';
 import {fakeD1} from './fake-cloudflare.mjs';
 import {handleStore,product,createStoreCheckout,settleStoreCheckout,fulfillStoreOrder,runStoreOrders} from '../store.mjs';
 import {handleStripeWebhook} from '../commission-stripe.mjs';
-const sql=(await Promise.all(['0001_commissions.sql','0002_store.sql','0003_store_snapshot.sql'].map(f=>readFile(new URL('../commission-migrations/'+f,import.meta.url),'utf8')))).join('\n');
+const sql=(await Promise.all(['0001_commissions.sql','0002_store.sql','0003_store_snapshot.sql','0004_patron_discounts.sql'].map(f=>readFile(new URL('../commission-migrations/'+f,import.meta.url),'utf8')))).join('\n');
 const address={firstName:'Sample',lastName:'Buyer',addressLine1:'451 Clarkson Ave',addressLine2:'',city:'Brooklyn',state:'NY',postCode:'11203',country:'US',email:'sample@example.com',phone:'2125550100'};
 function setup(){
  const db=fakeD1(sql),env={COMMISSIONS_DB:db,SITE_ORIGIN:'https://songaday.studio',STORE_OPEN:'yes',GELATO_API_KEY:'fixture',STRIPE_SECRET_KEY:'rk_'+'live_fixture',STRIPE_WEBHOOK_SECRET:'fixture'};
