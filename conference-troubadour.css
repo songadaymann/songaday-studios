@@ -48,9 +48,11 @@
 .booking-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem; }
 /* Once it's sent the form gives way to the thank-you; the grid above would keep it on screen. */
 .booking-form[hidden] { display: none; }
-.booking-form > h2, .booking-budget, .booking-check, .booking-status, .booking-actions { grid-column: 1 / -1; }
+.booking-form > h2, .booking-budget, .booking-story, .booking-check, .booking-status, .booking-actions { grid-column: 1 / -1; }
 .booking-field { display: grid; gap: .35rem; font-size: var(--type-meta); font-weight: 700; }
-.booking-field input { width: 100%; min-height: 44px; padding: 0 .75rem; border: 2px solid var(--white); border-radius: 0; background: var(--ink); color: var(--white); font-family: inherit; font-size: var(--type-body); font-weight: 400; -webkit-appearance: none; appearance: none; }
+.booking-field :is(input, textarea) { width: 100%; min-height: 44px; padding: 0 .75rem; border: 2px solid var(--white); border-radius: 0; background: var(--ink); color: var(--white); font-family: inherit; font-size: var(--type-body); font-weight: 400; -webkit-appearance: none; appearance: none; }
+/* The one answer in their own words, so it gets room. It's theirs to stretch taller. */
+.booking-field textarea { display: block; min-height: 7rem; padding: .6rem .75rem; line-height: 1.5; resize: vertical; }
 .booking-budget { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 1.5rem; min-width: 0; margin: 0; padding: 0; border: 0; }
 .booking-budget legend { margin-bottom: .25rem; padding: 0; font-size: var(--type-meta); font-weight: 700; }
 .booking-budget label { display: flex; align-items: center; gap: .6rem; min-height: 44px; font-size: var(--type-body); cursor: pointer; }
@@ -67,7 +69,7 @@
 a.booking-quiet { display: inline-flex; align-items: center; }
 .booking-done p { margin: 0; font-size: var(--type-body); line-height: 1.5; }
 .booking-done .booking-actions { margin-top: 1.5rem; }
-.booking :is(input, button, a):focus-visible { outline: 4px solid var(--red); outline-offset: 2px; }
+.booking :is(input, textarea, button, a):focus-visible { outline: 4px solid var(--red); outline-offset: 2px; }
 
 @media (max-width: 520px) {
   .booking { padding: 1.25rem; }

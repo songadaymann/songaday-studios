@@ -64,6 +64,10 @@ test('the build makes the Conference Troubadour page: what it is, four videos, w
     assert.deepEqual([...dialog.matchAll(/<input type="radio" name="budget" value="([^"]+)"/g)].map((match) => match[1]), BUDGETS);
     // The amounts are the fee: travel and lodging are theirs to cover on top.
     assert.match(dialog, /<legend>Budget, plus travel and lodging<\/legend>/);
+    // Last, a bigger box for whatever they want to say. It can be left empty.
+    const story = dialog.match(/<label class="booking-field booking-story">Tell me the story<textarea name="story" maxlength="(\d+)" rows="4"><\/textarea><\/label>/);
+    assert.equal(Number(story[1]), BOOKING_LIMITS.story);
+    assert.ok(dialog.indexOf('</fieldset>') < story.index && story.index < dialog.indexOf('data-booking-check'));
     assert.match(dialog, /<input class="booking-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">/);
     assert.equal(dialog.match(/<a class="booking-quiet" href="([^"]+)">Email me instead<\/a>/)[1], book[0]);
     // The page's script opens it, and loads the human check only then.
@@ -166,6 +170,22 @@ test('a booking goes to Jonathan as one email he can answer by pressing Reply, a
   assert.equal(env.COMMISSIONS_DB.one('SELECT COUNT(*) AS count FROM requests').count, 0);
   // The rate limit counts bookings apart from commissions.
   assert.match(env.COMMISSION_LIMIT.calls[0].key, /^booking:/);
+  // With no story, the email doesn't mention one.
+  assert.doesNotMatch(message.text + message.html, /The story/);
+});
+
+test('the story they tell arrives with its paragraphs, after the answers', async () => {
+  const env = await commissionEnv({ email: true });
+  const story = '  We end with a toast to <Ada>.\r\nShe founded it.\n\n\n\nKeep it warm & funny.  ';
+  assert.equal((await book(env, { ...ANSWERS, story })).status, 200);
+  const [message] = env.COMMISSION_EMAIL.sent;
+  assert.ok(message.text.includes(`Budget: ${BUDGETS[1]}\n\nThe story:\nWe end with a toast to <Ada>.\nShe founded it.\n\nKeep it warm & funny.\n\nReply to this email`));
+  // A stranger's words: escaped, a paragraph each, line breaks kept.
+  assert.ok(message.html.includes('<p><strong>The story</strong></p>\n<p>We end with a toast to &lt;Ada&gt;.<br>She founded it.</p>\n<p>Keep it warm &amp; funny.</p>'));
+  // Room to say a lot, not to send a book.
+  const long = await book(env, { ...ANSWERS, story: 'x'.repeat(BOOKING_LIMITS.story + 1) }, { stub: fakeFetch([]) });
+  assert.deepEqual([long.status, await long.json()], [400, { error: 'One of those answers is too long.' }]);
+  assert.equal((await book(env, { ...ANSWERS, story: 'x'.repeat(BOOKING_LIMITS.story) })).status, 200);
 });
 
 test('answers are cleaned to one line each, and a missing or made-up one is refused before anything is sent', async () => {
