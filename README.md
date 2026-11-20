@@ -258,8 +258,8 @@ Every page's header has the same menu: **Songs** (Listen, See) · **Films** · *
 - The build marks where a page is (`markMenu` in `build.mjs`): the link itself
   (`aria-current="page"`), whose group's word the styles underline too, or the group's word
   (`aria-current="true"` on Hire me) on the commission pages, which two links lead to.
-- Personal and Business go to `/commission?kind=personal` and `?kind=business`;
-  `commission-page.js` picks that answer to the form's first question.
+- Personal goes to `/commission`, which is for a person only, and Business to `/business/`
+  (below). The old `/commission?kind=business` link lands on `/business/`.
 - The footer's first row is the menu again, flat: a group's word, then its links
   (`.footer-menu`, `.footer-group` in `profile.css`). It is written out in `films.html` (which
   the build copies everywhere) and `profile.html`, and a test holds it equal to the menu. The
@@ -267,6 +267,39 @@ Every page's header has the same menu: **Songs** (Listen, See) · **Films** · *
   of their own.
 - **Stand-in as of 2026-11-19:** Apps goes to `/everything/`, because it has no page of its
   own yet.
+
+### The business page
+
+`/business/` is what Hire me > Business leads to: a song for a company, brand, event or
+organization, or a theme song for a podcast, show or channel. Business songs used to be a
+choice on the personal commission form, with a place in its line; since 2026-11-20 they have
+their own page and are a conversation instead.
+
+- `business.html` is the page and `business.css` its styles: what it is and one video (ENS, for
+  its partnership with GoDaddy), who it's been for (four square logos in
+  `private-assets/site/logos/`), two more videos (1Password, the ATP theme), and the request
+  form. The videos are the films page's cards.
+- The form asks for a name, an email, the company or project, what the song is for, a deadline
+  (plain words, optional), a budget and "Tell me everything". `business.mjs` answers at
+  `/business/request` and emails the answers to `COMMISSION_NOTIFY_TO` with Reply-To set to the
+  person who asked. Nothing is stored and nothing joins the commission line.
+- The budget choices are `BUSINESS_BUDGETS` in `business.mjs`.
+- `/commission` no longer asks "a person or a business": its form sends `kind=personal` and
+  points a business here. The commission system still knows the business kind (`PRICES`, the
+  admin), for requests made before the split.
+- `/theme-songs` and `/themes` (the old site's address) land on it.
+
+### The two booking forms' shared code
+
+The business form and the Conference Troubadour's Book me are the same machinery:
+
+- `inquiry.mjs` (server): the GET that says whether a form can be used, the guards, and the
+  email. `troubadour.mjs` and `business.mjs` each say only what their form asks and what its
+  email reads like.
+- `booking-form.mjs` (browser, inlined by the build into `troubadour-page.js` and
+  `business-page.js`): loads the human check when the form is first needed, sends, and shows
+  the thank-you.
+- `booking-form.css`: the form's styles, added to both pages.
 
 ### The Conference Troubadour page
 

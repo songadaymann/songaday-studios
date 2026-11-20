@@ -11,19 +11,16 @@
     <div class="commission-start-body">
     <div class="text-page-intro">
       <h1>Get a custom song written for you</h1>
-      <p>I’ve written a song every day since January 1, 2009. I’ll write one for you: for a birthday, a wedding, an anniversary, a launch, or just because.</p>
+      <p>I’ve written a song every day since January 1, 2009. I’ll write one for you: for a birthday, a wedding, an anniversary, or just because. For a company, a brand or a podcast, there’s <a href="/business/">a song for your business</a>.</p>
     </div>
 
     <section class="commission-request" aria-label="Your request">
 <!--commission:note-->
 <!--commission:form-->
       <form class="commission-form" id="request" method="post" action="/commission" enctype="multipart/form-data" data-request>
-        <fieldset aria-describedby="c-kind-hint">
-          <legend>Is this song for a person, or for a business?</legend>
-          <p class="commission-hint" id="c-kind-hint">Nothing to pay until your song is done.</p>
-          <label class="commission-choice"><input type="radio" name="kind" value="personal" required> A person (from {{PERSONAL_FROM}})</label>
-          <label class="commission-choice"><input type="radio" name="kind" value="business"> A company, brand, event or organization, or a theme song for a podcast, show or channel (from {{BUSINESS_FROM}})</label>
-        </fieldset>
+        <!-- This form is for a person. A business has its own page (/business/). -->
+        <input type="hidden" name="kind" value="personal">
+        <p class="commission-hint" id="c-kind-hint">Nothing to pay until your song is done. From {{PERSONAL_FROM}}.</p>
 
         <label for="c-recipient">Who’s it for?</label>
         <input id="c-recipient" type="text" name="recipient" maxlength="{{LIMIT_recipient}}" required placeholder="Frodo" autocomplete="off">
@@ -42,7 +39,7 @@
         <input id="c-memo" type="file" name="memo" accept="audio/*" aria-describedby="c-memo-hint" data-max-bytes="{{MEMO_MAX_BYTES}}">
 
         <label for="c-story">Tell me everything</label>
-        <p class="commission-hint" id="c-story-hint">Stories, inside jokes, places, what they love, what they’re like. For a business: what you do, who’ll hear it, and where it’ll play. <strong>The more information the better.</strong></p>
+        <p class="commission-hint" id="c-story-hint">Stories, inside jokes, places, what they love, what they’re like. <strong>The more information the better.</strong></p>
         <textarea id="c-story" name="story" rows="10" minlength="{{LIMIT_storyMin}}" maxlength="{{LIMIT_story}}" required aria-describedby="c-story-hint"></textarea>
 
         <label for="c-leave-out">Anything I should leave out?</label>
@@ -93,8 +90,8 @@
       <section aria-labelledby="cost-title">
         <h2 id="cost-title">What it costs</h2>
         <ul class="commission-list">
-          <li>For a person: pay what you can, from {{PERSONAL_FROM}}. Suggested: {{PERSONAL_SUGGESTED}}.</li>
-          <li>For a company, brand, event or organization, or a theme song for a podcast, show or channel: from {{BUSINESS_FROM}}, pay what you can.</li>
+          <li>Pay what you can, from {{PERSONAL_FROM}}. Suggested: {{PERSONAL_SUGGESTED}}.</li>
+          <li>For a company, brand, event or organization, or a theme song for a podcast, show or channel, see <a href="/business/">a song for your business</a>.</li>
           <li>{{VIDEO_LINE}}</li>
           <li>Pay all at once, or spread it over {{PLAN_MONTHS}} months.</li>
         </ul>

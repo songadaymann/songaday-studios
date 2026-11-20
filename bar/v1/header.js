@@ -36,8 +36,8 @@ export const SECTIONS = [
     { id: 'plugins', label: 'Plugins', path: '/plugins/' }
   ] },
   { id: 'hire-me', label: 'Hire me', items: [
-    { id: 'personal', label: 'Personal', path: '/commission?kind=personal' },
-    { id: 'business', label: 'Business', path: '/commission?kind=business' },
+    { id: 'personal', label: 'Personal', path: '/commission' },
+    { id: 'business', label: 'Business', path: '/business/' },
     { id: 'conference-troubadour', label: 'Conference troubadour', path: '/conference-troubadour/' }
   ] },
   { id: 'store', label: 'Store', path: '/store/' }

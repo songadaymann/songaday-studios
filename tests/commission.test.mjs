@@ -39,19 +39,21 @@ test('the page says how many songs are in line, and shows the form only when req
   assert.match(html, /<strong class="commission-line">Nobody’s in line right now\.<\/strong>/);
   assert.match(html, /<form class="commission-form" id="request"/);
   assert.match(html, /data-sitekey="site-key" data-action="commission"/);
-  assert.match(html, /For a person: pay what you can, from \$200\. Suggested: \$300, \$500, or \$1,000 \(or more\)\./);
-  assert.match(html, /from \$1,500, pay what you can/);
+  assert.match(html, /<li>Pay what you can, from \$200\. Suggested: \$300, \$500, or \$1,000 \(or more\)\./);
   assert.match(html, /spread it over 3, 6 or 12 months/);
   assert.match(html, /A music video: tick the box on the form and I’ll be in touch about it\./);
   assert.doesNotMatch(html, /\{\{|commission-site-key/);
-  // Theme songs are business songs; going public can come before the occasion; how long the line is.
-  assert.match(html, /or a theme song for a podcast, show or channel: from \$1,500, pay what you can\./);
-  assert.match(html, /value="personal" required> A person \(from \$200\)/);
-  assert.match(html, /value="business"> A company, brand, event or organization, or a theme song for a podcast, show or channel \(from \$1,500\)/);
+  // Theme songs are business songs, on their own page; going public can come before the occasion; how long the line is.
+  // The form is for a person: it doesn't ask, and a business is sent to its own page.
+  assert.match(html, /<input type="hidden" name="kind" value="personal">/);
+  assert.doesNotMatch(html, /name="kind" value="business"|type="radio" name="kind"|\$1,500/);
+  assert.match(html, /Nothing to pay until your song is done\. From \$200\./);
+  assert.match(html, /or a theme song for a podcast, show or channel, see <a href="\/business\/">a song for your business<\/a>\./);
+  assert.match(html, /For a company, a brand or a podcast, there’s <a href="\/business\/">a song for your business<\/a>\./);
   assert.match(html, /If yes, it may go up the day I write it, which can be before your occasion\. If it’s a surprise, choose private \(it’s free\)\./);
   assert.match(html, /I accept every request\. I write them in the order they come in\. I can write about 10 a day\./);
   assert.match(html, /placeholder="Frodo" autocomplete/);
-  assert.match(html, /For a business: what you do, who’ll hear it, and where it’ll play\./);
+  assert.doesNotMatch(html, /For a business:/);
   assert.match(html, /data-error-callback="commissionError"/);
   assert.match(html, /<noscript><p class="commission-status">This form needs JavaScript/);
   assert.match(html, /The human check didn’t load\./);
@@ -91,7 +93,7 @@ test('the page wears the studio header and footer, with no donate wording or Pat
   const html = await response.text();
   const home = await readFile(new URL('profile.html', root), 'utf8');
   assert.deepEqual(navLinks(html), navLinks(home));
-  assert.match(html, /<summary aria-current="true">Hire me<\/summary>/);
+  assert.match(html, /<a href="\/commission" aria-current="page">Personal<\/a>/);
   // The menu's Donate button is there, once, in the header; no other link goes to the donation form.
   assert.ok(html.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(MENU_DONATE));
   assert.equal(html.replace(/<style[\s\S]*?<\/style>/g, '').split('#donate').length - 1, 1);

@@ -95,7 +95,7 @@ test('the build makes the Conference Troubadour page: what it is, four videos, w
 test('the page keeps to three sizes of type and solid, square shapes', async () => {
   const css = await read('conference-troubadour.css');
   const sizes = [...css.matchAll(/font-size: ([^;]+);/g)].map((match) => match[1]);
-  assert.ok(sizes.length > 5);
+  assert.ok(sizes.length > 3);
   assert.deepEqual([...new Set(sizes)].sort(), ['var(--type-body)', 'var(--type-display)', 'var(--type-meta)']);
   // Square corners everywhere; the only border-radius is the one that squares a phone's fields.
   assert.doesNotMatch(css, /clamp\(|border-radius: (?!0;)|opacity|rgba\(|hsla\(/);

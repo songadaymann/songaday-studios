@@ -14,14 +14,6 @@
     const say = (text) => { status.textContent = text; };
     const token = () => form.querySelector('[name="cf-turnstile-response"]')?.value;
 
-    // The menu's Personal and Business links (/commission?kind=…) arrive with the first
-    // question answered. It can still be changed.
-    const kind = new URLSearchParams(location.search).get("kind");
-    if (kind === "personal" || kind === "business") {
-      const choice = form.querySelector(`input[name="kind"][value="${kind}"]`);
-      if (choice) choice.checked = true;
-    }
-
     // The earliest deadline is today in New York, where Jonathan is.
     if (deadline) {
       const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());

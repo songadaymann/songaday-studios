@@ -224,8 +224,8 @@ const HEADER = `<header class="site-header">
     <details class="nav-group" name="site-nav">
       <summary>Hire me</summary>
       <div class="nav-sub">
-        <a href="/commission?kind=personal">Personal</a>
-        <a href="/commission?kind=business">Business</a>
+        <a href="/commission">Personal</a>
+        <a href="/business/">Business</a>
         <a href="/conference-troubadour/">Conference troubadour</a>
       </div>
     </details>

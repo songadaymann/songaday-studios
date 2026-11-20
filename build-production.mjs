@@ -19,6 +19,8 @@ await cp('story/index.html', 'dist/story/index.html');
 await cp('patrons/index.html', 'dist/patrons/index.html');
 // The Conference Troubadour page, built by build.mjs from conference-troubadour.html.
 await cp('conference-troubadour/index.html', 'dist/conference-troubadour/index.html');
+// The business page, built by build.mjs from business.html.
+await cp('business/index.html', 'dist/business/index.html');
 await cp('gallery/studio-header.txt', 'dist/gallery/studio-header.txt');
 await cp('gallery/studio.css', 'dist/gallery/studio.css');
 await cp('store', 'dist/store', { recursive: true });

@@ -14,6 +14,7 @@ import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
 import { patronProblems, renderPatronFaces, renderPatrons } from "./patrons.mjs";
 import { BUDGETS } from "./troubadour.mjs";
+import { BUSINESS_BUDGETS } from "./business.mjs";
 import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
@@ -204,7 +205,7 @@ await writePage("gallery/studio.css", `${chromeCss}\n${await source("gallery.css
 // about donating: no footer link to the form or to the patrons, and a purchase line in place of
 // the fiscal sponsor's. They wear the same menu as every other page, Donate button included: it
 // goes to the form on the home page, and a menu that changes from page to page reads as a mistake.
-const purchaseHeader = markMenu(header, '<summary>Hire me</summary>', '<summary aria-current="true">Hire me</summary>');
+const purchaseHeader = markMenu(header, '<a href="/commission">Personal</a>', '<a href="/commission" aria-current="page">Personal</a>');
 const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate">Donate<\/a>/, "")
   .replace(/\n\s*<a href="\/patrons\/">Patrons<\/a>/, "")
   .replace(/<p class="sponsor-line">[\s\S]*?<\/p>/, '<p class="sponsor-line">Song commissions are purchases from Jonathan Mann.</p>');
@@ -288,6 +289,16 @@ await writePage("patrons/index.html", documentHtml({
 // whose answers troubadour.mjs emails to Jonathan; its budget choices are that file's BUDGETS.
 // Underneath, Book me is the one email link below, for when the form can't be used.
 const TROUBADOUR_BOOK_HREF = "mailto:jonathan@jonathanmann.net?subject=The%20Conference%20Troubadour";
+// What the two booking forms share in the browser (booking-form.mjs) and in their styles.
+const bookingFormSource = await source("booking-form.mjs");
+const bookingFormCss = await source("booking-form.css");
+const withBookingForm = (script) => {
+  if (!script.includes("/* BOOKING_FORM_HELPER */")) throw new Error("A booking page's script has no place for the form helper.");
+  return script.replace("/* BOOKING_FORM_HELPER */", () => scriptOf(bookingFormSource, "initBookingForm"));
+};
+// A form's budget choices, the first one carrying `required` for the set.
+const budgetChoices = (budgets) => budgets.map((budget, index) =>
+  `          <label><input type="radio" name="budget" value="${budget}"${index === 0 ? " required" : ""}> ${budget}</label>`).join("\n");
 const troubadourHeader = markMenu(header, '<a href="/conference-troubadour/">', '<a href="/conference-troubadour/" aria-current="page">');
 const troubadourFooter = markMenu(purchaseFooter, 'Song commissions are purchases', 'Conference bookings and song commissions are purchases');
 await writePage("conference-troubadour/index.html", documentHtml({
@@ -297,10 +308,27 @@ await writePage("conference-troubadour/index.html", documentHtml({
   body: hostedMedia((await source("conference-troubadour.html"))
     .replace("{{HEADER}}", () => troubadourHeader).replace("{{FOOTER}}", () => troubadourFooter)
     .replaceAll("{{BOOK_HREF}}", TROUBADOUR_BOOK_HREF)
-    .replace("{{BUDGETS}}", () => BUDGETS.map((budget, index) =>
-      `          <label><input type="radio" name="budget" value="${budget}"${index === 0 ? " required" : ""}> ${budget}</label>`).join("\n"))),
-  script: `${filmsJs}\n${await source("troubadour-page.js")}`,
-  extraCss: await source("conference-troubadour.css"),
+    .replace("{{BUDGETS}}", () => budgetChoices(BUDGETS))),
+  script: `${filmsJs}\n${withBookingForm(await source("troubadour-page.js"))}`,
+  extraCss: `${await source("conference-troubadour.css")}\n${bookingFormCss}`,
+}));
+
+// songaday.studio/business/: a song for a company, brand, event, podcast or show. Business songs
+// used to be a choice on the personal commission form; they have their own page now, with
+// examples, who they've been for, and a request form whose answers business.mjs emails to
+// Jonathan (budget choices: that file's BUSINESS_BUDGETS). A purchase page, like the others.
+const BUSINESS_BOOK_HREF = "mailto:jonathan@jonathanmann.net?subject=A%20song%20for%20my%20business";
+const businessHeader = markMenu(header, '<a href="/business/">', '<a href="/business/" aria-current="page">');
+await writePage("business/index.html", documentHtml({
+  title: "A song for your business · Song A Day Studio",
+  description: "A custom song for your company, brand, event or organization, or a theme song for your podcast, show or channel, by Jonathan Mann.",
+  url: "https://songaday.studio/business/",
+  body: hostedMedia((await source("business.html"))
+    .replace("{{HEADER}}", () => businessHeader).replace("{{FOOTER}}", () => purchaseFooter)
+    .replaceAll("{{BOOK_HREF}}", BUSINESS_BOOK_HREF)
+    .replace("{{BUDGETS}}", () => budgetChoices(BUSINESS_BUDGETS))),
+  script: `${filmsJs}\n${withBookingForm(await source("business-page.js"))}`,
+  extraCss: `${await source("business.css")}\n${bookingFormCss}`,
 }));
 
 // songaday.studio/commission: the page and request form, and the shell the Worker puts each
@@ -387,7 +415,7 @@ ${labBody}
 </body>
 </html>
 `);
-console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, patrons/, conference-troubadour/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, patrons/, conference-troubadour/, business/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
 
 // The store (songaday.studio/store/): a front page built from the list of what's on sale
 // (store/products.json, store-products.mjs), which opens with one picture per kind of thing and

@@ -83,12 +83,10 @@ test('the build makes the commission page and the song shell, purchase pages wit
     const [home, page, shell] = await Promise.all(['index.html', 'commission/index.html', 'commission/song.html'].map(read));
     for (const html of [page, shell]) {
       assert.deepEqual(navLinks(html), navLinks(home));
-      assert.match(html, /<summary aria-current="true">Hire me<\/summary>/);
-      // The menu's Personal and Business links arrive with the form's first question answered.
-      assert.match(html, /<a href="\/commission\?kind=personal">Personal<\/a>\s*<a href="\/commission\?kind=business">Business<\/a>/);
+      // The commission pages are the menu's Personal; Business has a page of its own.
+      assert.match(html, /<a href="\/commission" aria-current="page">Personal<\/a>\s*<a href="\/business\/">Business<\/a>/);
+      assert.equal(html.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].split('aria-current').length - 1, 1);
     }
-    assert.match(page, /new URLSearchParams\(location\.search\)\.get\("kind"\)/);
-    assert.match(page, /if \(kind === "personal" \|\| kind === "business"\)/);
     for (const html of [page, shell]) {
       // The menu keeps its Donate button, as on every page. Nothing else on a page about buying
       // a song says donate: no footer link, no tax-deductible line.

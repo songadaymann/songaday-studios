@@ -2,6 +2,7 @@ import {handleStore, runStoreOrders} from './store.mjs';
 import { cleanupPatrons } from './patron-discounts.mjs';
 import { handleMonthlyGiving } from './monthly-giving.mjs';
 import { handleTroubadour } from './troubadour.mjs';
+import { handleBusiness } from './business.mjs';
 import { songADayAge, songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
@@ -42,11 +43,14 @@ const SECTION_REDIRECTS = {
   // The Conference Troubadour, by a shorter word and by its address on the old jonathanmann.net.
   '/troubadour': '/conference-troubadour/',
   '/conf': '/conference-troubadour/',
-  '/conf-troubadour': '/conference-troubadour/'
+  '/conf-troubadour': '/conference-troubadour/',
+  // Songs for a business, by what people call them and by the old site's address.
+  '/theme-songs': '/business/',
+  '/themes': '/business/'
 };
 
 // Pages that live in a folder: /Films, /now and the like land on /films/, /now/.
-const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/story', '/patrons', '/conference-troubadour', '/data', '/press', '/store', '/store/muscle']);
+const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/story', '/patrons', '/conference-troubadour', '/business', '/data', '/press', '/store', '/store/muscle']);
 
 // The poster picker used to be the whole store page. Links people shared to a figure, and the
 // links Stripe sends buyers back on, name one of these; they land on the picker's own page.
@@ -174,10 +178,16 @@ export default {
     // What monthly patrons give each month, for Jonathan only (monthly-giving.mjs).
     const monthly = await handleMonthlyGiving(request, env, url);
     if (monthly) return monthly;
+    // Business songs were a choice on the personal form, and the menu linked to it that way for
+    // a day (/commission?kind=business). They have their own page now.
+    if (path === '/commission' && url.searchParams.get('kind') === 'business' && (request.method === 'GET' || request.method === 'HEAD')) {
+      return new Response(null, { status: 302, headers: { Location: '/business/', 'Cache-Control': 'no-store' } });
+    }
     const commission = await handleCommission(request, env, url, ctx);
     if (commission) return commission;
-    // The Conference Troubadour page's Book me form (troubadour.mjs).
-    const booking = await handleTroubadour(request, env, url);
+    // The Conference Troubadour page's Book me form (troubadour.mjs) and the business page's
+    // request form (business.mjs).
+    const booking = await handleTroubadour(request, env, url) ?? await handleBusiness(request, env, url);
     if (booking) return booking;
 
     // songaday.studio/fumble: anonymous bag-fumble stories (fumble.mjs).
