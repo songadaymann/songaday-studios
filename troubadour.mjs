@@ -9,7 +9,7 @@
 // The same guards as the commission form: a size limit, a field people can't see, the shared
 // rate limit, and Turnstile last, since its tokens work once.
 import { isHuman } from './turnstile.mjs';
-import { cleanLine, readForm, visitorKey } from './commission-core.mjs';
+import { cleanLine, cleanText, readForm, visitorKey } from './commission-core.mjs';
 
 export const BOOKING_PATH = '/conference-troubadour/booking';
 // The choices under Budget, in order. build.mjs writes them into the page, and an answer that
@@ -17,7 +17,7 @@ export const BOOKING_PATH = '/conference-troubadour/booking';
 // and lodging are on top.
 export const BUDGETS = ['$2,500 to $5,000', '$5,000 to $7,500', '$7,500 to $10,000', '$10,000 to $20,000'];
 // The most characters each answer can have; the page's fields carry the same numbers.
-export const BOOKING_LIMITS = { name: 120, email: 254, event: 160, date: 80, location: 160, people: 40 };
+export const BOOKING_LIMITS = { name: 120, email: 254, event: 160, date: 80, location: 160, people: 40, story: 2000 };
 const FORM_MAX_BYTES = 16 * 1024;
 // One plain address: it becomes the email's Reply-To.
 const EMAIL = /^[^\s@,;:<>()[\]"'\\]+@[^\s@,;:<>()[\]"'\\]+\.[^\s@,;:<>()[\]"'\\.]+$/;
@@ -25,9 +25,10 @@ const NO_STORE = { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' };
 
 const escapeHtml = (text) => String(text).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 
-// The form's answers, each cleaned to one line.
+// The form's answers, each cleaned to one line, except the story, which keeps its paragraphs.
 export function readBooking(form) {
-  const line = (name) => cleanLine(typeof form.get(name) === 'string' ? form.get(name) : '');
+  const words = (name) => (typeof form.get(name) === 'string' ? form.get(name) : '');
+  const line = (name) => cleanLine(words(name));
   return {
     name: line('name'),
     email: line('email').toLowerCase(),
@@ -35,7 +36,9 @@ export function readBooking(form) {
     date: line('date'),
     location: line('location'),
     people: line('people'),
-    budget: line('budget')
+    budget: line('budget'),
+    // "Tell me the story": whatever they want to say, in their own words. It can be left empty.
+    story: cleanText(words('story'))
   };
 }
 
@@ -60,14 +63,17 @@ export function bookingEmail(answers) {
     ['Name', answers.name], ['Email', answers.email], ['Event', answers.event], ['Date', answers.date],
     ['Location', answers.location], ['People', answers.people], ['Budget', answers.budget]
   ];
+  // The story, when they wrote one, a paragraph at a time.
+  const story = answers.story ? answers.story.split(/\n{2,}/) : [];
   return {
     subject: `Conference Troubadour: ${answers.event}`,
-    text: `${answers.name} wants to book the Conference Troubadour.\n\n${rows.map(([label, value]) => `${label}: ${value}`).join('\n')}\n\nReply to this email to write back to ${answers.email}.\n`,
+    text: `${answers.name} wants to book the Conference Troubadour.\n\n${rows.map(([label, value]) => `${label}: ${value}`).join('\n')}\n${
+      answers.story ? `\nThe story:\n${answers.story}\n` : ''}\nReply to this email to write back to ${answers.email}.\n`,
     html: `<p>${escapeHtml(answers.name)} wants to book the Conference Troubadour.</p>
 <table>
 ${rows.map(([label, value]) => `<tr><th align="left">${label}</th><td>${escapeHtml(value)}</td></tr>`).join('\n')}
 </table>
-<p>Reply to this email to write back to <a href="mailto:${escapeHtml(answers.email)}">${escapeHtml(answers.email)}</a>.</p>`
+${story.length ? `<p><strong>The story</strong></p>\n${story.map((part) => `<p>${escapeHtml(part).replaceAll('\n', '<br>')}</p>`).join('\n')}\n` : ''}<p>Reply to this email to write back to <a href="mailto:${escapeHtml(answers.email)}">${escapeHtml(answers.email)}</a>.</p>`
   };
 }
 

@@ -280,8 +280,8 @@ of it, how it works, what three people said, three more videos, and every confer
   videos are the films page's cards (`.film` in `profile.css`) and play in place with its script
   (`films-page.js`), so the page loads four pictures and no players.
 - **Book me** opens a dialog (`troubadour-page.js`) that asks for a name, an email, the event,
-  its date (plain words, since dates are often rough), where it is, how many people, and a
-  budget. `troubadour.mjs` answers at `/conference-troubadour/booking`: GET says whether the
+  its date (plain words, since dates are often rough), where it is, how many people, a
+  budget, and last "Tell me the story", a bigger box they can leave empty. `troubadour.mjs` answers at `/conference-troubadour/booking`: GET says whether the
   form can be used, and POST sends the answers to `COMMISSION_NOTIFY_TO` as one email with
   Reply-To set to the person who asked.
   - Nothing is stored. The email is sent before the answer goes back, so a failure is told to
