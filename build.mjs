@@ -13,6 +13,7 @@ import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
 import { patronProblems, renderPatronFaces, renderPatrons } from "./patrons.mjs";
+import { BUDGETS } from "./troubadour.mjs";
 import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
@@ -283,7 +284,9 @@ await writePage("patrons/index.html", documentHtml({
 // with a song about it. The words are from the old jonathanmann.net pages (/conf and
 // /conf-troubadour). Its videos are the films page's cards and play in place with its script.
 // A booking is a purchase from Jonathan, like a commission, so the page's own words say nothing
-// about donating (purchaseFooter). "Book me" is the one address below.
+// about donating (purchaseFooter). Book me opens a short form in a dialog (troubadour-page.js),
+// whose answers troubadour.mjs emails to Jonathan; its budget choices are that file's BUDGETS.
+// Underneath, Book me is the one email link below, for when the form can't be used.
 const TROUBADOUR_BOOK_HREF = "mailto:jonathan@jonathanmann.net?subject=The%20Conference%20Troubadour";
 const troubadourHeader = markMenu(header, '<a href="/conference-troubadour/">', '<a href="/conference-troubadour/" aria-current="page">');
 const troubadourFooter = markMenu(purchaseFooter, 'Song commissions are purchases', 'Conference bookings and song commissions are purchases');
@@ -293,8 +296,10 @@ await writePage("conference-troubadour/index.html", documentHtml({
   url: "https://songaday.studio/conference-troubadour/",
   body: hostedMedia((await source("conference-troubadour.html"))
     .replace("{{HEADER}}", () => troubadourHeader).replace("{{FOOTER}}", () => troubadourFooter)
-    .replaceAll("{{BOOK_HREF}}", TROUBADOUR_BOOK_HREF)),
-  script: filmsJs,
+    .replaceAll("{{BOOK_HREF}}", TROUBADOUR_BOOK_HREF)
+    .replace("{{BUDGETS}}", () => BUDGETS.map((budget, index) =>
+      `          <label><input type="radio" name="budget" value="${budget}"${index === 0 ? " required" : ""}> ${budget}</label>`).join("\n"))),
+  script: `${filmsJs}\n${await source("troubadour-page.js")}`,
   extraCss: await source("conference-troubadour.css"),
 }));
 

@@ -279,8 +279,24 @@ of it, how it works, what three people said, three more videos, and every confer
 - `conference-troubadour.html` is the page and `conference-troubadour.css` its styles. The
   videos are the films page's cards (`.film` in `profile.css`) and play in place with its script
   (`films-page.js`), so the page loads four pictures and no players.
-- **Book me** is one address, `TROUBADOUR_BOOK_HREF` in `build.mjs` (an email link today). The
-  old page also had a booking form on Squarespace; a form here would need its own endpoint.
+- **Book me** opens a dialog (`troubadour-page.js`) that asks for a name, an email, the event,
+  its date (plain words, since dates are often rough), where it is, how many people, and a
+  budget. `troubadour.mjs` answers at `/conference-troubadour/booking`: GET says whether the
+  form can be used, and POST sends the answers to `COMMISSION_NOTIFY_TO` as one email with
+  Reply-To set to the person who asked.
+  - Nothing is stored. The email is sent before the answer goes back, so a failure is told to
+    the person, who is pointed at the email link.
+  - The guards are the commission form's: a size limit, a hidden field for bots, the shared
+    rate limit (counted apart, under `booking:`), and Turnstile last. It also refuses a post
+    from another site.
+  - The budget choices are `BUDGETS` in `troubadour.mjs`; the build writes them into the page
+    and the server refuses any other answer.
+  - Underneath, Book me is an email link (`TROUBADOUR_BOOK_HREF` in `build.mjs`). That is what
+    it does without scripts, in a browser with no `<dialog>`, and when the server says the form
+    can't be used (no email binding, no Turnstile keys); the dialog also offers it.
+  - To try it locally, `.dev.vars` needs Turnstile's test keys (`TURNSTILE_SITE_KEY` and
+    `TURNSTILE_SECRET_KEY`) and any `COMMISSION_NOTIFY_TO`; wrangler prints the email instead
+    of sending it.
 - A booking is a purchase from Jonathan, so like the commission and store pages its own words
   say nothing about donating.
 - The old logos picture is left out on purpose: the list of conferences has one "Watchmaker

@@ -9,6 +9,8 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import worker from '../worker.mjs';
+import { BOOKING_LIMITS, BUDGETS, bookingProblem, readBooking } from '../troubadour.mjs';
+import { SITE, call, commissionEnv, fakeFetch, fakeRateLimit, form, turnstileRoute } from './fake-cloudflare.mjs';
 
 const root = new URL('../', import.meta.url);
 const read = (file) => readFile(new URL(file, root), 'utf8');
@@ -43,11 +45,30 @@ test('the build makes the Conference Troubadour page: what it is, four videos, w
     assert.match(page, /Watchmaker that wishes to be anonymous/);
     assert.doesNotMatch(page, /logos|Tudor/i);
 
-    // Book me, at the top and at the end, is one address (build.mjs).
+    // Book me, at the top and at the end, is one email link underneath (build.mjs), for when
+    // the form can't be used. With scripts it opens the dialog instead.
     const book = [...page.matchAll(/<p class="troubadour-book"><a href="([^"]+)">Book me<\/a><\/p>/g)].map((match) => match[1]);
     assert.equal(book.length, 2);
     assert.equal(new Set(book).size, 1);
     assert.match(book[0], /^mailto:[^?@\s]+@[^?@\s]+\?subject=The%20Conference%20Troubadour$/);
+
+    // The dialog: who they are, the event, and a budget from the server's own list.
+    const dialog = page.match(/<dialog class="booking" id="booking" aria-labelledby="booking-title">[\s\S]*?<\/dialog>/)[0];
+    assert.match(dialog, /<form class="booking-form" action="\/conference-troubadour\/booking" method="post" data-booking>/);
+    const fields = [...dialog.matchAll(/<label class="booking-field">([^<]+)<input type="(text|email)" name="([a-z]+)" maxlength="(\d+)"[^>]* required><\/label>/g)];
+    assert.deepEqual(fields.map((match) => [match[1], match[3]]),
+      [['Your name', 'name'], ['Your email', 'email'], ['Event name', 'event'], ['Date', 'date'], ['Location', 'location'], ['Number of people', 'people']]);
+    // The fields allow what the server allows, and the date is words, not a date picker.
+    for (const match of fields) assert.equal(Number(match[4]), BOOKING_LIMITS[match[3]], match[3]);
+    assert.doesNotMatch(dialog, /type="date"/);
+    assert.deepEqual([...dialog.matchAll(/<input type="radio" name="budget" value="([^"]+)"/g)].map((match) => match[1]), BUDGETS);
+    // The amounts are the fee: travel and lodging are theirs to cover on top.
+    assert.match(dialog, /<legend>Budget, plus travel and lodging<\/legend>/);
+    assert.match(dialog, /<input class="booking-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">/);
+    assert.equal(dialog.match(/<a class="booking-quiet" href="([^"]+)">Email me instead<\/a>/)[1], book[0]);
+    // The page's script opens it, and loads the human check only then.
+    assert.match(page, /<script>[\s\S]*dialog\.showModal\(\);[\s\S]*<\/script>/);
+    assert.doesNotMatch(page.replace(/<script>[\s\S]*?<\/script>/g, ''), /challenges\.cloudflare\.com/);
 
     // The same menu as the home page, with this page marked inside Hire me.
     const nav = (html) => [...html.match(/<nav class="site-sections"[\s\S]*?<\/nav>/)[0].matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
@@ -72,7 +93,8 @@ test('the page keeps to three sizes of type and solid, square shapes', async () 
   const sizes = [...css.matchAll(/font-size: ([^;]+);/g)].map((match) => match[1]);
   assert.ok(sizes.length > 5);
   assert.deepEqual([...new Set(sizes)].sort(), ['var(--type-body)', 'var(--type-display)', 'var(--type-meta)']);
-  assert.doesNotMatch(css, /clamp\(|border-radius|opacity|rgba\(|hsla\(/);
+  // Square corners everywhere; the only border-radius is the one that squares a phone's fields.
+  assert.doesNotMatch(css, /clamp\(|border-radius: (?!0;)|opacity|rgba\(|hsla\(/);
 });
 
 test('every copy of the menu, and the header other sites load, lead to the page', async () => {
@@ -97,4 +119,109 @@ test('short addresses, the old site’s among them, land on the page', async () 
     assert.equal(response.status, 302, from);
     assert.equal(response.headers.get('Location'), to, from);
   }
+});
+
+// ---- The booking form's endpoint (troubadour.mjs) -------------------------------------------
+
+const ANSWERS = { name: 'Dana Planner', email: 'Dana@Example.com', event: 'Widget Summit <2027>', date: 'March 2027, three days', location: 'Chicago', people: 'about 400', budget: BUDGETS[1] };
+const human = () => fakeFetch([turnstileRoute({ success: true, action: 'booking' })]);
+const book = async (env, answers = ANSWERS, { headers = { Origin: SITE }, stub = human() } = {}) =>
+  call(env, '/conference-troubadour/booking', await form({ ...answers, 'cf-turnstile-response': 'token' }, { json: true, headers }), stub);
+
+test('the form says whether it can be used, and gives the human check its key only then', async () => {
+  const env = await commissionEnv({ email: true });
+  const open = await call(env, '/conference-troubadour/booking');
+  assert.equal(open.status, 200);
+  assert.equal(open.headers.get('Cache-Control'), 'no-store');
+  assert.deepEqual(await open.json(), { open: true, siteKey: 'site-key' });
+  // No way to send email, nowhere to send it, or no human check: the page keeps its email link.
+  for (const missing of ['COMMISSION_EMAIL', 'COMMISSION_FROM_EMAIL', 'COMMISSION_NOTIFY_TO', 'TURNSTILE_SITE_KEY', 'TURNSTILE_SECRET_KEY']) {
+    const { [missing]: gone, ...rest } = env;
+    assert.deepEqual(await (await call(rest, '/conference-troubadour/booking')).json(), { open: false, siteKey: null }, missing);
+    const refused = await book(rest);
+    assert.equal(refused.status, 503, missing);
+    assert.match((await refused.json()).error, /Email me instead/);
+  }
+  assert.equal((await call(env, '/conference-troubadour/booking', { method: 'DELETE' })).status, 405);
+});
+
+test('a booking goes to Jonathan as one email he can answer by pressing Reply, and nothing is stored', async () => {
+  const env = await commissionEnv({ email: true });
+  const response = await book(env);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true });
+  assert.equal(env.COMMISSION_EMAIL.sent.length, 1);
+  const [message] = env.COMMISSION_EMAIL.sent;
+  assert.equal(message.to, 'notify@songaday.studio');
+  assert.deepEqual(message.from, { email: 'songs@songaday.studio', name: 'Conference Troubadour booking' });
+  assert.equal(message.replyTo, 'dana@example.com');
+  assert.equal(message.subject, 'Conference Troubadour: Widget Summit <2027>');
+  for (const line of ['Name: Dana Planner', 'Email: dana@example.com', 'Event: Widget Summit <2027>', 'Date: March 2027, three days',
+    'Location: Chicago', 'People: about 400', `Budget: ${BUDGETS[1]}`]) assert.ok(message.text.includes(line), line);
+  // The answers are a stranger's words: escaped in the HTML.
+  assert.ok(message.html.includes('<td>Widget Summit &lt;2027&gt;</td>'));
+  assert.doesNotMatch(message.html, /<2027>/);
+  // No row anywhere: not a request, not a queued email.
+  assert.equal(env.COMMISSIONS_DB.one('SELECT COUNT(*) AS count FROM outbox').count, 0);
+  assert.equal(env.COMMISSIONS_DB.one('SELECT COUNT(*) AS count FROM requests').count, 0);
+  // The rate limit counts bookings apart from commissions.
+  assert.match(env.COMMISSION_LIMIT.calls[0].key, /^booking:/);
+});
+
+test('answers are cleaned to one line each, and a missing or made-up one is refused before anything is sent', async () => {
+  const cleaned = readBooking(new Map(Object.entries({ ...ANSWERS, name: '  Dana\n  Planner ', email: ' DANA@Example.com ' })));
+  assert.equal(cleaned.name, 'Dana Planner');
+  assert.equal(cleaned.email, 'dana@example.com');
+  assert.equal(bookingProblem(cleaned), null);
+
+  const env = await commissionEnv({ email: true });
+  const cases = {
+    'Add your name.': { name: ' ' },
+    'That email doesn’t look right.': { email: 'dana at example.com' },
+    'Add the event’s name.': { event: '' },
+    'Add the date, even a rough one.': { date: '' },
+    'Add where it is.': { location: '' },
+    'Add about how many people will be there.': { people: '' },
+    'Pick a budget.': { budget: '$1 to $2' },
+    'One of those answers is too long.': { event: 'x'.repeat(BOOKING_LIMITS.event + 1) }
+  };
+  for (const [error, change] of Object.entries(cases)) {
+    // The human check is never asked about answers that will be refused.
+    const never = fakeFetch([]);
+    const response = await book(env, { ...ANSWERS, ...change }, { stub: never });
+    assert.equal(response.status, 400, error);
+    assert.deepEqual(await response.json(), { error });
+  }
+  // An address that would smuggle a second recipient into Reply-To is not an address.
+  assert.equal((await book(env, { ...ANSWERS, email: 'a@example.com, b@example.com' })).status, 400);
+  assert.equal(env.COMMISSION_EMAIL.sent.length, 0);
+});
+
+test('bots, floods, other sites and failed human checks send nothing', async () => {
+  const env = await commissionEnv({ email: true });
+  // A bot that fills in the field people can't see is told it worked.
+  const trapped = await book(env, { ...ANSWERS, website: 'https://spam.example' }, { stub: fakeFetch([]) });
+  assert.deepEqual([trapped.status, await trapped.json()], [200, { ok: true }]);
+  // Another site's page can't post here.
+  assert.equal((await book(env, ANSWERS, { headers: { Origin: 'https://elsewhere.example' }, stub: fakeFetch([]) })).status, 403);
+  assert.equal((await book(env, ANSWERS, { headers: {}, stub: fakeFetch([]) })).status, 403);
+  // Too many at once.
+  const flooded = await book({ ...env, COMMISSION_LIMIT: fakeRateLimit(false) }, ANSWERS, { stub: fakeFetch([]) });
+  assert.equal(flooded.status, 429);
+  // Not a person, or a token meant for another form.
+  assert.equal((await book(env, ANSWERS, { stub: fakeFetch([turnstileRoute({ success: false })]) })).status, 403);
+  assert.equal((await book(env, ANSWERS, { stub: fakeFetch([turnstileRoute({ success: true, action: 'commission' })]) })).status, 403);
+  // Too big to be this form.
+  const huge = await book(env, { ...ANSWERS, event: 'x'.repeat(20_000) }, { stub: fakeFetch([]) });
+  assert.equal(huge.status, 413);
+  assert.equal(env.COMMISSION_EMAIL.sent.length, 0);
+});
+
+test('when the email can’t be sent, the person is told, and pointed at the email link', async () => {
+  const env = await commissionEnv({ email: true });
+  env.COMMISSION_EMAIL.fail = 'E_INTERNAL_SERVER_ERROR';
+  const response = await book(env);
+  assert.equal(response.status, 502);
+  assert.deepEqual(await response.json(), { error: 'That didn’t go through. Email me instead.' });
+  assert.equal(env.COMMISSION_EMAIL.sent.length, 0);
 });

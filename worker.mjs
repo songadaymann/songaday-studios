@@ -1,5 +1,6 @@
 import {handleStore, runStoreOrders} from './store.mjs';
 import { handleMonthlyGiving } from './monthly-giving.mjs';
+import { handleTroubadour } from './troubadour.mjs';
 import { songADayAge, songADayNumber } from './song-day.mjs';
 import { MEDIA_PATH, serveMedia } from './media.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from './films.mjs';
@@ -174,6 +175,9 @@ export default {
     if (monthly) return monthly;
     const commission = await handleCommission(request, env, url, ctx);
     if (commission) return commission;
+    // The Conference Troubadour page's Book me form (troubadour.mjs).
+    const booking = await handleTroubadour(request, env, url);
+    if (booking) return booking;
 
     // songaday.studio/fumble: anonymous bag-fumble stories (fumble.mjs).
     const fumble = await handleFumble(request, env, url);

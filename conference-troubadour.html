@@ -91,6 +91,36 @@
       <p class="troubadour-back">I’m bringing the Conference Troubadour back after a long absence.</p>
       <p class="troubadour-book"><a href="{{BOOK_HREF}}">Book me</a></p>
     </section>
+
+    <!-- Book me opens this (troubadour-page.js); without scripts the buttons are email links. -->
+    <dialog class="booking" id="booking" aria-labelledby="booking-title">
+      <form class="booking-form" action="/conference-troubadour/booking" method="post" data-booking>
+        <h2 id="booking-title">Book me</h2>
+        <label class="booking-field">Your name<input type="text" name="name" maxlength="120" autocomplete="name" required></label>
+        <label class="booking-field">Your email<input type="email" name="email" maxlength="254" autocomplete="email" required></label>
+        <label class="booking-field">Event name<input type="text" name="event" maxlength="160" required></label>
+        <label class="booking-field">Date<input type="text" name="date" maxlength="80" required></label>
+        <label class="booking-field">Location<input type="text" name="location" maxlength="160" required></label>
+        <label class="booking-field">Number of people<input type="text" name="people" maxlength="40" inputmode="numeric" required></label>
+        <fieldset class="booking-budget">
+          <legend>Budget, plus travel and lodging</legend>
+{{BUDGETS}}
+        </fieldset>
+        <input class="booking-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="booking-check" data-booking-check></div>
+        <p class="booking-status" role="status" data-booking-status></p>
+        <p class="booking-actions">
+          <button class="booking-send" type="submit">Send</button>
+          <button class="booking-quiet" type="button" data-booking-close>Close</button>
+          <a class="booking-quiet" href="{{BOOK_HREF}}">Email me instead</a>
+        </p>
+      </form>
+      <div class="booking-done" data-booking-done hidden>
+        <h2>Got it.</h2>
+        <p>I’ll write back soon.</p>
+        <p class="booking-actions"><button class="booking-send" type="button" data-booking-close>Close</button></p>
+      </div>
+    </dialog>
   </main>
 
 {{FOOTER}}

@@ -39,3 +39,37 @@
 @media (max-width: 520px) {
   .troubadour-steps { grid-template-columns: 1fr; }
 }
+
+/* Book me opens this dialog: seven short answers and a budget, sent to Jonathan as an email
+   (troubadour.mjs). Square and solid like the rest: the page behind is covered, not dimmed. */
+.booking { width: min(40rem, calc(100% - 2rem)); max-height: calc(100dvh - 2rem); margin: auto; padding: 2rem; border: 4px solid var(--white); background: var(--ink); color: var(--white); box-shadow: var(--offset) var(--offset) 0 var(--red); overflow: auto; }
+.booking::backdrop { background: var(--paper); }
+.booking h2 { margin-bottom: .5rem; }
+.booking-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 1.5rem; }
+/* Once it's sent the form gives way to the thank-you; the grid above would keep it on screen. */
+.booking-form[hidden] { display: none; }
+.booking-form > h2, .booking-budget, .booking-check, .booking-status, .booking-actions { grid-column: 1 / -1; }
+.booking-field { display: grid; gap: .35rem; font-size: var(--type-meta); font-weight: 700; }
+.booking-field input { width: 100%; min-height: 44px; padding: 0 .75rem; border: 2px solid var(--white); border-radius: 0; background: var(--ink); color: var(--white); font-family: inherit; font-size: var(--type-body); font-weight: 400; -webkit-appearance: none; appearance: none; }
+.booking-budget { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 1.5rem; min-width: 0; margin: 0; padding: 0; border: 0; }
+.booking-budget legend { margin-bottom: .25rem; padding: 0; font-size: var(--type-meta); font-weight: 700; }
+.booking-budget label { display: flex; align-items: center; gap: .6rem; min-height: 44px; font-size: var(--type-body); cursor: pointer; }
+.booking-budget input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--red); }
+/* For bots, which fill in every field. People never see or reach it. */
+.booking-trap { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); }
+.booking-check:empty, .booking-status:empty { display: none; }
+.booking-status { margin: 0; font-size: var(--type-body); font-weight: 700; line-height: 1.5; }
+.booking-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin: .5rem 0 0; }
+.booking-send { min-height: 44px; padding: 0 1.15rem; border: 0; border-radius: 0; background: var(--red-button); color: var(--white); font-family: inherit; font-size: var(--type-meta); font-weight: 700; letter-spacing: .06em; line-height: 1; text-transform: uppercase; cursor: pointer; }
+.booking-send:hover { background: var(--white); color: var(--ink); }
+.booking-send:disabled { background: var(--white); color: var(--ink); cursor: default; }
+.booking-quiet { min-height: 44px; padding: 0; border: 0; background: none; color: var(--white); font-family: inherit; font-size: var(--type-body); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: .2em; cursor: pointer; }
+a.booking-quiet { display: inline-flex; align-items: center; }
+.booking-done p { margin: 0; font-size: var(--type-body); line-height: 1.5; }
+.booking-done .booking-actions { margin-top: 1.5rem; }
+.booking :is(input, button, a):focus-visible { outline: 4px solid var(--red); outline-offset: 2px; }
+
+@media (max-width: 520px) {
+  .booking { padding: 1.25rem; }
+  .booking-form, .booking-budget { grid-template-columns: 1fr; }
+}
