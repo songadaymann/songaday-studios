@@ -215,6 +215,27 @@ test('the plugins, films and links pages and assets still come from static asset
   }
 });
 
+// songaday.studio/node: the NODE application video page. Nothing links to it, search engines are
+// asked to skip it, and its video and pictures are the ones the build and R2 actually have.
+test('the NODE page stays unlisted and points at its own video, poster and font', async () => {
+  const html = await readFile(new URL('node/index.html', root), 'utf8');
+  assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
+  assert.match(html, /<source src="\/assets\/video\/node-whatif\.mp4" type="video\/mp4">/);
+  assert.match(html, /poster="\/assets\/images\/node\/whatif-poster\.webp"/);
+  assert.match(html, /url\("\/node\/press-start-2p\.woff2"\)/);
+  for (const file of ['profile.html', 'films.html', 'plugins/index.html', 'projects.json', 'links/index.html']) {
+    assert.doesNotMatch(await readFile(new URL(file, root), 'utf8'), /\/node\//, file);
+  }
+  // Every level starts where the video says it does.
+  const levels = [...html.matchAll(/data-t="([\d.]+)"[^>]*><span class="time">(\d+):(\d\d)<\/span>/g)];
+  assert.equal(levels.length, 7);
+  for (const [, seconds, minutes, rest] of levels) {
+    assert.equal(Math.floor(Number(seconds)), Number(minutes) * 60 + Number(rest), seconds);
+  }
+  const production = await readFile(new URL('build-production.mjs', root), 'utf8');
+  assert.match(production, /cp\('node', 'dist\/node'/);
+});
+
 test('www and http go to https://songaday.studio, but local previews stay on http', async () => {
   const www = await fetchPath('/plugins/', 'https://www.songaday.studio');
   assert.equal(www.status, 301);
@@ -268,7 +289,7 @@ test('the films feed is read in playlist order and rendered safely', async () =>
 });
 
 test('any spelling of /films or /links lands on the page', async () => {
-  for (const path of ['/films', '/Films', '/FILMS/', '/links', '/Links', '/LINKS/', '/data', '/Data']) {
+  for (const path of ['/films', '/Films', '/FILMS/', '/links', '/Links', '/LINKS/', '/data', '/Data', '/node', '/NODE']) {
     const response = await fetchPath(path + '?from=x');
     assert.equal(response.status, 302, path);
     assert.equal(response.headers.get('Location'), path.replace(/\/$/, '').toLowerCase() + '/?from=x', path);

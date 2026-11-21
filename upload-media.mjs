@@ -14,6 +14,10 @@ const dryRun = process.argv.includes('--dry-run');
 // Videos larger than this (the political-satire trailer) are re-encoded at about 1.3 Mbps
 // so they stream well on phones. The re-encode is kept in output/media/ between runs.
 const REENCODE_OVER = 25 * 1024 * 1024;
+// Videos already encoded for the web that go up as they are. The NODE application video
+// (songaday.studio/node) is 1080p at about 5.5 Mbps because its pixel-font subtitles smear
+// at 1.3 Mbps.
+const AS_IS = new Set(['node-whatif.mp4']);
 
 const mtime = async (file) => (await stat(file).catch(() => null))?.mtimeMs ?? 0;
 
@@ -22,7 +26,7 @@ if (!names.length) throw new Error('No videos found in assets/video/');
 
 for (const name of names) {
   let file = path.join('assets/video', name);
-  if ((await stat(file)).size > REENCODE_OVER) {
+  if (!AS_IS.has(name) && (await stat(file)).size > REENCODE_OVER) {
     const encoded = path.join('output/media/video', name);
     if (!dryRun && (await mtime(encoded)) < (await mtime(file))) {
       await mkdir(path.dirname(encoded), { recursive: true });

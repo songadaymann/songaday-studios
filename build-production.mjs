@@ -38,6 +38,9 @@ await cp('bar', 'dist/bar', { recursive: true, filter: (source) => !source.endsW
 await cp('projects.json', 'dist/projects.json');
 // Plugin downloads page: a static page of its own (songaday.studio/plugins).
 await cp('plugins', 'dist/plugins', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
+// songaday.studio/node: the video for the NODE WHATIF residency application, a standalone page
+// that nothing links to. Its font is Press Start 2P (SIL Open Font License; node/README.md).
+await cp('node', 'dist/node', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') && !source.endsWith('.md') });
 // Bio link page (songaday.studio/links), also static; the Worker fills in today's song.
 await cp('links', 'dist/links', { recursive: true, filter: (source) => !source.endsWith('.DS_Store') });
 if (existsSync('assets')) {

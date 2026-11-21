@@ -129,6 +129,7 @@ real page, later:
 | `/mini-docs` | `/films/` |
 | `/plugins/` | `plugins/index.html` |
 | `/links/` | `links/index.html`, the bio link page |
+| `/node/` | `node/index.html`, the NODE WHATIF Residency application video; unlisted and noindex (`node/README.md`) |
 | `/fumble` | The Museum of Fumbled Bags (`fumble.mjs`) |
 | `/everything/` | `everything/index.html`, built from `projects.json` |
 | `/now/` | `now/index.html`, built from `now.html` |
