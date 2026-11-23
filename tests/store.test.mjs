@@ -61,7 +61,7 @@ const values={ALBUM_COUNT:'5',PERSONAL_FROM:'$200',FIGURE_COUNT:'236',POSTER_FRO
 const tiles=html=>[...html.matchAll(/<li><a href="([^"]+)"[^>]*><span class="store-item-image([^"]*)">((?:<img[^>]*>)+)<\/span><span class="store-item-name">([^<]+)<\/span><span class="store-item-note">(.*?)<\/span><\/a><\/li>/g)]
  .map(m=>({href:m[1],look:m[2].trim(),images:[...m[3].matchAll(/src="([^"]+)"/g)].map(i=>i[1]),lazy:/loading="lazy"/.test(m[3]),name:m[4],note:m[5].replace(/<[^>]+>/g,'')}));
 
-test('the live product list is clean, and each kind with one product is a picture that goes straight to it',async()=>{
+test('the live product list is clean: a kind with one product is a picture that goes straight to it, and Clothing, with two, lists them further down',async()=>{
  const data=await read('products.json');
  assert.deepEqual(productProblems(data,values),[]);
  assert.deepEqual(data.kinds.map(k=>k.id),['music','custom-song','posters','clothing']);
@@ -70,25 +70,30 @@ test('the live product list is clean, and each kind with one product is a pictur
   ['#music','Music','5 albums on Bandcamp','store-item-mosaic',4,false],
   ['/commission','A song written for you','From $200, pay when it’s done','',1,false],
   ['/store/muscle/','MUSCLE posters','236 figures, from $29 · opens soon','store-item-print',1,false],
-  ['https://cottonbureau.com/p/NW5ZGT/hat/songs-hat','Songs Hat','On Cotton Bureau ↗ (opens in a new tab)','store-item-contain',1,false]]);
- // Only Music has more to show than its picture: the album list.
- assert.deepEqual([...store.sections.matchAll(/<section class="store-kind" id="([^"]+)"/g)].map(m=>m[1]),['music']);
- assert.doesNotMatch(store.sections,/class="store-items"/);
+  ['#clothing','Clothing','Songs Hat and Songs Shirt','store-item-mosaic',2,false]]);
+ // Clothing has two products, so it gets a list; Music has the album list, and goes last.
+ assert.deepEqual([...store.sections.matchAll(/<section class="store-kind" id="([^"]+)"/g)].map(m=>m[1]),['clothing','music']);
+ assert.equal((store.sections.match(/class="store-items"/g)??[]).length,1);
+ const clothing=tiles(store.sections.match(/<section class="store-kind" id="clothing"[\s\S]*?<\/section>/)[0]);
+ assert.deepEqual(clothing.map(t=>[t.href,t.name,t.note,t.look,t.lazy]),[
+  ['https://cottonbureau.com/p/NW5ZGT/hat/songs-hat','Songs Hat','On Cotton Bureau ↗ (opens in a new tab)','store-item-contain',true],
+  ['https://cottonbureau.com/p/KENBQ2/shirt/songs-shirt','Songs Shirt','Tees and hoodies, on Cotton Bureau ↗ (opens in a new tab)','store-item-contain',true]]);
 });
 
-test('adding a second product to a kind turns its picture into the kind, with a list further down',async()=>{
+test('adding another product to a kind turns its picture into the kind, with a list further down',async()=>{
  const data=await read('products.json');
  data.products.push({id:'song-a-day-poster',kind:'posters',name:'Song A Day poster',note:'Every song in one picture',href:'/store/song-a-day/',image:'/assets/images/store/song-a-day-poster.jpg',fit:'print',checkout:'posters'},
-  {id:'songs-shirt',kind:'clothing',name:'Songs Shirt',note:'On Cotton Bureau',href:'https://cottonbureau.com/p/EXAMPLE/shirt/songs-shirt',image:'https://cottonbureau.com/mockup?pid=1'});
+  {id:'songs-socks',kind:'clothing',name:'Songs Socks',note:'On Cotton Bureau',href:'https://cottonbureau.com/p/EXAMPLE/socks/songs-socks',image:'https://cottonbureau.com/mockup?pid=1'});
  assert.deepEqual(productProblems(data,values),[]);
  const store=renderStore(data,{albums:albumsForTests(),values});
  const top=tiles(store.items);
- // Still four pictures on the first screen; the two kinds that grew now carry the kind's name.
+ // Still four pictures on the first screen; the kinds with several products carry the kind's name
+ // (Posters has just grown to two; Clothing, already two, shows its first two pictures of three).
  assert.deepEqual(top.map(t=>[t.href,t.name,t.note,t.look,t.images.length]),[
   ['#music','Music','5 albums on Bandcamp','store-item-mosaic',4],
   ['/commission','A song written for you','From $200, pay when it’s done','',1],
   ['#posters','Posters','MUSCLE posters and Song A Day poster','store-item-mosaic',2],
-  ['#clothing','Clothing','Songs Hat and Songs Shirt','store-item-mosaic',2]]);
+  ['#clothing','Clothing','Songs Hat, Songs Shirt and Songs Socks','store-item-mosaic',2]]);
  assert.ok(top.every(t=>!t.lazy));
  assert.deepEqual([...store.sections.matchAll(/<section class="store-kind" id="([^"]+)" aria-labelledby="\1-heading">\s*<h2 id="\1-heading">([^<]+)<\/h2>/g)].map(m=>[m[1],m[2]]),
   [['posters','Posters'],['clothing','Clothing'],['music','Music']]);
@@ -99,11 +104,11 @@ test('adding a second product to a kind turns its picture into the kind, with a 
   ['/store/muscle/','MUSCLE posters','236 figures, from $29 · opens soon','store-item-print',true],
   ['/store/song-a-day/','Song A Day poster','Every song in one picture · opens soon','store-item-print',true]]);
  const clothing=store.sections.match(/<section class="store-kind" id="clothing"[\s\S]*?<\/section>/)[0];
- assert.equal((clothing.match(/target="_blank" rel="noopener noreferrer"/g)??[]).length,2);
+ assert.equal((clothing.match(/target="_blank" rel="noopener noreferrer"/g)??[]).length,3);
  // Four or more pictures in a kind show as two by two; past three names, the rest are counted.
  for(const n of [3,4])data.products.push({id:'shirt-'+n,kind:'clothing',name:'Shirt '+n,note:'On Cotton Bureau',href:'https://cottonbureau.com/p/'+n,image:'https://cottonbureau.com/mockup?pid='+n});
  const bigger=tiles(renderStore(data,{albums:albumsForTests(),values}).items)[3];
- assert.deepEqual([bigger.name,bigger.note,bigger.images.length],['Clothing','Songs Hat, Songs Shirt and 2 more',4]);
+ assert.deepEqual([bigger.name,bigger.note,bigger.images.length],['Clothing','Songs Hat, Songs Shirt and 3 more',4]);
 });
 
 test('the product list says what is wrong with a row before the build uses it',async()=>{
@@ -135,24 +140,32 @@ test('the store front page shows everything up top, then the albums; the poster 
   await promisify(execFile)(process.execPath,[fileURLToPath(new URL('../build.mjs',import.meta.url)),'--out',out],{env:{...process.env,SONGADAY_OFFLINE:'1'}});
   const [front,muscle]=await Promise.all(['store/index.html','store/muscle/index.html'].map(p=>readFile(path.join(out,p),'utf8')));
   assert.match(front,/<title>Store · Song A Day Studio<\/title>/);
-  // The four things in the store, before anything else on the page, each a link to where it's sold.
+  // The four kinds of thing in the store, before anything else on the page: three link to where
+  // they're sold, and Clothing, which has two products, jumps to its list.
   const items=front.match(/<ul class="store-items"[\s\S]*?<\/ul>/)[0];
   assert.ok(front.indexOf('class="store-items"')<front.indexOf('id="music"'));
   assert.deepEqual([...items.matchAll(/<li><a href="([^"]+)"[\s\S]*?<span class="store-item-name">([^<]+)<\/span>/g)].map(m=>[m[1],m[2]]),
-   [['#music','Music'],['/commission','A song written for you'],['/store/muscle/','MUSCLE posters'],['https://cottonbureau.com/p/NW5ZGT/hat/songs-hat','Songs Hat']]);
+   [['#music','Music'],['/commission','A song written for you'],['/store/muscle/','MUSCLE posters'],['#clothing','Clothing']]);
   assert.equal((items.match(/<span class="store-item-image store-item-mosaic">(?:<img src="https:\/\/f4\.bcbits\.com\/img\/a\d{10}_2\.jpg" alt="" referrerpolicy="no-referrer">){4}<\/span>/g)??[]).length,1);
   assert.match(items,/<span class="store-item-image"><img src="(?:https:\/\/songaday\.studio)?\/assets\/images\/jonathan-swing-800\.webp" alt=""><\/span>/);
   assert.match(items,/<span class="store-item-image store-item-print"><img src="https:\/\/pub-[a-z0-9]+\.r2\.dev\/centered-v4-original-color\/preview\/015\.jpg" alt="" referrerpolicy="no-referrer"><\/span>/);
-  assert.match(items,/<span class="store-item-image store-item-contain"><img src="https:\/\/cottonbureau\.com\/mockup\?default=1&amp;hash=LSmS&amp;pid=115154&amp;w=1024" alt="" referrerpolicy="no-referrer"><\/span>/);
+  assert.match(items,/<span class="store-item-image store-item-mosaic"><img src="https:\/\/cottonbureau\.com\/mockup\?default=1&amp;hash=LSmS&amp;pid=115154&amp;w=1024" alt="" referrerpolicy="no-referrer"><img src="https:\/\/cottonbureau\.com\/mockup\?default=1&amp;hash=FeeW&amp;pid=115389&amp;w=1024" alt="" referrerpolicy="no-referrer"><\/span>/);
+  assert.match(items,/<span class="store-item-note">Songs Hat and Songs Shirt<\/span>/);
   assert.match(items,/<span class="store-item-note">32 albums on Bandcamp<\/span>/);
   assert.match(items,/<span class="store-item-note">From \$200, pay when it’s done<\/span>/);
   assert.match(items,/<span class="store-item-note">236 figures, from \$29<span data-store-opens-soon> · opens soon<\/span><\/span>/);
-  assert.match(items,/<span class="store-item-note">On Cotton Bureau ↗<span class="visually-hidden"> \(opens in a new tab\)<\/span><\/span>/);
   assert.match(front,/querySelectorAll\("\[data-store-opens-soon\]"\)/);
-  assert.match(items,/<a href="https:\/\/cottonbureau\.com\/p\/NW5ZGT\/hat\/songs-hat" target="_blank" rel="noopener noreferrer">/);
   // The row is on the first screen, so its pictures load and decode right away.
   assert.doesNotMatch(items,/loading="lazy"|decoding="async"/);
-  assert.deepEqual([...front.matchAll(/<section class="store-kind" id="([^"]+)"/g)].map(m=>m[1]),['music']);
+  assert.deepEqual([...front.matchAll(/<section class="store-kind" id="([^"]+)"/g)].map(m=>m[1]),['clothing','music']);
+  // The clothing list: the hat and the shirt, each a link to Cotton Bureau in a new tab.
+  const clothing=front.match(/<section class="store-kind" id="clothing"[\s\S]*?<\/section>/)[0];
+  assert.match(clothing,/<h2 id="clothing-heading">Clothing<\/h2>\s*<ul class="store-items" aria-labelledby="clothing-heading">/);
+  assert.match(clothing,/<a href="https:\/\/cottonbureau\.com\/p\/NW5ZGT\/hat\/songs-hat" target="_blank" rel="noopener noreferrer">/);
+  assert.match(clothing,/<a href="https:\/\/cottonbureau\.com\/p\/KENBQ2\/shirt\/songs-shirt" target="_blank" rel="noopener noreferrer">/);
+  assert.match(clothing,/<span class="store-item-note">On Cotton Bureau ↗<span class="visually-hidden"> \(opens in a new tab\)<\/span><\/span>/);
+  assert.match(clothing,/<span class="store-item-note">Tees and hoodies, on Cotton Bureau ↗<span class="visually-hidden"> \(opens in a new tab\)<\/span><\/span>/);
+  assert.ok(front.indexOf('id="clothing"')<front.indexOf('id="music"'));
   assert.match(front,/<h2 id="music-heading">Music<\/h2>\s*<p>Every year of Song A Day is an album\. Listen and buy on Bandcamp\.<\/p>\s*<ul class="store-albums" aria-labelledby="music-heading">/);
   const years=[...front.matchAll(/<li><a href="https:\/\/jonathanmann\.bandcamp\.com\/album\/song-a-day-year-[a-z0-9-]+" target="_blank" rel="noopener noreferrer"><img src="https:\/\/f4\.bcbits\.com\/img\/a\d{10}_2\.jpg" alt="" width="350" height="350" loading="lazy" decoding="async"><span class="store-album-name">(\d{4})<\/span><span class="store-album-note">(Year [A-Za-z-]+)<\/span>/g)];
   assert.ok(years.length>=18);assert.equal(years[0][1],String(2008+years.length));assert.equal(years.at(-1)[2],'Year One');

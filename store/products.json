@@ -43,6 +43,15 @@
       "href": "https://cottonbureau.com/p/NW5ZGT/hat/songs-hat",
       "image": "https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024",
       "fit": "contain"
+    },
+    {
+      "id": "songs-shirt",
+      "kind": "clothing",
+      "name": "Songs Shirt",
+      "note": "Tees and hoodies, on Cotton Bureau",
+      "href": "https://cottonbureau.com/p/KENBQ2/shirt/songs-shirt",
+      "image": "https://cottonbureau.com/mockup?default=1&hash=FeeW&pid=115389&w=1024",
+      "fit": "contain"
     }
   ]
 }

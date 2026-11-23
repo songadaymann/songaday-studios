@@ -461,7 +461,7 @@ const storeFrontJs = `(() => {
 })();`;
 await writePage("store/index.html", documentHtml({
   title: "Store · Song A Day Studio",
-  description: "Song A Day albums on Bandcamp, a song written for you, MUSCLE posters and the Songs Hat.",
+  description: "Song A Day albums on Bandcamp, a song written for you, MUSCLE posters, and the Songs Hat and Songs Shirt.",
   url: "https://songaday.studio/store/",
   body: storeBody(storeSource),
   script: storeFrontJs, extraCss: storeCss,

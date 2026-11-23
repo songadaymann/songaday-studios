@@ -66,7 +66,8 @@ Replace these references with your own assets for an independent deployment.
   one links to its album on Bandcamp. The covers are Jonathan's release artwork; some
   include other artists' illustration or photography, which this repository's licenses
   don't cover.
-- The Songs Hat image is hotlinked from Cotton Bureau's official product mockup:
-  https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024 . It is used
-  to link to Jonathan's Songs Hat listing. No image binary is copied into Git, and
-  this reference grants no redistribution rights to Cotton Bureau photography.
+- The Songs Hat and Songs Shirt images are hotlinked from Cotton Bureau's official
+  product mockups: https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024
+  and https://cottonbureau.com/mockup?default=1&hash=FeeW&pid=115389&w=1024 . They are
+  used to link to Jonathan's listings. No image binary is copied into Git, and these
+  references grant no redistribution rights to Cotton Bureau photography.
