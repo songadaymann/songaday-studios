@@ -15,7 +15,7 @@ test('every figure has exactly one original-color preview and no dashboard links
  for(let id=1;id<=236;id++) {const f=rows.find(f=>f.id===id);assert.ok(f.name);assert.match(f.image,new RegExp('/centered-v4-original-color/preview/'+String(id).padStart(3,'0')+'\\.jpg$'));assert.equal(f.gelatoUrl,undefined);}
 });
 test('size and frame options only map to quote-verified products',async()=>{
- const c=await read('variants.json');assert.equal(c.variants.length,7);assert.equal(c.checkoutEnabled,false);
+ const c=await read('variants.json');assert.equal(c.variants.length,7);assert.equal(c.checkoutEnabled,true);
  for(const s of c.sizes){const v=c.variants.filter(v=>v.size===s.id);assert.deepEqual(v.map(v=>v.frame),s.id==='30x40'?['none']:['none','black','white']);for(const p of v){assert.ok(p.productUid);assert.ok(Number.isInteger(p.priceCents)&&p.priceCents>0);assert.ok(p.artworkPrefix.startsWith('https://'));}}
 });
 test('old figure links and Stripe return links land on the poster page, with their choices',async()=>{
@@ -148,7 +148,7 @@ test('the store front page shows everything up top, then the albums; the poster 
    [['#music','Music'],['/commission','A song written for you'],['/store/muscle/','MUSCLE posters'],['#clothing','Clothing']]);
   assert.equal((items.match(/<span class="store-item-image store-item-mosaic">(?:<img src="https:\/\/f4\.bcbits\.com\/img\/a\d{10}_2\.jpg" alt="" referrerpolicy="no-referrer">){4}<\/span>/g)??[]).length,1);
   assert.match(items,/<span class="store-item-image"><img src="(?:https:\/\/songaday\.studio)?\/assets\/images\/jonathan-swing-800\.webp" alt=""><\/span>/);
-  assert.match(items,/<span class="store-item-image store-item-print"><img src="https:\/\/pub-[a-z0-9]+\.r2\.dev\/centered-v4-original-color\/preview\/015\.jpg" alt="" referrerpolicy="no-referrer"><\/span>/);
+  assert.match(items,/<span class="store-item-image store-item-print"><img src="https:\/\/prints\.songaday\.studio\/centered-v4-original-color\/preview\/015\.jpg" alt="" referrerpolicy="no-referrer"><\/span>/);
   assert.match(items,/<span class="store-item-image store-item-mosaic"><img src="https:\/\/cottonbureau\.com\/mockup\?default=1&amp;hash=LSmS&amp;pid=115154&amp;w=1024" alt="" referrerpolicy="no-referrer"><img src="https:\/\/cottonbureau\.com\/mockup\?default=1&amp;hash=FeeW&amp;pid=115389&amp;w=1024" alt="" referrerpolicy="no-referrer"><\/span>/);
   assert.match(items,/<span class="store-item-note">Songs Hat and Songs Shirt<\/span>/);
   assert.match(items,/<span class="store-item-note">32 albums on Bandcamp<\/span>/);

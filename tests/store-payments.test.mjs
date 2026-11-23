@@ -46,6 +46,13 @@ test('checkout retries use stable parameters and idempotency keys, with shipping
  const q=await quote(s);const row=s.db.rows('store_orders')[0];await Promise.all([createStoreCheckout(s.env,row),createStoreCheckout(s.env,row)]);
  const requests=s.calls.filter(c=>new URL(c.url).pathname==='/v1/checkout/sessions');assert.equal(requests.length,2);assert.equal(requests[0].body,requests[1].body);assert.equal(requests[0].headers['Idempotency-Key'],requests[1].headers['Idempotency-Key']);
  const form=new URLSearchParams(requests[0].body);assert.equal(form.get('line_items[0][price_data][unit_amount]'),'2900');assert.equal(form.get('shipping_address_collection[allowed_countries][0]'),null);assert.equal(form.get('automatic_tax[enabled]'),'true');
+ // Stripe Tax uses the fixed Customer shipping address. Explicit PaymentIntent shipping
+ // conflicts with automatic tax, and payment methods now come from Stripe's Dashboard.
+ assert.equal(form.get('payment_method_types[0]'),null);
+ assert.equal(form.get('payment_intent_data[shipping][address][line1]'),null);
+ const customerForm=new URLSearchParams(s.calls.find(c=>new URL(c.url).pathname==='/v1/customers').body);
+ assert.equal(customerForm.get('shipping[address][line1]'),address.addressLine1);
+ assert.equal(customerForm.get('shipping[address][postal_code]'),address.postCode);
  const before=s.calls.length;await createStoreCheckout(s.env,s.db.rows('store_orders')[0]);assert.equal(s.calls.length,before);assert.ok(q.token);
 }));
 test('duplicate signed paid events submit only one correctly configured Gelato order',()=>withSetup(async s=>{

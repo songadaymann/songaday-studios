@@ -48,10 +48,10 @@ const load=(env,token)=>env.COMMISSIONS_DB.prepare('SELECT * FROM store_orders W
 const addressOf=r=>({line1:r.addressLine1,line2:r.addressLine2,city:r.city,state:r.state,postal_code:r.postCode,country:r.country});
 export function checkoutParams(env,row,p,customer){
  const r=JSON.parse(row.recipient_json);
- return {mode:'payment',customer,client_reference_id:row.id,payment_method_types:['card'],automatic_tax:{enabled:true},billing_address_collection:'required',
+ return {mode:'payment',customer,client_reference_id:row.id,automatic_tax:{enabled:true},billing_address_collection:'required',
   line_items:[{quantity:1,price_data:{currency:'usd',unit_amount:row.price_cents-(row.discount_cents??0),tax_behavior:'exclusive',product_data:{tax_code:'txcd_99999999',name:`MUSCLE #${String(p.figure).padStart(3,'0')} ${p.name}`,description:`${p.size.replace('x',' × ')} inches · ${p.frame==='none'?'Unframed':p.frame+' wooden frame, ready to hang'}${row.discount_percent?' · '+row.discount_percent+'% monthly patron discount applied':''}`,images:[p.image]}}}],
   shipping_options:[{shipping_rate_data:{display_name:'Shipping',type:'fixed_amount',fixed_amount:{amount:row.shipping_cents,currency:'usd'},tax_behavior:'exclusive'}}],
-  payment_intent_data:{receipt_email:r.email,shipping:{name:r.firstName+' '+r.lastName,phone:r.phone,address:addressOf(r)},metadata:{store_order_id:row.id}},metadata:{store_order_id:row.id},
+  payment_intent_data:{receipt_email:r.email,metadata:{store_order_id:row.id}},metadata:{store_order_id:row.id},
   custom_text:{submit:{message:`Ships to ${r.firstName} ${r.lastName}, ${r.addressLine1}, ${r.city}, ${r.state} ${r.postCode}. Return to the store to change the shipping address.`}},
   success_url:`${env.SITE_ORIGIN}/store/muscle/?order=${row.id}`,cancel_url:`${env.SITE_ORIGIN}/store/muscle/?figure=${p.figure}&size=${p.size}&frame=${p.frame}`,
   expires_at:row.expires_at};

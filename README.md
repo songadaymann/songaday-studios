@@ -1048,21 +1048,27 @@ reconciles uncertain submissions, and updates tracking. The daily commission job
 still runs only at its original time. Store administration is at
 `/commission/admin/store`, with the same Access JWT and allowlist checks.
 
-Purchasing is CLOSED (`STORE_OPEN=no`) while live Stripe configuration is finished.
-The current commission restricted key returned `more_permissions_required` during
-the store Checkout probe. Prefer a separate LIVE restricted key on the SAME Stripe
-account: Customers write, Checkout Sessions write, PaymentIntents read. Install as
-`STORE_STRIPE_SECRET_KEY` (Worker secret). If omitted, the store tries the existing
-commission key. `GELATO_API_KEY` is installed as a Worker secret. No secrets belong
-in the public catalog. Automatic Stripe Tax is enabled with the tangible-goods
-product code; confirm the account's tax settings/registrations in Stripe. The
-shipping address is collected on the store, saved to the Stripe customer and
-PaymentIntent, and fixed for that Checkout session so shipping quotes stay valid.
+Purchasing is OPEN (`STORE_OPEN=yes`). The existing live commission Stripe key also
+serves the store. It has Customers write, Checkout Sessions write, Shipping Rates
+write, Payment Intents read, and Charges and Refunds read, alongside its existing
+commission permissions. The same signed webhook handles completed and asynchronous
+successful Checkout payments. `STORE_STRIPE_SECRET_KEY` remains an optional same-account
+override. `GELATO_API_KEY` is a Worker secret.
 
-Before opening: repeat the real quote/unpaid Checkout probe, verify the Checkout
-page and account webhook delivery/configuration, then set `STORE_OPEN=yes` and
-rebuild/deploy. Do not charge a test card in live mode or send a paid test print
-order without explicit authorization. Test-mode Stripe sessions cannot print.
+Checkout uses the account's Dashboard payment methods and automatic Stripe Tax.
+The fixed destination is stored on the Stripe Customer before checkout. Stripe Tax
+rejects explicit `payment_intent_data.shipping`, so shipping stays on the Customer
+and private order snapshot. Tax registrations are managed in the Stripe Dashboard.
+The November22 launch check found no registrations configured, and the New York
+unpaid checkout showed zero tax. Confirm the account's registrations as applicable.
+
+All708 print files were checked through the production R2 domain
+https://prints.songaday.studio. The prior r2.dev development hostname hit429 limits
+during the catalog audit. Existing immutable files retain their original contents.
+
+Before a future launch/configuration change, repeat a real quote and unpaid Checkout
+probe, inspect the payment page and webhook, and run the store tests. The launch verification used an unpaid
+Checkout session. Live customer payments trigger automatic Gelato fulfillment.
 First version supports one poster per order, shipping to the US only.
 
 For a `submitting`/`ambiguous` order with no reference match, inspect Gelato manually

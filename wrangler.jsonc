@@ -88,7 +88,7 @@
     // "open" to take requests. Open since 2026-10-25, on Stripe's live keys since later that
     // day, so payments are real money (README, Commissions).
     "COMMISSION_REQUESTS": "open",
-    "STORE_OPEN": "no",
+    "STORE_OPEN": "yes",
     // Any current monthly Zeffy patron gets this percent off posters; shipping is separate.
     "PATRON_DISCOUNT_PERCENT": "20",
     // songaday.studio has Email Sending on (since 2026-10-24); its mail is still iCloud's.
