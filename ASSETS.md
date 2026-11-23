@@ -68,6 +68,8 @@ Replace these references with your own assets for an independent deployment.
   don't cover.
 - The Songs Hat and Songs Shirt images are hotlinked from Cotton Bureau's official
   product mockups: https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024
-  and https://cottonbureau.com/mockup?default=1&hash=FeeW&pid=115389&w=1024 . They are
+  , https://cottonbureau.com/mockup?default=1&hash=FeeW&pid=115389&w=1024 and, for the
+  shirt's black pullover hoodie,
+  https://cottonbureau.com/mockup?vid=52875068&hash=FeeW&w=1024 . They are
   used to link to Jonathan's listings. No image binary is copied into Git, and these
   references grant no redistribution rights to Cotton Bureau photography.

@@ -3,8 +3,8 @@
 // The page opens with one picture per KIND of thing (music, posters, clothing…), so everything
 // in the store shows on the first screen. A kind with one product is that product: its name,
 // its picture, and a link straight to where it's sold. A kind with two or more products shows
-// the kind's name over a picture made from theirs, and jumps to a list of them further down
-// the page. So adding a product is adding a row, and nothing else has to change.
+// the kind's name over their pictures, one at a time, and jumps to a list of them further
+// down the page. So adding a product is adding a row, and nothing else has to change.
 //
 // A product row:
 //   id        a short name of its own, e.g. "song-a-day-poster"
@@ -15,6 +15,8 @@
 //   href      where it's sold: a page here ("/store/muscle/") or another shop's address
 //             ("https://…", which opens in a new tab and gets the ↗)
 //   image     its picture: an address on this site ("/assets/…") or an https one
+//   moreImages  optional: more pictures of it, e.g. the hoodie of a shirt that also comes as
+//             one. In the top row they take turns with `image`; in a kind's list it shows `image`
 //   fit       how the picture sits in its square: "cover" (fills it; the default), "contain"
 //             (all of it shows, on the page's black) or "print" (a poster on a grey mat)
 //   checkout  "posters" when it's bought through the Studio's own poster checkout; its note
@@ -62,10 +64,13 @@ export function productProblems(data, values = {}) {
     }
     if (product?.list !== undefined) {
       if (product.list !== 'albums') problems.push(`${name} has the list "${product.list}"; the only list is "albums".`);
-      if (product.href || product.image) problems.push(`${name} stands for the albums, so it takes no href or image.`);
+      if (product.href || product.image || product.moreImages) problems.push(`${name} stands for the albums, so it takes no href or image.`);
     } else {
       if (!okHref(product?.href)) problems.push(`${name} needs an href: a page here ("/…") or an https address.`);
       if (!okImage(product?.image)) problems.push(`${name} needs an image: "/assets/…" or an https address.`);
+      if (product?.moreImages !== undefined && !(Array.isArray(product.moreImages) && product.moreImages.length && product.moreImages.every(okImage))) {
+        problems.push(`${name}'s moreImages needs to be a list of pictures, each "/assets/…" or an https address.`);
+      }
     }
     if (product?.fit !== undefined && !FITS.includes(product.fit)) problems.push(`${name} has the fit "${product.fit}"; use ${FITS.join(', ')}.`);
     if (product?.checkout !== undefined && product.checkout !== 'posters') problems.push(`${name} has the checkout "${product.checkout}"; the only one is "posters".`);
@@ -87,22 +92,27 @@ function namesOf(products) {
   return `${names.slice(0, 2).join(', ')} and ${names.length - 2} more`;
 }
 
-// One picture fills the square; two or three show the first two side by side; four or more
-// show the first four, two by two.
-function picture(images, fit, eager) {
-  const shown = images.length >= 4 ? images.slice(0, 4) : images.slice(0, 2);
+// One picture fills the square. With `turns`, several take turns filling it, one at a time:
+// the first carries data-shown, and the store's front-page script moves it along. Otherwise
+// (the album covers) two or three show the first two side by side, and four or more show the
+// first four, two by two.
+function picture(images, fit, eager, turns = false) {
+  const turning = turns && images.length > 1;
+  const shown = turning ? images : images.length >= 4 ? images.slice(0, 4) : images.slice(0, 2);
   const loading = eager ? '' : ' loading="lazy" decoding="async"';
-  const kind = shown.length > 1 ? ' store-item-mosaic' : fit === 'print' ? ' store-item-print' : fit === 'contain' ? ' store-item-contain' : '';
+  const fitted = fit === 'print' ? ' store-item-print' : fit === 'contain' ? ' store-item-contain' : '';
+  const kind = turning ? ` store-item-turns${fitted}` : shown.length > 1 ? ' store-item-mosaic' : fitted;
   // Pictures kept on other sites (Bandcamp, Cotton Bureau, the print host) aren't told which page asked.
   const referrer = (image) => image.startsWith('https://') ? ' referrerpolicy="no-referrer"' : '';
-  return `<span class="store-item-image${kind}">${shown.map((image) => `<img src="${escapeHtml(image)}" alt=""${loading}${referrer(image)}>`).join('')}</span>`;
+  const first = (index) => turning && index === 0 ? ' data-shown' : '';
+  return `<span class="store-item-image${kind}">${shown.map((image, index) => `<img src="${escapeHtml(image)}" alt=""${loading}${referrer(image)}${first(index)}>`).join('')}</span>`;
 }
 
-function tile({ href, images, fit, name, note, opensSoon = false, eager }) {
+function tile({ href, images, fit, turns, name, note, opensSoon = false, eager }) {
   const external = isExternal(href);
   const link = `<a href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>`;
   const tail = `${opensSoon ? '<span data-store-opens-soon> · opens soon</span>' : ''}${external ? ' ↗<span class="visually-hidden"> (opens in a new tab)</span>' : ''}`;
-  return ` <li>${link}${picture(images, fit, eager)}<span class="store-item-name">${escapeHtml(name)}</span><span class="store-item-note">${escapeHtml(note)}${tail}</span></a></li>`;
+  return ` <li>${link}${picture(images, fit, eager, turns)}<span class="store-item-name">${escapeHtml(name)}</span><span class="store-item-note">${escapeHtml(note)}${tail}</span></a></li>`;
 }
 
 // The top row and the sections under it. `albums` is renderAlbums()'s result (store-albums.mjs)
@@ -111,18 +121,26 @@ export function renderStore(data, { albums, values = {} }) {
   const kinds = data.kinds.map((kind) => ({ ...kind, products: data.products.filter((product) => product.kind === kind.id) }))
     .filter((kind) => kind.products.length);
   const imagesOf = (product) => product.list === 'albums' ? albums.newestCovers : [product.image];
-  const productTile = (product, kind, eager) => tile({
+  // In the top row a product's moreImages take their turns too.
+  const topImagesOf = (product) => [...imagesOf(product), ...(product.moreImages ?? [])];
+  // `top`: the tile is in the top row (its pictures load at once, and take turns), not in a kind's list.
+  const productTile = (product, kind, top) => tile({
     href: product.list === 'albums' ? `#${kind.id}` : product.href,
-    images: imagesOf(product),
+    images: top ? topImagesOf(product) : imagesOf(product),
     fit: product.fit,
+    turns: top && product.list !== 'albums',
     name: product.name,
     note: fill(product.note, values),
     opensSoon: product.checkout === 'posters',
-    eager,
+    eager: top,
   });
+  // A kind's own picture uses its products' fit when they all share one, and fills the square otherwise.
+  const fitOf = (kind) => new Set(kind.products.map((product) => product.fit ?? 'cover')).size === 1 ? kind.products[0].fit : undefined;
   const items = kinds.map((kind) => kind.products.length === 1 ? productTile(kind.products[0], kind, true) : tile({
     href: `#${kind.id}`,
-    images: kind.products.flatMap(imagesOf),
+    images: kind.products.flatMap(topImagesOf),
+    fit: fitOf(kind),
+    turns: true,
     name: kind.name,
     note: namesOf(kind.products),
     eager: true,

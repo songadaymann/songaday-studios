@@ -998,15 +998,19 @@ per thing on sale (`store-products.mjs` explains each field and checks the list;
 thing, so everything shows without scrolling (two by two on a phone): today the music on
 Bandcamp, a custom song (`/commission`), the MUSCLE posters and the clothing. The
 first three link to where they're sold; Clothing has two products (the Songs Hat and
-the Songs Shirt, both on Cotton Bureau), so it jumps to a short list of them. The
-albums follow underneath.
+the Songs Shirt, both on Cotton Bureau), so its picture shows the hat, the shirt and
+the shirt's hoodie one at a time, and it jumps to a short list of them. The albums
+follow underneath.
 
 To add something to the store, add a row to `products` in `store/products.json` with
 its kind, name, note, link and picture, then rebuild and deploy. While a kind has one
 product, its picture is that product. From its second product on, the picture carries
-the kind's name ("Posters", "Clothing"), shows the products' pictures together, and
+the kind's name ("Posters", "Clothing"), shows the products' pictures one at a time
+(every 2.5 seconds; it holds still for visitors who ask for less motion), and
 jumps to a list of them further down the page (above the albums, which always come
-last because there are so many); nothing else needs editing. The first
+last because there are so many); nothing else needs editing. A product can also list
+`moreImages` (the shirt lists its hoodie): they take their turns in the top row, and
+the list further down shows only its main picture. The first
 screen fits four kinds, and the build stops with an explanation if a fifth gets a
 product. A product sold on another site (Cotton Bureau, Bandcamp) is only a row. One
 sold through the Studio's own poster checkout also needs that checkout to know it:

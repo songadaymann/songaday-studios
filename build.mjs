@@ -452,12 +452,25 @@ const storeBody = (page) => hostedMedia(page.replace("{{HEADER}}", () => storeHe
     if (!(name in storeTokens)) throw new Error(`The store pages have an unknown {{${name}}}.`);
     return storeTokens[name];
   }));
-// The front page says "opens soon" under what the poster checkout sells until the Worker says it's open.
+// The front page says "opens soon" under what the poster checkout sells until the Worker says it's open,
+// and moves each turning picture (store-products.mjs) on every 2.5 seconds, unless the visitor
+// asks for less motion or the tab is out of sight.
 const storeFrontJs = `(() => {
  "use strict";
  fetch("/store/config").then((response) => response.ok ? response.json() : null).then((config) => {
   if (config && config.checkoutEnabled) for (const note of document.querySelectorAll("[data-store-opens-soon]")) note.hidden = true;
  }).catch(() => {});
+ const still = matchMedia("(prefers-reduced-motion: reduce)");
+ for (const turns of document.querySelectorAll(".store-item-turns")) {
+  const pictures = [...turns.querySelectorAll("img")];
+  let shown = 0;
+  setInterval(() => {
+   if (still.matches || document.hidden) return;
+   pictures[shown].removeAttribute("data-shown");
+   shown = (shown + 1) % pictures.length;
+   pictures[shown].setAttribute("data-shown", "");
+  }, 2500);
+ }
 })();`;
 await writePage("store/index.html", documentHtml({
   title: "Store · Song A Day Studio",

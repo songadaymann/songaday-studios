@@ -61,6 +61,11 @@
 .store-item-print img { inset:1rem; width:calc(100% - 2rem); height:calc(100% - 2rem); object-fit:contain; }
 .store-item-contain { background:none; }
 .store-item-contain img { object-fit:contain; }
+/* Pictures that take turns (Clothing: the hat, the shirt, the hoodie). The front page's script
+   moves data-shown along; each picture fades out before the next fades in. Without the script,
+   or for a visitor who asks for less motion, the first one stays. */
+.store-item-turns img { opacity:0; transition:opacity .35s; }
+.store-item-turns img[data-shown] { opacity:1; transition-delay:.35s; }
 .store-item-name,.store-item-note { display:block; }
 .store-item-name { font-size:var(--type-body); font-weight:700; }
 .store-item-note { font-size:var(--type-meta); }
