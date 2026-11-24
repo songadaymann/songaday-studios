@@ -123,7 +123,7 @@ test('the build makes /patrons/ from patrons.json, with the studio header and a 
     // The same menu as the home page, Donate button included, and the page's own styles.
     const nav = (html) => [...html.match(/<nav class="site-sections"[\s\S]*?<\/nav>/)[0].matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
     assert.deepEqual(nav(page), nav(home));
-    assert.match(page, /<a class="nav-donate" href="\/#donate">Donate<\/a>/);
+    assert.match(page, /<a class="nav-donate" href="\/#donate" data-donate="header">Donate<\/a>/);
     assert.match(page, /\.patrons \{ --patrons-across: 8;/);
     // One pop-up per patron with a line about them, and the script that opens it for a finger.
     assert.equal(page.split('<p class="patron-bio"').length - 1, list.patrons.filter((patron) => patron.bio).length);

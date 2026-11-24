@@ -90,7 +90,7 @@ test('the build makes the commission page and the song shell, purchase pages wit
     for (const html of [page, shell]) {
       // The menu keeps its Donate button, as on every page. Nothing else on a page about buying
       // a song says donate: no footer link, no tax-deductible line.
-      const menuDonate = '<a class="nav-donate" href="/#donate">Donate</a>';
+      const menuDonate = '<a class="nav-donate" href="/#donate" data-donate="header">Donate</a>';
       assert.ok(html.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(menuDonate));
       const markup = html.replace(/<style[\s\S]*?<\/style>/g, '').replace(menuDonate, '');
       assert.doesNotMatch(markup, /nav-donate|#donate|tax.deductible|gifts|donat/i);
@@ -161,7 +161,7 @@ test('the story has a page of its own, and the home page keeps the goals and a l
     assert.doesNotMatch(main(story), /<h4/);
     // It sits a folder down, so nothing in it is addressed relative to the home page.
     assert.doesNotMatch(story, /(?:src|poster|data-video-src|href)="(?:assets\/|#donate)/);
-    assert.match(main(story), /<a class="brand-band-donate" href="\/#donate">Donate<\/a>/);
+    assert.match(main(story), /<a class="brand-band-donate" href="\/#donate" data-donate="band">Donate<\/a>/);
     assert.doesNotMatch(story, /\{\{|_HELPER \*\//);
     // The studio header (nothing marked current) and footer, like /everything and /now.
     assert.deepEqual(navLinks(story), navLinks(home));

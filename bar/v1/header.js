@@ -12,11 +12,13 @@
 //   @media (max-width: 1100px) { songaday-header { min-height: 101px; } }
 //
 // It takes the place of the universe bar (bar.js) on that site; a page shows one or the other.
-// It draws in its own shadow DOM, so it can't restyle the page or be restyled by it, and it
-// makes no requests: the sections below are the studio's own menu (tests/header.test.mjs keeps
-// them in step with it). Like the studio's header it stays at the top while the page scrolls;
+// It draws in its own shadow DOM, so it can't restyle the page or be restyled by it, and its
+// only requests are the Donate button test's counts (donate-words.js). The sections below are
+// the studio's own menu (tests/header.test.mjs keeps them in step with it). Like the studio's header it stays at the top while the page scrolls;
 // a page that would rather it scrolled away sets `songaday-header { position: static; }`.
 // "v1" is pinned: changes that could break a host page get a new version folder.
+
+import { wireButton } from './donate-words.js';
 
 const STUDIO = 'https://songaday.studio';
 
@@ -95,6 +97,9 @@ summary:focus-visible { outline: 4px solid #ff2445; outline-offset: 4px; }
   .brand img { width: 34px; height: 34px; }
   .donate { grid-area: donate; align-self: center; padding: 12px 15px; }
 }
+@media (max-width: 560px) {
+  .donate { max-width: 10.5em; line-height: 1.2; text-align: center; }
+}
 `;
 
 function element(tag, className, text) {
@@ -161,6 +166,8 @@ function define() {
 
       const donate = element('a', 'donate', 'Donate');
       donate.href = donateHref(location.hostname);
+      // Its words are the Donate button test's (donate-words.js), which counts its presses.
+      wireButton(donate, 'studio-header');
 
       const header = element('header');
       header.append(brand, nav, donate);

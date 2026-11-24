@@ -197,6 +197,9 @@ button:disabled { background: var(--dim); cursor: wait; }
   .site-header .brand-mark { width: 34px; height: 34px; }
   .site-header .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: 12px; }
 }
+@media (max-width: 560px) {
+  .site-header .nav-donate { max-width: 10.5em; line-height: 1.2; text-align: center; }
+}
 `;
 
 const HEADER = `<header class="site-header">
@@ -231,7 +234,7 @@ const HEADER = `<header class="site-header">
     </details>
     <a href="/store/">Store</a>
   </nav>
-  <a class="nav-donate" href="/#donate">Donate</a>
+  <a class="nav-donate" href="/#donate" data-donate="header">Donate</a>
 </header>`;
 
 const MUSEUM = 'The Museum of Fumbled Bags';

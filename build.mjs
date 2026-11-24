@@ -206,7 +206,7 @@ await writePage("gallery/studio.css", `${chromeCss}\n${await source("gallery.css
 // the fiscal sponsor's. They wear the same menu as every other page, Donate button included: it
 // goes to the form on the home page, and a menu that changes from page to page reads as a mistake.
 const purchaseHeader = markMenu(header, '<a href="/commission">Personal</a>', '<a href="/commission" aria-current="page">Personal</a>');
-const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate">Donate<\/a>/, "")
+const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate" data-donate="footer">Donate<\/a>/, "")
   .replace(/\n\s*<a href="\/patrons\/">Patrons<\/a>/, "")
   .replace(/<p class="sponsor-line">[\s\S]*?<\/p>/, '<p class="sponsor-line">Song commissions are purchases from Jonathan Mann.</p>');
 const withChrome = (page, { purchase = false } = {}) => page

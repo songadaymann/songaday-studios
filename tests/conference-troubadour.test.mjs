@@ -82,7 +82,7 @@ test('the build makes the Conference Troubadour page: what it is, four videos, w
 
     // A booking is a purchase from Jonathan, like a commission: the menu keeps its Donate
     // button, and nothing else on the page says donate.
-    const menuDonate = '<a class="nav-donate" href="/#donate">Donate</a>';
+    const menuDonate = '<a class="nav-donate" href="/#donate" data-donate="header">Donate</a>';
     assert.ok(page.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(menuDonate));
     const markup = page.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(menuDonate, '');
     assert.doesNotMatch(markup, /nav-donate|#donate|tax.deductible|gifts|donat|patron/i);

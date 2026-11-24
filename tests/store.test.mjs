@@ -205,7 +205,7 @@ test('the store front page shows everything up top, then the albums; the poster 
    // page. The patron eligibility panel can refer to an existing donation; the
    // purchase pages never ask for a donation or describe the purchase as tax-deductible.
    assert.match(page,/<a href="\/store\/" aria-current="page">Store<\/a>/);
-   const menuDonate='<a class="nav-donate" href="/#donate">Donate</a>';
+   const menuDonate='<a class="nav-donate" href="/#donate" data-donate="header">Donate</a>';
    assert.ok(page.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].includes(menuDonate));
    assert.doesNotMatch(page,/tax.deductible/i);
    const purchaseCopy=page.replace(/<style[\s\S]*?<\/style>/g,'').replace(/<script[\s\S]*?<\/script>/g,'').replace(/<section id="patron-discount"[\s\S]*?<\/section>/,'').replace(menuDonate,'');

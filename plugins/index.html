@@ -180,6 +180,9 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
   .site-header .brand-mark { width: 34px; height: 34px; }
   .site-header .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: 12px; }
 }
+@media (max-width: 560px) {
+  .site-header .nav-donate { max-width: 10.5em; line-height: 1.2; text-align: center; }
+}
 
 </style>
 </head>
@@ -216,7 +219,7 @@ footer { margin-top: 26px; text-align: center; font-size: 11.5px; color: var(--d
     </details>
     <a href="/store/">Store</a>
   </nav>
-  <a class="nav-donate" href="/#donate">Donate</a>
+  <a class="nav-donate" href="/#donate" data-donate="header">Donate</a>
 </header>
 <div class="desk">
   <div class="window">

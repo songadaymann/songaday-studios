@@ -955,6 +955,31 @@ progress bar or a running total without asking Jonathan.
 Shared Studio typography uses `--type-display`, `--type-body`, and `--type-meta` in `studio-chrome.css`;
 third-party embeds control their own type.
 
+### The Donate button test
+
+Since 2026-11-24 the Donate buttons try four wordings, to see which gets pressed most: "Donate",
+"Be my best friend", "Blood sacrifice" and "Get a tax break". The words are in
+`bar/v1/donate-words.js`.
+
+- **Where:** the studio header, the black band on the home and story pages, the footer link,
+  the universe bar and the studio header on other sites. The purchase pages (commission,
+  business, conference troubadour, store) keep "Donate": "Get a tax break" beside a price would
+  read like a promise about the purchase.
+- **Who sees what:** a new visitor gets one wording at random and keeps it on every page. On
+  songaday.studio the Worker chooses it (`donate-test.mjs`) and keeps it in a `donate_words`
+  cookie holding only the letter, for 60 days. On other sites the bar or header keeps it in that
+  site's localStorage. `?donate_words=a` (or `b`, `c`, `d`) shows a wording and keeps it.
+- **What's counted:** one view per page load and one click per press, with the wording, the
+  button and the site. `POST /donate-test/hit` adds each to a daily total (`donate_counts` in
+  the commissions database, migration `0005`); no address, cookie or request is kept, and it is
+  limited to 60 a minute per visitor (`DONATE_LIMIT`).
+- **Results:** `/commission/admin/donate-test` (behind the admin's Access check; `?format=json`
+  for the numbers). It says "too early" until a wording has 500 views, then whether its click
+  rate differs from Donate's by more than chance.
+- **Ending it:** set `RUNNING` to `false` in `donate-words.js` and deploy; every button says
+  Donate again and nothing is counted. To keep a winner, make it the only wording, under `a`.
+- On a phone a long wording takes two lines in the header (`studio-chrome.css` and its copies).
+
 ## Production
 
 The public site is https://songaday.studio. Cloudflare Worker

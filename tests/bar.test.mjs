@@ -87,9 +87,11 @@ test('the bar carries the crypto-wallet-gate detector unchanged and fetches noth
   assert.ok(barSource.includes(gate.match(/function override\(\)\{[\s\S]*?\n\}/)[0]), 'override() matches wallet-gate.js');
   assert.ok(barSource.includes("const KEY='crypto-override';"));
 
-  // No fonts, images or other scripts: the only request is projects.json.
+  // No fonts, images or other scripts: the only requests are projects.json and the Donate
+  // button test's counts, from its one import, next to it in bar/v1/.
   assert.deepEqual([...barSource.matchAll(/\bfetch\(/g)].length, 1);
-  assert.doesNotMatch(barSource, /\bimport\s|@import|url\(|<img|<link|new Image/);
+  assert.deepEqual([...barSource.matchAll(/^import .*$/gm)].map((line) => line[0]), ["import { wireButton } from './donate-words.js';"]);
+  assert.doesNotMatch(barSource.replace(/^import .*$/m, ''), /\bimport\s|@import|url\(|<img|<link|new Image/);
   assert.doesNotMatch(barSource, /innerHTML|insertAdjacentHTML/);
   assert.doesNotMatch(barSource, /patreon/i);
 });

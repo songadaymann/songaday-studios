@@ -13,7 +13,7 @@ const TOKEN = /^\/commission\/s\/([0-9a-f]{32})\?new$/;
 
 // The Donate button every page's menu has. Purchase pages keep it (it goes to the form on the
 // home page) and say nothing else about donating.
-export const MENU_DONATE = '<a class="nav-donate" href="/#donate">Donate</a>';
+export const MENU_DONATE = '<a class="nav-donate" href="/#donate" data-donate="header">Donate</a>';
 
 // What a reader sees and where its links go, apart from that one menu button: <style>, <script>
 // and every attribute but href are dropped first, since every page inlines profile.css, whose

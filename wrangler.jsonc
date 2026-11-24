@@ -45,6 +45,8 @@
   // Per visitor IP (Fumble posts, commission requests) and per buyer link (starting a payment),
   // counted but never stored: 3 a minute.
   "ratelimits": [
+    // Donate button test counts (donate-test.mjs): a generous 60 a minute per visitor IP.
+    {"name": "DONATE_LIMIT", "namespace_id": "20261124", "simple": {"limit": 60, "period": 60}},
     {"name": "PATRON_LIMIT", "namespace_id": "20261120", "simple": {"limit": 6, "period": 60}},
     {"name": "STORE_LIMIT", "namespace_id": "20261105", "simple": {"limit": 6, "period": 60}},
     {

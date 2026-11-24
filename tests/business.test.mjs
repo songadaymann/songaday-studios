@@ -66,7 +66,7 @@ test('the build makes the business page: what it is, three videos, who it’s be
     assert.equal(page.match(/<header class="site-header">[\s\S]*?<\/header>/)[0].split('aria-current').length - 1, 1);
 
     // A purchase page: the menu keeps its Donate button, and nothing else says donate.
-    const menuDonate = '<a class="nav-donate" href="/#donate">Donate</a>';
+    const menuDonate = '<a class="nav-donate" href="/#donate" data-donate="header">Donate</a>';
     const markup = page.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '').replace(menuDonate, '');
     assert.doesNotMatch(markup, /nav-donate|#donate|tax.deductible|gifts|donat|patron/i);
     assert.match(page, /<p class="sponsor-line">Song commissions are purchases from Jonathan Mann\.<\/p>/);

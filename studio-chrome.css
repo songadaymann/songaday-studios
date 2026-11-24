@@ -83,3 +83,8 @@
   .brand-mark { width: 34px; height: 34px; }
   .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: var(--type-meta); }
 }
+/* On a phone, a long Donate wording (the button test, bar/v1/donate-words.js) takes two lines
+   instead of crowding the name. */
+@media (max-width: 560px) {
+  .nav-donate { max-width: 10.5em; line-height: 1.2; text-align: center; }
+}
