@@ -49,7 +49,6 @@ async function setUp(options = {}) {
   const elements = new Map([
     ['crypto-donate', element({ hidden: true })],
     ['zeffy-donate', element({ hidden: false })],
-    ['charitable-tax-note', element({ hidden: false })],
     ['direct-usdc', element({ hidden: false })],
     ['usdc-amount', element({ value: amount })],
     ['usdc-network', element({ value: selectedNetwork })],
@@ -70,7 +69,6 @@ test('a Base USDC tip requests the correct transfer only after form submission',
   const { elements, calls, submit } = await setUp();
   assert.deepEqual(calls, []);
   assert.equal(elements.get('crypto-donate').hidden, false);
-  assert.equal(elements.get('charitable-tax-note').hidden, true);
 
   await submit();
   assert.deepEqual(calls.map(({ method }) => method), ['eth_requestAccounts', 'eth_chainId', 'eth_sendTransaction']);

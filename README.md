@@ -937,7 +937,7 @@ visitor submits the form. Wallet visitors can choose
 (`wallet/`) asks installed wallets to announce themselves once, and this check hears the same
 announcements; `?crypto=0` keeps Zeffy too.
 
-The homepage labels eligible charitable donations as tax-deductible in the U.S.
+The homepage footer labels eligible charitable donations as tax-deductible in the U.S.
 The direct USDC form says the payment goes to Jonathan and is not tax-deductible.
 
 Zeffy doesn't offer Apple Pay or Google Pay inside embedded forms, and its own page
@@ -947,8 +947,8 @@ official Apple Pay mark ("Donate with [Apple Pay] on Zeffy's page"); on Android 
 says Google Pay in text.
 
 The donation form's heading is "Join my patron collective" ("patron" links to the
-patrons page; the site says "patron" throughout, not "supporter"), and names the first
-goal beside it ("First goal: $3,000 a month."). The monthly ladder
+patrons page; the site says "patron" throughout, not "supporter"), with nothing under it
+(the first-goal and tax-deductible line came off on 2026-11-25). The monthly ladder
 ($3,000 first goal, $20,000 the dream) is on the home page under the four section cards, and
 again in the story page's Patronage section. Both figures come from
 `patronage.mjs`; `tests/patronage.test.mjs` keeps the bio link page's copy in step. The site

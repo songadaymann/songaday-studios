@@ -39,7 +39,6 @@
   const cryptoDonate = document.getElementById("crypto-donate");
   const zeffyDonate = document.getElementById("zeffy-donate");
   const directUsdc = document.getElementById("direct-usdc");
-  const charitableTaxNote = document.getElementById("charitable-tax-note");
   const hasDirectUsdc = directUsdc && !directUsdc.hidden;
   let prefersZeffy = false;
   let donationWallet;
@@ -53,14 +52,12 @@
         donationWallet ??= event.detail.provider;
         zeffyDonate.hidden = true;
         cryptoDonate.hidden = false;
-        charitableTaxNote.hidden = Boolean(hasDirectUsdc);
       });
     });
     document.getElementById("donate-by-card")?.addEventListener("click", () => {
       prefersZeffy = true;
       cryptoDonate.hidden = true;
       zeffyDonate.hidden = false;
-      charitableTaxNote.hidden = false;
       zeffyDonate.focus({ preventScroll: true });
     });
   }
