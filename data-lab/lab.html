@@ -81,6 +81,29 @@ section > header { display: grid; gap: 12px; max-width: 680px; }
 .minis text { font-size: 9px; }
 @media (max-width: 760px) { .minis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
+/* Pictures of songs: press one and the video plays in its place */
+.frames { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 2px; }
+.frame { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: 0; background: #111; color: var(--ink); font: inherit; cursor: pointer; overflow: hidden; }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame span { position: absolute; left: 0; bottom: 0; background: var(--bg); font-weight: 700; font-size: .8125rem; padding: 2px 8px; }
+.frame:hover, .frame:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+iframe.frame { cursor: auto; }
+.one { display: grid; gap: 12px; align-content: start; }
+.one .frame { max-width: 480px; }
+.wheel path { cursor: pointer; }
+.wheel path:hover, .wheel path:focus-visible, .wheel path[aria-pressed="true"] { fill: var(--ink); outline: none; }
+.wheel text { pointer-events: none; }
+.tempo rect.bar[data-on] { fill: var(--red); }
+input[type="range"] { width: 100%; margin: 0; accent-color: var(--red); }
+.scrub { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: end; }
+.scrub img { width: 240px; height: 240px; display: block; background: #111; }
+.scrub > div { display: grid; gap: 12px; }
+@media (max-width: 560px) { .scrub { grid-template-columns: minmax(0, 1fr); } }
+.plain { font: inherit; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.plain:hover, .plain[aria-pressed="true"] { color: var(--red); }
+.sub { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; justify-items: start; }
+.sub:not(:empty) { margin-top: 8px; }
+
 /* Findings */
 .findings { display: grid; gap: 64px; }
 .finding { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: start; }
@@ -128,7 +151,7 @@ footer.credits a { color: var(--ink-2); }
 
 #tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .8125rem; line-height: 1.35; padding: 6px 9px; max-width: 260px; }
 #tip[hidden] { display: none; }
-section[hidden] { display: none; }
+section[hidden], .tool[hidden], .lens[hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -162,6 +185,7 @@ section[hidden] { display: none; }
     <button class="lens" type="button" data-lens="views" aria-pressed="false">Views</button>
     <button class="lens" type="button" data-lens="away" aria-pressed="false">Home or away</button>
     <button class="lens" type="button" data-lens="beard" aria-pressed="false">Beard</button>
+    <button class="lens" type="button" data-lens="home" aria-pressed="false" hidden>Home city</button>
   </div>
   <div class="legend" id="legend" aria-hidden="true"></div>
   <canvas id="field" role="img" aria-label="A calendar of every Song A Day song from 2009 to 2026, one square per day."></canvas>
@@ -174,24 +198,73 @@ section[hidden] { display: none; }
   </header>
   <div class="tools">
     <div class="tool">
-      <h3>Songs on your birthday</h3>
+      <h3>One day, every year</h3>
       <div class="pick">
         <label>Month <select id="bd-month"></select></label>
         <label>Day <select id="bd-day"></select></label>
       </div>
-      <ul class="notes" id="bd-list"></ul>
+      <div class="frames" id="bd-frames"></div>
     </div>
-    <div class="tool">
+    <div class="tool" id="find-tool">
       <h3>Find a song</h3>
       <div class="pick" id="find-pick"></div>
       <p class="muted small" id="find-count" aria-live="polite"></p>
       <ul class="notes" id="find-list"></ul>
       <div><button class="lens" type="button" id="find-more">Show others</button></div>
     </div>
-    <div class="tool">
+    <div class="tool" id="year-tool">
       <h3>One year</h3>
       <div class="pick"><label>Year <select id="yr"></select></label></div>
       <ul class="notes" id="yr-list"></ul>
+    </div>
+  </div>
+</section>
+
+<section id="press" aria-labelledby="press-title">
+  <header>
+    <h2 id="press-title">Things to press</h2>
+    <p class="muted">Press a picture to play the song.</p>
+  </header>
+  <div class="tools">
+    <div class="tool" id="sets-tool">
+      <h3>Most watched, and every thousandth</h3>
+      <div class="field-bar" role="group" aria-label="Which songs">
+        <button class="lens" type="button" data-set="top" aria-pressed="true">Most watched each year</button>
+        <button class="lens" type="button" data-set="thousand" aria-pressed="false">Every thousandth song</button>
+      </div>
+      <div class="frames" id="set-frames"></div>
+    </div>
+    <div class="tool">
+      <h3>Keys</h3>
+      <div class="finding">
+        <figure class="chart" style="margin:0">
+          <div class="wheel" id="key-wheel"></div>
+          <figcaption>Songs in each key. Major keys point out, their relative minors point in.</figcaption>
+        </figure>
+        <div class="one" id="key-one"></div>
+      </div>
+    </div>
+    <div class="tool" id="tempo-tool">
+      <h3>Tempo</h3>
+      <div class="finding">
+        <figure class="chart" style="margin:0">
+          <div class="tempo" id="tempo-chart"></div>
+          <input type="range" id="tempo-range" min="44" max="220" step="1" value="120" aria-label="Beats per minute">
+          <figcaption>Songs at each tempo, in beats per minute.</figcaption>
+        </figure>
+        <div class="one" id="tempo-one"></div>
+      </div>
+    </div>
+    <div class="tool" id="beard-tool" hidden>
+      <h3>Beard</h3>
+      <div class="scrub">
+        <img id="beard-face" alt="" width="240" height="240">
+        <div>
+          <p id="beard-text" aria-live="polite"></p>
+          <input type="range" id="beard-range" min="0" max="0" step="1" value="0" aria-label="Month">
+          <div><button class="lens" type="button" id="beard-play" aria-pressed="false">Play</button></div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -330,6 +403,7 @@ section[hidden] { display: none; }
   </div>
   <div class="tool">
     <h3>Most common topics each year</h3>
+    <p class="muted small">Press a topic for its songs.</p>
     <ul class="notes" id="year-topics"></ul>
   </div>
 </section>
@@ -522,7 +596,7 @@ section[hidden] { display: none; }
       if (l === lens) return;
       var current = to.map(function (c, i) { return from && t < 1 ? mix(from[i], c, t) : c; });
       lens = l; from = current; to = colors(l); drawLegend();
-      document.querySelectorAll('.lens').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lens === l)); });
+      document.querySelectorAll('.lens[data-lens]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lens === l)); });
       if (reduce.matches) { from = null; t = 1; draw(); return; }
       t = 0; var t0 = performance.now(); cancelAnimationFrame(anim);
       (function step(now) {
@@ -530,7 +604,7 @@ section[hidden] { display: none; }
         if (k < 1) anim = requestAnimationFrame(step); else { from = null; t = 1; }
       })(t0);
     }
-    document.querySelectorAll('.lens').forEach(function (b) { b.addEventListener('click', function () { setLens(b.dataset.lens); }); });
+    document.querySelectorAll('.lens[data-lens]').forEach(function (b) { b.addEventListener('click', function () { setLens(b.dataset.lens); }); });
     canvas.addEventListener('pointermove', function (e) { if (e.pointerType !== 'mouse') return; var n = hit(e); if (n !== hoverN) { hoverN = n; if (!pinned) setReadout(n); draw(); } });
     canvas.addEventListener('pointerleave', function () { hoverN = 0; if (!pinned) setReadout(0); draw(); });
     canvas.addEventListener('click', function (e) { var n = hit(e); pinned = n && n !== pinned ? n : 0; setReadout(pinned || n); draw(); });
@@ -568,9 +642,9 @@ section[hidden] { display: none; }
   }
 
   function newsChart() {
-    var el = document.getElementById('chart-news'), rows = [['Same day', 77], ['Day before', 66], ['Two days before', 24]];
+    var el = document.getElementById('chart-news'), rows = [['Same day', 77], ['Day before', 67], ['Two days before', 25]];
     var W = 520, L = 120, R = 40, bh = 22, gap = 18, H = rows.length * (bh + gap);
-    var s = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Strong news matches: 77 same day, 66 the day before, 24 two days before' }, el);
+    var s = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Strong news matches: 77 same day, 67 the day before, 25 two days before' }, el);
     rows.forEach(function (r, i) {
       var y = i * (bh + gap), w = (W - L - R) * r[1] / 80;
       svg('text', { x: 0, y: y + bh / 2 + 4 }, s).textContent = r[0];
@@ -697,21 +771,51 @@ section[hidden] { display: none; }
   }
   function clock(seconds) { var m = Math.floor(seconds / 60), s = Math.round(seconds % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
 
+  // A song's picture. Pressing it plays the video in its place; only one plays at a time.
+  var playing = null;
+  function frame(data, n, tag, eager) {
+    var yt = data.songs.yt[n - 1], title = data.songs.title[n - 1] || 'Untitled';
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'frame';
+    b.title = '#' + n + ' ' + title + ', ' + fmtDate(n); b.setAttribute('aria-label', 'Play ' + b.title);
+    if (yt) { var img = document.createElement('img'); img.alt = ''; img.loading = eager ? 'eager' : 'lazy'; img.src = 'https://i.ytimg.com/vi/' + encodeURIComponent(yt) + '/mqdefault.jpg'; b.appendChild(img); }
+    if (tag) { var t = document.createElement('span'); t.textContent = tag; b.appendChild(t); }
+    b.addEventListener('click', function () {
+      if (!yt) return;
+      if (playing && playing[0].parentNode) playing[0].replaceWith(playing[1]);
+      var f = document.createElement('iframe'); f.className = 'frame'; f.title = title; f.allow = 'autoplay; encrypted-media; picture-in-picture'; f.allowFullscreen = true;
+      f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(yt) + '?autoplay=1';
+      b.replaceWith(f); playing = [f, b];
+    });
+    return b;
+  }
+  function frames(el, data, list) { el.textContent = ''; list.forEach(function (it) { el.appendChild(frame(data, it[0], it[1])); }); }
+  // One song out of a list, with a way to ask for another.
+  function oneOf(el, data, heading, list) {
+    el.textContent = '';
+    var h = document.createElement('p'); h.textContent = heading; el.appendChild(h);
+    if (!list.length) return;
+    var n = list[Math.floor(Math.random() * list.length)];
+    el.appendChild(frame(data, n, '', true));
+    var p = document.createElement('p'); p.className = 'muted small'; p.appendChild(songLink(data, n)); p.appendChild(document.createTextNode(meta(data, n, true))); el.appendChild(p);
+    if (list.length > 1) {
+      var wrap = document.createElement('div'), more = document.createElement('button'); more.type = 'button'; more.className = 'lens'; more.textContent = 'Another';
+      more.addEventListener('click', function () { oneOf(el, data, heading, list); }); wrap.appendChild(more); el.appendChild(wrap);
+    }
+  }
+
   function birthday(data) {
-    var N = data.songs.title.length, month = document.getElementById('bd-month'), day = document.getElementById('bd-day'), list = document.getElementById('bd-list');
+    var N = data.songs.title.length, month = document.getElementById('bd-month'), day = document.getElementById('bd-day'), box = document.getElementById('bd-frames');
     LONG_MONTHS.forEach(function (m, i) { option(month, i, m); });
     for (var d = 1; d <= 31; d++) option(day, d, d);
     var now = new Date(); month.value = now.getMonth(); day.value = now.getDate();
     function show() {
-      list.textContent = '';
-      var m = Number(month.value), d = Number(day.value), found = 0;
+      var m = Number(month.value), d = Number(day.value), list = [];
       for (var y = 2009; y <= songDate(N).getUTCFullYear(); y++) {
         var ts = Date.UTC(y, m, d); if (new Date(ts).getUTCMonth() !== m) continue;
-        var n = Math.round((ts - SONG_ONE) / DAY) + 1; if (n < 1 || n > N) continue;
-        found++;
-        (function (n, y) { row(list, String(y), function (p) { p.appendChild(songLink(data, n)); p.appendChild(document.createTextNode(meta(data, n, false))); }); })(n, y);
+        var n = Math.round((ts - SONG_ONE) / DAY) + 1; if (n >= 1 && n <= N) list.push([n, String(y)]);
       }
-      if (!found) row(list, '', function (p) { p.textContent = 'No songs on that date.'; });
+      frames(box, data, list);
+      if (!list.length) { var p = document.createElement('p'); p.className = 'muted'; p.textContent = 'No songs on that date.'; box.appendChild(p); }
     }
     month.addEventListener('change', show); day.addEventListener('change', show); show();
   }
@@ -791,11 +895,139 @@ section[hidden] { display: none; }
       el.appendChild(box);
     });
   }
-  function yearTopics(extra) {
-    var list = document.getElementById('year-topics');
+  function yearTopics(data, extra) {
+    var list = document.getElementById('year-topics'), x = extra.songs, N = data.songs.title.length, open = null;
     extra.years.forEach(function (yr, i) {
-      row(list, String(yr), function (p) { p.textContent = extra.topics_by_year[i].map(function (t) { return t[0] + ' (' + t[1] + ')'; }).join(', '); });
+      row(list, String(yr), function (p) {
+        var sub = document.createElement('div'); sub.className = 'sub';
+        extra.topics_by_year[i].forEach(function (t, k) {
+          if (k) p.appendChild(document.createTextNode(', '));
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'plain'; b.textContent = t[0] + ' (' + t[1] + ')'; b.setAttribute('aria-pressed', 'false');
+          b.addEventListener('click', function () {
+            if (open) { open[0].setAttribute('aria-pressed', 'false'); open[1].textContent = ''; }
+            if (open && open[0] === b) { open = null; return; }
+            open = [b, sub]; b.setAttribute('aria-pressed', 'true');
+            var id = extra.labels.topic.indexOf(t[0]), from = Math.round((Date.UTC(yr, 0, 1) - SONG_ONE) / DAY) + 1, to = Math.min(N, Math.round((Date.UTC(yr + 1, 0, 1) - SONG_ONE) / DAY));
+            for (var n = from; n <= to; n++) if (x.topics[n - 1].indexOf(id) >= 0) sub.appendChild(songLink(data, n));
+          });
+          p.appendChild(b);
+        });
+        p.appendChild(sub);
+      });
     });
+  }
+
+  // ---------- things to press ----------
+  function sets(data, extra) {
+    var s = data.songs, N = s.title.length, box = document.getElementById('set-frames'), gone = {};
+    extra.gone.forEach(function (n) { gone[n] = 1; });
+    var top = [];
+    for (var y = 2009; y <= songDate(N).getUTCFullYear(); y++) {
+      var from = Math.round((Date.UTC(y, 0, 1) - SONG_ONE) / DAY) + 1, to = Math.min(N, Math.round((Date.UTC(y + 1, 0, 1) - SONG_ONE) / DAY)), best = 0;
+      for (var n = from; n <= to; n++) if (!gone[n] && s.views[n - 1] != null && (!best || s.views[n - 1] > s.views[best - 1])) best = n;
+      if (best) top.push([best, y + '  ' + compact(s.views[best - 1])]);
+    }
+    var thousand = [[1, '#1']];
+    for (var k = 1000; k < N; k += 1000) thousand.push([k, '#' + fmtInt(k)]);
+    thousand.push([N, '#' + fmtInt(N)]);
+    var which = { top: top, thousand: thousand };
+    document.querySelectorAll('.lens[data-set]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelectorAll('.lens[data-set]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+        frames(box, data, which[b.dataset.set]);
+      });
+    });
+    frames(box, data, top);
+  }
+
+  var FIFTHS = [['C', 'Am'], ['G', 'Em'], ['D', 'Bm'], ['A', 'F#m'], ['E', 'C#m'], ['B', 'G#m'], ['F#', 'Ebm'], ['Db', 'Bbm'], ['Ab', 'Fm'], ['Eb', 'Cm'], ['Bb', 'Gm'], ['F', 'Dm']];
+  function keyWheel(data) {
+    var s = data.songs, N = s.title.length, by = {}, el = document.getElementById('key-wheel'), one = document.getElementById('key-one');
+    for (var i = 0; i < N; i++) if (s.key[i]) (by[s.key[i]] = by[s.key[i]] || []).push(i + 1);
+    function count(k) { return (by[k] || []).length; }
+    var maxOut = 0, maxIn = 0; FIFTHS.forEach(function (p) { maxOut = Math.max(maxOut, count(p[0])); maxIn = Math.max(maxIn, count(p[1])); });
+    var W = 360, c = W / 2, r0 = 62, band = 20, out = 78, inn = 40;
+    var g = svg('svg', { viewBox: '0 0 ' + W + ' ' + W, role: 'group', 'aria-label': 'Songs per key' }, el), chosen = null;
+    function wedge(a, from, to) {
+      var h = Math.PI / 12 - 0.03, p = function (r, t) { return (c + Math.cos(t) * r).toFixed(1) + ',' + (c + Math.sin(t) * r).toFixed(1); };
+      return 'M' + p(from, a - h) + 'L' + p(to, a - h) + 'A' + to + ',' + to + ' 0 0 1 ' + p(to, a + h) + 'L' + p(from, a + h) + 'A' + from + ',' + from + ' 0 0 0 ' + p(from, a - h) + 'Z';
+    }
+    function pick(k, path) {
+      if (chosen) chosen.setAttribute('aria-pressed', 'false');
+      chosen = path; path.setAttribute('aria-pressed', 'true');
+      oneOf(one, data, fmtInt(count(k)) + (count(k) === 1 ? ' song in ' : ' songs in ') + k, by[k] || []);
+    }
+    var first = null;
+    FIFTHS.forEach(function (pair, i) {
+      var a = -Math.PI / 2 + i * Math.PI / 6;
+      [[pair[0], r0 + band, r0 + band + Math.max(4, out * count(pair[0]) / maxOut), C.orange], [pair[1], r0 - Math.max(4, inn * count(pair[1]) / maxIn), r0, C.blue]].forEach(function (w) {
+        var path = svg('path', { d: wedge(a, w[1], w[2]), fill: w[3], tabindex: 0, role: 'button', 'aria-pressed': 'false', 'aria-label': w[0] + ', ' + fmtInt(count(w[0])) + ' songs' }, g);
+        path.addEventListener('click', function () { pick(w[0], path); });
+        path.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(w[0], path); } });
+        hover(path, w[0] + ': ' + fmtInt(count(w[0])) + ' songs');
+        if (!first) first = [w[0], path];
+      });
+      var ro = r0 + band + Math.max(4, out * count(pair[0]) / maxOut) + 12;
+      svg('text', { x: c + Math.cos(a) * ro, y: c + Math.sin(a) * ro + 4, 'text-anchor': 'middle', class: 'label-strong' }, g).textContent = pair[0];
+      svg('text', { x: c + Math.cos(a) * (r0 + band / 2), y: c + Math.sin(a) * (r0 + band / 2) + 3.5, 'text-anchor': 'middle', style: 'font-size:9px' }, g).textContent = pair[1];
+    });
+    pick(first[0], first[1]);
+  }
+
+  function tempo(data, extra) {
+    var bpm = extra.songs.bpm, N = bpm.length, by = {}, el = document.getElementById('tempo-chart'), range = document.getElementById('tempo-range'), one = document.getElementById('tempo-one');
+    var lo = Number(range.min), hi = Number(range.max), max = 0;
+    for (var i = 0; i < N; i++) if (bpm[i] != null && bpm[i] >= lo && bpm[i] <= hi) { (by[bpm[i]] = by[bpm[i]] || []).push(i + 1); max = Math.max(max, by[bpm[i]].length); }
+    var W = 520, H = 220, B = 22, T = 6, bw = W / (hi - lo + 1), bars = {};
+    var g = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Songs at each tempo; the most are at 120, 100 and 90 beats per minute' }, el);
+    for (var b = lo; b <= hi; b++) {
+      var h = by[b] ? Math.max(1, (H - B - T) * by[b].length / max) : 0;
+      if (h) bars[b] = svg('rect', { class: 'bar', x: (b - lo) * bw, y: H - B - h, width: Math.max(1, bw - 0.6), height: h, fill: C.ink2 }, g);
+      if (b % 20 === 0) svg('text', { x: (b - lo + 0.5) * bw, y: H - 6, 'text-anchor': 'middle' }, g).textContent = b;
+    }
+    var on = null;
+    function nearest(v) { for (var d = 0; d <= hi - lo; d++) { if (by[v - d]) return v - d; if (by[v + d]) return v + d; } return v; }
+    function mark(v) { if (on) on.removeAttribute('data-on'); on = bars[v]; if (on) on.setAttribute('data-on', ''); }
+    function choose(v) { v = nearest(v); range.value = v; mark(v); oneOf(one, data, v + ' beats per minute, ' + fmtInt(by[v].length) + (by[v].length === 1 ? ' song' : ' songs'), by[v]); }
+    function at(e) { var r = g.getBoundingClientRect(); return Math.round(lo + (e.clientX - r.left) / r.width * (hi - lo + 1) - 0.5); }
+    g.style.cursor = 'pointer'; g.style.touchAction = 'pan-y';
+    g.addEventListener('pointermove', function (e) { if (e.buttons) { var v = nearest(Math.max(lo, Math.min(hi, at(e)))); range.value = v; mark(v); } });
+    g.addEventListener('click', function (e) { choose(Math.max(lo, Math.min(hi, at(e)))); });
+    range.addEventListener('input', function () { mark(nearest(Number(range.value))); });
+    range.addEventListener('change', function () { choose(Number(range.value)); });
+    choose(120);
+  }
+
+  // One face per month, lined up by the eyes, so sliding through them plays like a film.
+  function beardSlider(data, faces) {
+    var tool = document.getElementById('beard-tool'), img = document.getElementById('beard-face'), text = document.getElementById('beard-text');
+    var range = document.getElementById('beard-range'), play = document.getElementById('beard-play'), timer = 0, loaded = false;
+    var NAMES = { Beard: 'Beard', Shadow: 'Stubble', Clean: 'Clean-shaven' };
+    range.max = faces.length - 1;
+    function show(i) {
+      var f = faces[i], ym = f.month.split('-');
+      img.src = 'faces/' + f.month + '.jpg';
+      text.textContent = LONG_MONTHS[Number(ym[1]) - 1] + ' ' + ym[0] + ' · ' + (NAMES[f.beard] || f.beard) + ' · ';
+      text.appendChild(songLink(data, f.n));
+    }
+    function stop() { clearInterval(timer); timer = 0; play.textContent = 'Play'; play.setAttribute('aria-pressed', 'false'); }
+    range.addEventListener('input', function () { stop(); show(Number(range.value)); });
+    play.addEventListener('click', function () {
+      if (timer) return stop();
+      if (!loaded) { faces.forEach(function (f) { new Image().src = 'faces/' + f.month + '.jpg'; }); loaded = true; }
+      if (Number(range.value) >= faces.length - 1) range.value = 0;
+      play.textContent = 'Stop'; play.setAttribute('aria-pressed', 'true');
+      timer = setInterval(function () { var i = Number(range.value) + 1; if (i >= faces.length) return stop(); range.value = i; show(i); }, 140);
+    });
+    tool.hidden = false; show(0);
+  }
+
+  // The home-city colours for the every-day field; the lens appears once its data has loaded.
+  function homeLens(extra) {
+    var era = extra.songs.era, cols = [C.orange, '#e6b422', C.blue, C.aqua];
+    LENSES.home = { color: function (i) { return era[i] == null ? hex(C.none) : hex(cols[era[i]]); },
+      legend: extra.labels.era.map(function (name, k) { return [cols[k], name]; }) };
+    document.querySelector('.lens[data-lens="home"]').hidden = false;
   }
 
   function fillMeta(data) {
@@ -813,11 +1045,12 @@ section[hidden] { display: none; }
 
   fetch('lab.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (data) {
     LENSES = buildLenses(data);
-    fillMeta(data); field(data); weekdayChart(data); newsChart(); beardChart(data); angryChart(data); viewsChart(data); linkSongs(data);
+    fillMeta(data); field(data); weekdayChart(data); newsChart(); beardChart(data); angryChart(data); viewsChart(data); linkSongs(data); birthday(data); keyWheel(data);
     // The tools read a second, smaller file; without it they stay out of the way.
     fetch('lab-extra.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (extra) {
-      birthday(data); finder(data, extra); oneYear(data, extra); instrumentCharts(extra); yearTopics(extra);
-    }).catch(function () { document.getElementById('tools').hidden = true; document.getElementById('years').hidden = true; });
+      finder(data, extra); oneYear(data, extra); instrumentCharts(extra); yearTopics(data, extra); homeLens(extra); sets(data, extra); tempo(data, extra);
+    }).catch(function () { ['find-tool', 'year-tool', 'years', 'sets-tool', 'tempo-tool'].forEach(function (id) { document.getElementById(id).hidden = true; }); });
+    fetch('faces/index.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (faces) { if (faces.length) beardSlider(data, faces); }).catch(function () {});
   }).catch(function () {
     document.getElementById('readout').textContent = 'The song data didn’t load. Reload the page to try again.';
   });

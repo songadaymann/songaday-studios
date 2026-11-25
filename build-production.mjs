@@ -32,6 +32,8 @@ await cp('commission/song.html', 'dist/commission/song.html');
 await cp('data/index.html', 'dist/data/index.html');
 await cp('data-lab/lab.json', 'dist/data/lab.json');
 await cp('data-lab/lab-extra.json', 'dist/data/lab-extra.json');
+// One face per month for the beard slider (data-lab/make-faces.py). The page works without them.
+if (existsSync('data-lab/faces/index.json')) await cp('data-lab/faces', 'dist/data/faces', { recursive: true });
 // The press page, built by build.mjs from press/press.json; the Worker can swap in the live sheet.
 await cp('press/index.html', 'dist/press/index.html');
 // The universe bar and the list it reads, for every Song A Day site (the Worker adds CORS).
