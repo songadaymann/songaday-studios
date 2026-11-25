@@ -66,7 +66,9 @@ outside the Fridays at The Park app.
   weather, moon, planets, news and views, and the tested findings. `lab.html` is a self-contained
   page; `build.mjs` wraps it in a document with the bar. `lab.json` comes from the public
   [songaday-data](https://github.com/songadaymann/songaday-data) repo: run its `web/export.py`
-  and copy `web/lab.json` into `data-lab/` to refresh it. (The folder isn't called `data/`,
+  and copy `web/lab.json` into `data-lab/` to refresh it. `data-lab/lab-extra.json` feeds the
+  birthday lookup, song finder, one-year numbers and instrument charts; it comes from the same
+  repo's `web/export_extra.py` (standard library only). (The folder isn't called `data/`,
   which `.gitignore` keeps for private data.)
 - `calendar.mjs`, `build-calendar.mjs`, `calendar.json` — the calendar under the hero: every song as
   one picture, an image per year; see "Calendar" below
