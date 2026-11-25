@@ -944,7 +944,7 @@ link above the form to Zeffy's own page, and nobody else does: on iPhones it car
 official Apple Pay mark ("Donate with [Apple Pay] on Zeffy's page"); on Android Chrome it
 says Google Pay in text.
 
-The donation form asks visitors to become a monthly patron or donate ("patron" links to the
+The donation form's heading is "Join my patron collective" ("patron" links to the
 patrons page; the site says "patron" throughout, not "supporter"), and names the first
 goal beside it ("First goal: $3,000 a month."). The monthly ladder
 ($3,000 first goal, $20,000 the dream) is on the home page under the four section cards, and
