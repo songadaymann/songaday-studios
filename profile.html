@@ -7,30 +7,41 @@
       <span class="brand-word">SONG A DAY<span class="brand-dot">.</span> STUDIO</span>
     </a>
     <nav class="site-sections" aria-label="Sections">
-      <a href="/all">All songs<span class="nav-out" aria-hidden="true">↗</span></a>
-      <a href="/listen">Listen<span class="nav-out" aria-hidden="true">↗</span></a>
-      <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
+      <details class="nav-group" name="site-nav">
+        <summary>Songs</summary>
+        <div class="nav-sub">
+          <a href="/listen">Listen</a>
+          <a href="/gallery/">See</a>
+        </div>
+      </details>
       <a href="/films/">Films</a>
-      <a href="/plugins/">Plugins</a>
-      <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
+      <a href="/games">Games</a>
+      <details class="nav-group" name="site-nav">
+        <summary>Software</summary>
+        <div class="nav-sub">
+          <a href="/everything/">Apps</a>
+          <a href="/plugins/">Plugins</a>
+        </div>
+      </details>
+      <details class="nav-group" name="site-nav">
+        <summary>Hire me</summary>
+        <div class="nav-sub">
+          <a href="/commission">Personal</a>
+          <a href="/business/">Business</a>
+          <a href="/conference-troubadour/">Conference troubadour</a>
+        </div>
+      </details>
+      <a href="/store/">Store</a>
     </nav>
-    <a class="nav-donate" href="#donate">Donate</a>
+    <a class="nav-donate" href="#donate" data-donate="header">Donate</a>
   </header>
 
   <main id="main">
     <section class="hero" id="mission" aria-labelledby="mission-title">
       <div class="hero-stage">
         <div class="hero-intro">
-          <h1 class="hero-headline" id="mission-title"><span class="hero-eyebrow">Today I wrote Song A Day #<span data-song-day="today">{{SONG_NUMBER}}</span>.</span> <span class="hero-ask">Help me write <span class="hero-ask-number">#<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span></span>.</span></h1>
-          <p class="hero-subheader">I’m Jonathan Mann. I’ve written a song every day since January&nbsp;1,&nbsp;2009. Now I make games and free music software too.</p>
-          <div class="today-song" id="today">
-{{TODAY_SONG}}
-          </div>
-          <div class="hero-actions">
-            <a class="hero-action hero-action-primary" href="#donate">Help write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span></a>
-            <a class="hero-action" href="#every-song">See all of them</a>
-            <a class="hero-action" href="/listen">Listen to every one<span class="nav-out" aria-hidden="true">↗</span></a>
-          </div>
+          <h1 class="hero-headline" id="mission-title">I’ve been writing a song a day for <span class="hero-ask-accent hero-day-count"><span data-song-day="count">{{SONG_COUNT}}</span> days.</span></h1>
+          <p class="hero-subheader">Hi, I’m Jonathan Mann. I’ve written a song every day since January&nbsp;1,&nbsp;2009. Now I make games and free music software too.</p>
         </div>
 
         <div class="hero-video">
@@ -70,13 +81,31 @@
         </div>
 
         <section class="hero-donate" id="donate" aria-label="Donate to Song A Day Studio" tabindex="-1">
-          <div class="goal">
-            <h2 class="goal-label" id="donate-title">Become a monthly supporter</h2>
-            <p class="goal-line">First goal: $3,000 a month.</p>
+          <div class="donate-intro">
+            <h2 id="donate-title">Join my <a href="/patrons/">patron</a> collective</h2>
           </div>
           <div class="crypto-donate" id="crypto-donate" hidden>
-            <h3>Donate with crypto</h3>
-            <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
+            <div class="crypto-donate-method" data-crypto-method="endaoment">
+              <h3>Donate with crypto</h3>
+              <a class="donation-link endaoment-donation-link" href="https://app.endaoment.org/orgs/334885154/bec1501c-43bb-4af4-b1c0-edf2d163233a?gw_open=true&amp;gw_method=crypto&amp;gw_destination=%7B%22type%22%3A%22org%22%2C%22einOrId%22%3A%22334885154%22%2C%22subprojectId%22%3A%22bec1501c-43bb-4af4-b1c0-edf2d163233a%22%7D" target="_blank" rel="noreferrer">Donate via <img src="assets/brand/endaoment-wordmark-white.svg" alt="Endaoment" width="145" height="30"></a>
+            </div>
+            <form class="crypto-donate-method" id="direct-usdc" data-crypto-method="direct" hidden>
+              <h3>Support Jonathan with USDC</h3>
+              <p class="usdc-note">This one-time payment goes directly to Jonathan and is not tax-deductible.</p>
+              <div class="usdc-fields">
+                <label>Amount in USDC
+                  <input id="usdc-amount" type="text" inputmode="decimal" autocomplete="off" pattern="[0-9]+([.,][0-9]{1,6})?" required>
+                </label>
+                <label>Network
+                  <select id="usdc-network">
+                    <option value="base">Base</option>
+                    <option value="ethereum">Ethereum</option>
+                  </select>
+                </label>
+              </div>
+              <button class="donation-link" id="open-usdc-wallet" type="submit">Open wallet to send</button>
+              <p class="usdc-note" id="usdc-status" role="status"></p>
+            </form>
             <button class="crypto-donate-alternative" id="donate-by-card" type="button">Donate by card or bank</button>
           </div>
           <div class="zeffy-embed-shell" id="zeffy-donate" tabindex="-1">
@@ -96,33 +125,43 @@
             onerror="document.querySelectorAll('[data-zeffy-embed]').forEach(function(el){el.style.display='none';});document.querySelectorAll('[data-zeffy-embed-fallback]').forEach(function(el){el.style.display='block';el.querySelectorAll('iframe[data-zeffy-embed-src]').forEach(function(f){f.src=f.getAttribute('data-zeffy-embed-src');});});">
           </script>
         </section>
+        <div class="hero-ask-row">
+          <a class="hero-ask-link" href="#donate">Help me write <span class="hero-ask-accent">tomorrow’s song.</span>
+            <svg class="hero-ask-arrow" viewBox="0 0 180 160" fill="none" aria-hidden="true" focusable="false">
+              <path d="M8 142C96 164 148 100 148 12M130 32L148 12L166 32" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
       </div>
     </section>
 
     <section class="calendar-section" id="every-song" aria-labelledby="calendar-title">
       <div class="calendar-inner">
         <div class="calendar-heading">
-          <h2 id="calendar-title">This is all of it</h2>
-          <p>Every square is one day’s song, starting January&nbsp;1,&nbsp;2009. In each year, the months are rows and the days are columns.</p>
+          <h2 id="calendar-title" data-song-day="age">{{SONG_AGE}}</h2>
         </div>
+        <div class="today-song" id="today">
+{{TODAY_SONG}}
+        </div>
+        <p class="calendar-help" id="calendar-help">Each square is one day’s song. <span class="calendar-help-mouse">Hover to preview; click to watch.</span><span class="calendar-help-touch">Tap one to watch.</span><span class="visually-hidden"> Use the arrow keys to choose a day, then Enter to watch.</span></p>
 {{CALENDAR}}
-        <a class="calendar-more" href="/all">Explore every song<span class="nav-out" aria-hidden="true">↗</span></a>
+        <a class="calendar-more" href="/gallery/">Explore every song</a>
       </div>
     </section>
 
     <section class="gift-section" id="studios" aria-labelledby="gift-title">
       <div class="gift-inner">
-        <h2 id="gift-title">What your gift makes</h2>
+        <h2 id="gift-title">Your patronage keeps it all going.</h2>
         <div class="gift-grid">
-          <a class="gift-card" href="/songs">
+          <a class="gift-card" href="/gallery/">
             <img class="gift-card-icon" src="assets/icons/musician.png" alt="" width="56" height="56" loading="lazy" decoding="async">
-            <h3>Songs<span class="nav-out" aria-hidden="true">↗</span></h3>
-            <p><span data-song-day="count">{{SONG_COUNT}}</span> songs and counting, every one under a Creative Commons license.</p>
+            <h3>Songs</h3>
+            <p><span data-song-day="count">{{SONG_COUNT}}</span> songs and counting, and they’re all Creative Commons.</p>
           </a>
           <a class="gift-card" href="/games">
             <img class="gift-card-icon" src="assets/icons/gamer.png" alt="" width="56" height="56" loading="lazy" decoding="async">
-            <h3>Games<span class="nav-out" aria-hidden="true">↗</span></h3>
-            <p>Game A Day, WAMP, and games about the news.</p>
+            <h3>Games</h3>
+            <p>WAMP and topical games based on the news.</p>
           </a>
           <a class="gift-card" href="/films/">
             <img class="gift-card-icon" src="assets/icons/explorer.png" alt="" width="56" height="56" loading="lazy" decoding="async">
@@ -132,9 +171,22 @@
           <a class="gift-card" href="/plugins/">
             <img class="gift-card-icon" src="assets/icons/science.png" alt="" width="56" height="56" loading="lazy" decoding="async">
             <h3>Plugins</h3>
-            <p>Novox The Robot makes your computer sing. Free and open source.</p>
+            <p>Free and open source music software. Novox The Robot is my first plugin; it makes your computer sing.</p>
           </a>
         </div>
+        <dl class="patronage-match" id="goal" aria-label="Monthly goals">
+          <div>
+            <dt>The first goal, from monthly patrons</dt>
+            <dd>{{GOAL_FIRST}}<span class="patronage-match-unit">/month</span></dd>
+          </div>
+          <div>
+            <dt>The dream: enough to focus solely on what I do best</dt>
+            <dd>{{GOAL_DREAM}}<span class="patronage-match-unit">/month</span></dd>
+          </div>
+        </dl>
+        {{PATRON_FACES}}
+        <a class="gift-more" href="/story/">Read the story</a>
+        <a class="gift-more" href="/patrons/">Meet the patrons</a>
       </div>
     </section>
 
@@ -142,140 +194,6 @@
       <p class="visually-hidden" id="catalog-ticker-summary"></p>
       <div class="catalog-ticker-viewport" aria-hidden="true">
         <div class="catalog-ticker-track" id="catalog-ticker-track"></div>
-      </div>
-    </section>
-
-    <section class="editorial-story" aria-labelledby="story-title">
-      <h2 class="visually-hidden" id="story-title">The story</h2>
-      <div class="editorial-story-grid">
-        <div class="business-layout">
-          <section class="story-block story-business" aria-labelledby="business-title">
-            <h3 id="business-title">Song A Day has never fit neatly into any business model.</h3>
-            <div class="story-copy story-copy-cards">
-            <button class="story-text-blob story-video-card" type="button" data-video-id="50R5qPDSXF0" data-video-title="Video contests">
-              <span class="story-text-copy">In the early days of Song A Day, I made a living entering video contests.</span>
-              <span class="story-video-note">Watch video <span aria-hidden="true">▶</span></span>
-            </button>
-            <button class="story-text-blob story-video-card" type="button" data-video-id="HCdwY4B3Ln8" data-video-start="1" data-video-title="The Conference Troubadour">
-              <span class="story-text-copy">For about 10 years, I went on the conference circuit and became the Conference Troubadour.</span>
-              <span class="story-video-note">Watch video <span aria-hidden="true">▶</span></span>
-            </button>
-            <button class="story-text-blob story-video-card" type="button" data-video-id="WjEB7W1NSTg" data-video-title="The long story">
-              <span class="story-text-copy">Then I sold my songs as NFTs, made $3 million, and lost it again (long story).</span>
-              <span class="story-video-note">Watch video <span aria-hidden="true">▶</span></span>
-            </button>
-              <p class="story-text-blob">Commissions used to be a big part of my income, but with the advent of AI-generated music, they've mostly dried up.</p>
-            </div>
-          </section>
-
-          <figure class="story-figure story-figure-early">
-            <img src="assets/images/song-a-day-early.webp" alt="Jonathan Mann in a homemade Song A Day costume, surrounded by recording equipment in the early days" loading="lazy" decoding="async">
-            <figcaption>The early days of Song A Day.</figcaption>
-          </figure>
-        </div>
-
-        <p class="story-emphasis">Through all these 18 years, I've had one dream: make enough money that I can focus solely on what I do best.</p>
-
-        <figure class="story-figure story-figure-conference">
-          <img src="assets/images/conference-troubadour.webp" alt="Jonathan Mann performing for an outdoor audience beside a lake" loading="lazy" decoding="async">
-          <figcaption>The Conference Troubadour.</figcaption>
-        </figure>
-
-        <div class="story-license-copy business-license">
-          <img src="assets/images/creative-commons.svg" alt="Creative Commons" width="64" height="64">
-          <p>Every Song A Day song lives under a Creative Commons license. Anyone is free to cover, remix, and use it — part of Song A Day's life as a public good. <a href="https://creativecommons.org/share-your-work/cclicenses/" target="_blank" rel="noreferrer">Learn about Creative Commons ↗</a></p>
-        </div>
-
-        <section class="story-block story-patronage" aria-labelledby="patronage-title">
-          <h3 id="patronage-title">Patronage</h3>
-          <div class="patronage-boxes">
-            <article class="patronage-box">
-              <div class="patronage-box-media">
-                <img src="assets/images/patronage-platforms.svg" alt="Patreon, YouTube, and Bandcamp logos" loading="lazy" decoding="async">
-              </div>
-              <p>I've tried Patreon, paid YouTube subscribers, and a Bandcamp fan club. Until now, none has made up more than one-sixteenth of my income.</p>
-              <img class="patronage-box-icon" src="assets/icons/musician.png" alt="" aria-hidden="true">
-            </article>
-            <article class="patronage-box">
-              <div class="patronage-box-media">
-                <img src="assets/images/cy-lee.webp" alt="C.Y. Lee holding an ice cream cone outside" loading="lazy" decoding="async">
-              </div>
-              <p>Recently, C.Y. Lee — an early Microsoft and RealPlayer employee — became a friend and mentor. He now uses his resources to fund dozens of artists across the country.</p>
-              <img class="patronage-box-icon" src="assets/icons/explorer.png" alt="" aria-hidden="true">
-            </article>
-            <article class="patronage-box">
-              <div class="patronage-box-media">
-                <img src="assets/images/fridays-at-the-park.webp" alt="Jonathan Mann and a collaborator at a keyboard in a recording studio" loading="lazy" decoding="async">
-              </div>
-              <p>I'm fiscally sponsored by Fridays at The Park, an LA recording collective and nonprofit. That means every donation is tax-deductible.</p>
-              <img class="patronage-box-icon" src="assets/icons/tunes.png" alt="" aria-hidden="true">
-            </article>
-          </div>
-          <dl class="patronage-match" id="goal" aria-label="Monthly goals">
-            <div>
-              <dt>The first goal, from monthly supporters</dt>
-              <dd>$3,000<span class="patronage-match-unit">/month</span></dd>
-            </div>
-            <div>
-              <dt>The dream: enough to focus solely on what I do best</dt>
-              <dd>$20,000<span class="patronage-match-unit">/month</span></dd>
-            </div>
-          </dl>
-        </section>
-
-        <section class="story-block video-games-section" aria-labelledby="video-games-title">
-          <div class="video-games-heading">
-            <img class="video-games-heading-icon" src="assets/icons/gamer.png" alt="" aria-hidden="true">
-            <div class="video-games-heading-copy">
-              <h3 id="video-games-title">VIDEO GAMES</h3>
-              <p>In addition to continuing Song A Day, I've turned my attention back to my other major love</p>
-            </div>
-          </div>
-          <div class="video-games-grid">
-            <article class="video-game-card">
-              <div class="video-game-card-media">
-                <video src="assets/video/game-a-day-quick-cut.mp4" poster="assets/images/game-a-day-quick-cut-poster.webp" loop muted playsinline preload="metadata" aria-label="Quick-cut montage of Game A Day projects"></video>
-              </div>
-              <div class="video-game-card-copy">
-                <div class="video-game-card-heading">
-                  <h4>GAME A DAY</h4>
-                  <img class="video-game-card-icon" src="assets/icons/tunes.png" alt="" aria-hidden="true">
-                </div>
-                <p>I made a Game A Day in January 2026.</p>
-              </div>
-            </article>
-
-            <button class="video-game-card video-game-card-button" type="button" data-video-src="assets/video/wamp-trailer.mp4" data-video-title="WAMP">
-              <div class="video-game-card-media">
-                <img src="assets/images/wamp-world.webp" alt="Screenshot of the WAMP world, a collaborative platformer" loading="lazy" decoding="async">
-              </div>
-              <div class="video-game-card-copy">
-                <div class="video-game-card-heading">
-                  <h4>WAMP</h4>
-                  <img class="video-game-card-icon" src="assets/icons/gamer.png" alt="" aria-hidden="true">
-                </div>
-                <p>Since March, I've been working on the game of my dreams: We All Make A Platformer (or WAMP).</p>
-                <p>WAMP already has one employee: an incredible pixel artist named Alex Florez.</p>
-                <span class="video-game-card-action">Watch trailer <span aria-hidden="true">▶</span></span>
-              </div>
-            </button>
-
-            <button class="video-game-card video-game-card-button" type="button" data-video-src="assets/video/political-satire-trailer.mp4" data-video-title="Political Satire">
-              <div class="video-game-card-media">
-                <img src="assets/images/political-satire-splices.gif" alt="Quick-cut montage of topical Game A Day games" loading="lazy" decoding="async">
-              </div>
-              <div class="video-game-card-copy">
-                <div class="video-game-card-heading">
-                  <h4>POLITICAL SATIRE</h4>
-                  <img class="video-game-card-icon" src="assets/icons/politics.png" alt="" aria-hidden="true">
-                </div>
-                <p>Like with Song A Day, I've been making topical games that comment on the news of the day.</p>
-                <span class="video-game-card-action">Watch video <span aria-hidden="true">▶</span></span>
-              </div>
-            </button>
-          </div>
-        </section>
-
       </div>
     </section>
 
@@ -290,33 +208,6 @@
         </div>
       </div>
     </div>
-
-    <section class="work-section studios-section" aria-labelledby="studios-title">
-      <div class="section-heading">
-        <h2 id="studios-title">ALSO FROM THE STUDIO</h2>
-      </div>
-      <div class="studios-grid">
-        <article class="studios-card">
-          <div class="studios-card-media">
-            <img src="assets/images/motba.webp" alt="The Museum of Time Based Art timeline interface showing past, present, and future artworks" loading="lazy" decoding="async">
-          </div>
-          <div class="studios-card-copy">
-            <h3>MOTBA</h3>
-            <p>I've created a website called The Museum of Time Based Art, dedicated to artists for whom time is a central theme in their work.</p>
-          </div>
-        </article>
-
-        <article class="studios-card">
-          <div class="studios-card-media">
-            <img src="assets/images/jamuary.webp" alt="Jamuary invitation to make and share a song every day in January" loading="lazy" decoding="async">
-          </div>
-          <div class="studios-card-copy">
-            <h3>#JAMUARY</h3>
-            <p>This January, I am bringing back #Jamuary: An invitation to make and share one song every day that month.</p>
-          </div>
-        </article>
-      </div>
-    </section>
 
     <section class="brand-band" aria-labelledby="brand-band-title">
       <div class="brand-band-icons" aria-hidden="true">
@@ -335,25 +226,7 @@
       </div>
       <div class="brand-band-copy">
         <h2 id="brand-band-title">Help me write #<span data-song-day="tomorrow">{{NEXT_SONG_NUMBER}}</span>.</h2>
-        <a class="brand-band-donate" href="#donate">Donate</a>
-      </div>
-    </section>
-
-    <section class="thank-you-section" aria-labelledby="thank-you-title">
-      <h2 id="thank-you-title">THANK YOU!</h2>
-      <div class="story-image-trio" role="group" aria-label="Song A Day and Game A Day milestones">
-        <figure class="story-figure story-trio-every-day">
-          <img src="assets/images/game-a-day-every-day.webp" alt="Jonathan Mann playing ukulele beneath an Every Day sign" loading="lazy" decoding="async">
-          <figcaption>Every day means every day.</figcaption>
-        </figure>
-        <figure class="story-figure story-trio-illustration">
-          <img src="assets/images/game-a-day-illustration.webp" alt="Illustrated Song A Day scene with a guitarist and colorful characters" loading="lazy" decoding="async">
-          <figcaption>Games as songs you can step inside.</figcaption>
-        </figure>
-        <figure class="story-figure story-trio-guinness">
-          <img src="assets/images/guinness-record.webp" alt="Jonathan Mann holding up his Guinness World Records certificate" loading="lazy" decoding="async">
-          <figcaption>Guinness World Record certificate, 2014.</figcaption>
-        </figure>
+        <a class="brand-band-donate" href="#donate" data-donate="band">Donate</a>
       </div>
     </section>
 
@@ -363,7 +236,7 @@
         <div class="directory-groups">
 {{DIRECTORY}}
         </div>
-        <p class="directory-more"><a href="/everything/">Everything, with what’s coming and what’s done</a> · <a href="/now/">What I’m doing now</a></p>
+        <p class="directory-more"><a href="/everything/">Everything, with what’s coming and what’s done</a> · <a href="/now/">What I’m doing now</a> · <a href="/story/">The story</a></p>
       </div>
     </section>
   </main>
@@ -374,17 +247,21 @@
       <p>Daily, relentless creativity. Open-source software and music.</p>
     </div>
     <div class="footer-links">
-      <nav aria-label="Footer sections">
-        <a href="/all">All songs<span class="nav-out" aria-hidden="true">↗</span></a>
-        <a href="/listen">Listen<span class="nav-out" aria-hidden="true">↗</span></a>
-        <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
+      <nav class="footer-menu" aria-label="Footer sections">
+        <span class="footer-group"><span>Songs</span> <a href="/listen">Listen</a> <a href="/gallery/">See</a></span>
         <a href="/films/">Films</a>
-        <a href="/plugins/">Plugins</a>
-        <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
+        <a href="/games">Games</a>
+        <span class="footer-group"><span>Software</span> <a href="/everything/">Apps</a> <a href="/plugins/">Plugins</a></span>
+        <span class="footer-group"><span>Hire me</span> <a href="/commission">Personal</a> <a href="/business/">Business</a> <a href="/conference-troubadour/">Conference troubadour</a></span>
+        <a href="/store/">Store</a>
+      </nav>
+      <nav aria-label="More pages">
         <a href="/everything/">Everything</a>
         <a href="/now/">Now</a>
         <a href="/press/">Press</a>
-        <a href="#donate">Donate</a>
+        <a href="/story/">Story</a>
+        <a href="/patrons/">Patrons</a>
+        <a href="#donate" data-donate="footer">Donate</a>
       </nav>
       <nav aria-label="Social links">
         <a href="https://www.youtube.com/channel/UCvj5S3f10rO6CoibatfRGzg" target="_blank" rel="noreferrer">YouTube</a>
@@ -394,6 +271,6 @@
         <a href="https://wamp.land" target="_blank" rel="noreferrer">WAMP</a>
       </nav>
     </div>
-    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park, so gifts are tax-deductible. Commissions and albums are purchases from Jonathan, not gifts.</p>
+    <p class="sponsor-line">Song A Day Studio is fiscally sponsored by Fridays at The Park, and executive produced by C.Y. Lee. Eligible charitable donations are tax-deductible in the U.S. Commissions and albums are purchases from Jonathan, not donations.</p>
   </footer>
 </div>

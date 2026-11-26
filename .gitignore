@@ -47,8 +47,19 @@ venv/
 /everything/index.html
 /press/index.html
 /now/index.html
+/story/index.html
+/patrons/index.html
+/conference-troubadour/index.html
+/business/index.html
 /data/index.html
+/commission/index.html
+/commission/song.html
 /assets
 
 # Local preview config for the Claude desktop app
 .claude/launch.json
+
+/store/index.html
+/store/muscle/index.html
+/gallery/studio-header.txt
+/gallery/studio.css

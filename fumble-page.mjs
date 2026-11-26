@@ -167,6 +167,18 @@ button:disabled { background: var(--dim); cursor: wait; }
 .site-sections a { display: inline-flex; align-items: center; min-height: 44px; border-bottom: 2px solid transparent; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; white-space: nowrap; }
 .site-sections a:hover { border-bottom-color: var(--red); }
 .site-header .nav-out { margin-left: .25em; font-weight: 400; opacity: .6; }
+/* Groups in the menu: see studio-chrome.css, which this copies. */
+.site-sections .nav-group { position: relative; }
+.site-sections summary { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; border-bottom: 2px solid transparent; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; list-style: none; cursor: pointer; }
+.site-sections summary::-webkit-details-marker { display: none; }
+.site-sections summary::after { content: ""; border: 4px solid transparent; border-top: 5px solid currentColor; border-bottom: 0; }
+.site-sections summary:hover, .site-sections details[open] > summary, .site-sections summary[aria-current], .site-sections .nav-group:has(a[aria-current]) > summary { border-bottom-color: var(--red); }
+.site-sections summary:focus-visible { outline: 4px solid var(--red); outline-offset: 4px; }
+.nav-sub { position: absolute; z-index: 2; top: calc(100% + 14px); left: -1.15rem; display: grid; min-width: max-content; padding: .35rem 1.15rem .6rem; border: 4px solid var(--red); border-top: 0; background: #000; }
+@media (min-width: 761px) {
+  .site-sections details[open] > summary::before { content: ""; position: fixed; inset: 0; z-index: 1; cursor: default; }
+  .site-sections > a, .site-sections details:not([open]) > summary, .site-header .brand, .site-header .nav-donate { position: relative; z-index: 2; }
+}
 .site-header .nav-donate { flex: none; padding: .8rem 1.15rem; background: #e6203f; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .06em; line-height: 1; text-decoration: none; text-transform: uppercase; }
 .site-header .nav-donate:hover { background: #fff; color: #000; }
 @media (max-width: 760px) {
@@ -175,9 +187,18 @@ button:disabled { background: var(--dim); cursor: wait; }
   .site-sections { grid-area: sections; gap: 1.1rem; height: 41px; margin: 0 -16px .55rem; padding: 0 16px; border-bottom: 1px solid #2a2a2a; overflow-x: auto; scrollbar-width: none; }
   .site-sections::-webkit-scrollbar { display: none; }
   .site-sections a { flex: none; min-height: 40px; font-size: 12px; letter-spacing: .05em; }
+  .site-sections .nav-group { position: static; flex: none; }
+  .site-sections summary { gap: .35rem; min-height: 40px; font-size: 12px; letter-spacing: .05em; }
+  .site-sections:has(details[open]) { margin-bottom: calc(.55rem + 44px); }
+  .nav-sub { top: 41px; left: 0; right: 0; display: flex; gap: 1.1rem; min-width: 0; height: 44px; padding: 0 16px; border: 0; border-bottom: 1px solid #2a2a2a; overflow-x: auto; scrollbar-width: none; }
+  .nav-sub::-webkit-scrollbar { display: none; }
+  .nav-sub a { min-height: 43px; }
   .site-header .brand { grid-area: brand; min-width: 0; gap: .55rem; font-size: 14px; }
   .site-header .brand-mark { width: 34px; height: 34px; }
   .site-header .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: 12px; }
+}
+@media (max-width: 560px) {
+  .site-header .nav-donate { max-width: 10.5em; line-height: 1.2; text-align: center; }
 }
 `;
 
@@ -187,14 +208,33 @@ const HEADER = `<header class="site-header">
     <span class="brand-word">SONG A DAY<span class="brand-dot">.</span> STUDIO</span>
   </a>
   <nav class="site-sections" aria-label="Sections">
-    <a href="/all">All songs<span class="nav-out" aria-hidden="true">↗</span></a>
-    <a href="/listen">Listen<span class="nav-out" aria-hidden="true">↗</span></a>
-    <a href="/games">Games<span class="nav-out" aria-hidden="true">↗</span></a>
+    <details class="nav-group" name="site-nav">
+      <summary>Songs</summary>
+      <div class="nav-sub">
+        <a href="/listen">Listen</a>
+        <a href="/gallery/">See</a>
+      </div>
+    </details>
     <a href="/films/">Films</a>
-    <a href="/plugins/">Plugins</a>
-    <a href="/commission">Get a song<span class="nav-out" aria-hidden="true">↗</span></a>
+    <a href="/games">Games</a>
+    <details class="nav-group" name="site-nav">
+      <summary>Software</summary>
+      <div class="nav-sub">
+        <a href="/everything/">Apps</a>
+        <a href="/plugins/">Plugins</a>
+      </div>
+    </details>
+    <details class="nav-group" name="site-nav">
+      <summary>Hire me</summary>
+      <div class="nav-sub">
+        <a href="/commission">Personal</a>
+        <a href="/business/">Business</a>
+        <a href="/conference-troubadour/">Conference troubadour</a>
+      </div>
+    </details>
+    <a href="/store/">Store</a>
   </nav>
-  <a class="nav-donate" href="/#donate">Donate</a>
+  <a class="nav-donate" href="/#donate" data-donate="header">Donate</a>
 </header>`;
 
 const MUSEUM = 'The Museum of Fumbled Bags';

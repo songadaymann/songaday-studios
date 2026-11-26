@@ -1,0 +1,24 @@
+{
+  "layout": "h",
+  "name": "Eighteen year blocks",
+  "trim_inches": [
+    40,
+    30
+  ],
+  "page_mm": [
+    1024,
+    770
+  ],
+  "bleed_mm": 4,
+  "bleed_treatment": "mirrored outside nominal trim",
+  "image_pixels": [
+    12000,
+    9000
+  ],
+  "effective_ppi": 300,
+  "source_jpeg_sha256": "f1d87815471551b2f0a90b2ebc0984f3b9da61b3d15c5ad93b735d6f31bbf05a",
+  "pdf_sha256": "8ca0dd24b603e97e718e15e5c3a1734602ba00db77877233c0f74218b5c2aaea",
+  "jpeg_bytes_unchanged": true,
+  "artwork_status": "Recovered proof artwork; imagery through song6505; title/count unchanged",
+  "filename": "songaday-h-40x30-proof-v1.pdf"
+}

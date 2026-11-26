@@ -1,12 +1,22 @@
+import { roomGeometry } from './store-preview.mjs';
+import { albumProblems, renderAlbums } from './store-albums.mjs';
+import { productProblems, renderStore } from './store-products.mjs';
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { songADayNumber } from "./song-day.mjs";
+import { createHash } from "node:crypto";
+import { songADayAge, songADayNumber } from "./song-day.mjs";
+import { MONTHLY_GOALS, dollars } from "./patronage.mjs";
 import { FILMS_FALLBACK, FILMS_FEED_URL, FILMS_PLAYLIST_URL, parseFeed, renderFilms } from "./films.mjs";
 import { SONGS_FEED_URL, TODAY_SONG_FALLBACK, latestSong, renderTodaySong } from "./today-song.mjs";
 import { pressSnapshot, renderPress, renderPressSummary } from "./press.mjs";
 import { renderCalendar } from "./calendar.mjs";
 import { renderDirectory, renderEverything, validateProjects } from "./projects.mjs";
+import { patronProblems, renderPatronFaces, renderPatrons } from "./patrons.mjs";
+import { BUDGETS } from "./troubadour.mjs";
+import { BUSINESS_BUDGETS } from "./business.mjs";
+import { DATA_CARD, SHARE_CARDS, SHARE_SIZE, shareImageUrl } from "./share-images.mjs";
+import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
 // `node build.mjs --out <folder>` writes the pages there instead of next to the sources, and
@@ -15,9 +25,11 @@ const outFlag = process.argv.indexOf("--out");
 const outRoot = outFlag > 0 ? path.resolve(process.argv[outFlag + 1]) : projectRoot;
 const offline = process.env.SONGADAY_OFFLINE === "1";
 const source = (name) => readFile(path.join(projectRoot, name), "utf8");
-const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson, projectsJson, nowSource, everythingSource, walletDetect, walletGate] = await Promise.all([
+const [htmlSource, filmsSource, chromeCss, profileCss, jsSource, filmsJs, calendarJson, projectsJson, nowSource, everythingSource, walletDetect, walletGate,
+  commissionSource, commissionCss, commissionJs, storySource, storyJs, videoModalSource] = await Promise.all([
   source("profile.html"),
   source("films.html"),
+  source("studio-chrome.css"),
   source("profile.css"),
   source("profile.js"),
   source("films-page.js"),
@@ -27,7 +39,14 @@ const [htmlSource, filmsSource, css, jsSource, filmsJs, calendarJson, projectsJs
   source("everything.html"),
   source("wallet/wallet-detect.js"),
   source("wallet/wallet-gate.js"),
+  source("commission.html"),
+  source("commission.css"),
+  source("commission-page.js"),
+  source("story.html"),
+  source("story-page.js"),
+  source("video-modal.mjs"),
 ]);
+const css = `${chromeCss}\n${profileCss}`;
 
 const projects = JSON.parse(projectsJson);
 const problems = validateProjects(projects);
@@ -42,6 +61,10 @@ return { ${name} };
 })();`;
 const walletGateScript = `${scriptOf(walletDetect, "detectWallet")}
 ${scriptOf(walletGate, "applyWalletGate")}`;
+const calendarPreviewScript = scriptOf(
+  `${(await source("calendar.mjs")).split("export function renderCalendar")[0]}\n${await source("calendar-preview.mjs")}`,
+  "initCalendarPreview"
+);
 const hasLocalAssets = existsSync(path.join(projectRoot, "assets"));
 
 // A snapshot of the newest song on YouTube; the Worker refreshes it from the live feed.
@@ -61,11 +84,23 @@ async function todaySongSnapshot() {
 
 const number = songADayNumber();
 const todaySong = await todaySongSnapshot();
+// The patrons (patrons.json, checked by patrons.mjs): the home page shows a row of their faces
+// under the goals, and /patrons/ further down shows everyone.
+const patrons = JSON.parse(await source("patrons.json"));
+const patronIssues = patronProblems(patrons);
+if (patronIssues.length) {
+  throw new Error(`patrons.json has problems:\n${patronIssues.join("\n")}`);
+}
 // Function replacements, so a "$" in a song title isn't read as a replacement pattern.
 let html = htmlSource.replaceAll("{{SONG_NUMBER}}", String(number))
   .replaceAll("{{NEXT_SONG_NUMBER}}", String(number + 1))
   .replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))
+  .replaceAll("{{SONG_AGE}}", songADayAge(number).text)
+  .replaceAll("{{GOAL_FIRST}}", dollars(MONTHLY_GOALS.first))
+  .replaceAll("{{GOAL_DREAM}}", dollars(MONTHLY_GOALS.dream))
   .replace("{{TODAY_SONG}}", () => todaySong)
+  // The home page addresses its pictures from its own folder ("assets/…"), like the rest of it.
+  .replace("{{PATRON_FACES}}", () => renderPatronFaces(patrons).replaceAll('src="/assets/', 'src="assets/'))
   .replace("{{CALENDAR}}", () => renderCalendar(JSON.parse(calendarJson)))
   .replace("{{DIRECTORY}}", () => renderDirectory(projects));
 // Public checkouts use hosted media when the private local asset bundle is absent.
@@ -75,9 +110,13 @@ if (!hasLocalAssets) {
     .replaceAll(/\bsrcset="([^"]*)"/g, (match, list) =>
       `srcset="${list.replaceAll(/(^|,\s*)assets\//g, "$1https://songaday.studio/assets/")}"`);
 }
-const js = jsSource.replace("/* SONG_DAY_NUMBER_HELPER */",
-  `const songADayNumber = ${songADayNumber.toString()};`)
-  .replace("/* WALLET_GATE_HELPER */", () => walletGateScript);
+// What the home page's script and the story page's share: the day counter and the video dialog.
+const withPageHelpers = (script) => script.replace("/* SONG_DAY_NUMBER_HELPER */",
+  () => `const songADayNumber = ${songADayNumber.toString()};\n  const songADayAge = ${songADayAge.toString()};`)
+  .replace("/* VIDEO_MODAL_HELPER */", () => scriptOf(videoModalSource, "initVideoModal"));
+const js = withPageHelpers(jsSource)
+  .replace("/* WALLET_GATE_HELPER */", () => walletGateScript)
+  .replace("/* CALENDAR_PREVIEW_HELPER */", () => calendarPreviewScript);
 
 // A snapshot of the mini-docs playlist; the Worker refreshes it from the live feed.
 async function filmsSnapshot() {
@@ -94,23 +133,44 @@ async function filmsSnapshot() {
   }
 }
 
-function documentHtml({ title, description, ogDescription = description, url, body, script }) {
+const DEFAULT_CSP = "default-src 'none'; img-src https: http: data: blob:; media-src 'self' https: http: data: blob:; style-src 'unsafe-inline' https:; font-src https: http: data:; script-src 'self' 'unsafe-inline' https:; frame-src https:; connect-src 'self' https:;";
+// An inline script as it goes into the page, so its CSP hash is of exactly these characters.
+const inlineScript = (script) => script.replaceAll("</script", "<\\/script");
+
+// The picture a shared link shows (share-images.mjs draws them): og:image, and the large card on X.
+const attribute = (text) => text.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+function shareTags(name) {
+  const { width, height, alt } = name === "data" ? DATA_CARD : { ...SHARE_SIZE, alt: SHARE_CARDS[name]?.alt };
+  if (!alt) throw new Error(`share-images.mjs has no card called ${name}.`);
+  return `
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Song A Day Studio">
+  <meta property="og:image" content="${shareImageUrl(name)}">
+  <meta property="og:image:width" content="${width}">
+  <meta property="og:image:height" content="${height}">
+  <meta property="og:image:alt" content="${attribute(alt)}">
+  <meta name="twitter:card" content="summary_large_image">`;
+}
+
+function documentHtml({ title, description, ogDescription = description, url, share, body, script, csp = DEFAULT_CSP, extraCss = "", robots = null }) {
+  const og = url ? `
+  <meta name="description" content="${description}">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${ogDescription}">
+  <meta property="og:url" content="${url}">${share ? shareTags(share) : ""}` : "";
   return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: http: data: blob:; media-src 'self' https: http: data: blob:; style-src 'unsafe-inline' https:; font-src https: http: data:; script-src 'self' 'unsafe-inline' https:; frame-src https:; connect-src 'self' https:;">
-  <title>${title}</title>
-  <meta name="description" content="${description}">
-  <meta property="og:title" content="${title}">
-  <meta property="og:description" content="${ogDescription}">
-  <meta property="og:url" content="${url}">
-  <style>html,body{margin:0;min-height:100%;}${css}</style>
+  <meta http-equiv="Content-Security-Policy" content="${csp}">${robots ? `
+  <meta name="robots" content="${robots}">` : ""}
+  <title>${title}</title>${og}
+  <style>html,body{margin:0;min-height:100%;}${css}${extraCss}</style>
 </head>
 <body>
 ${body}
-${script ? `<script>${script.replaceAll("</script", "<\\/script")}</script>\n` : ""}</body>
+${script ? `<script>${inlineScript(script)}</script>\n` : ""}</body>
 </html>
 `;
 }
@@ -125,6 +185,7 @@ await writePage("index.html", documentHtml({
   description: "Jonathan Mann has written a song every day since January 1, 2009. Help him write tomorrow's. Songs, games, films and free music software from Song A Day Studio.",
   ogDescription: "Jonathan Mann has written a song every day since January 1, 2009. Help him write tomorrow's.",
   url: "https://songaday.studio/",
+  share: "home",
   body: html,
   script: js,
 }));
@@ -134,24 +195,47 @@ const snapshot = await filmsSnapshot();
 const filmsBody = filmsSource.replace("{{FILMS}}", () => snapshot)
   .replaceAll("{{FILMS_PLAYLIST_URL}}", FILMS_PLAYLIST_URL);
 const hostedMedia = (body) => hasLocalAssets ? body
-  : body.replaceAll(/\bsrc="\/assets\//g, 'src="https://songaday.studio/assets/');
+  : body.replaceAll(/\b(src|poster|data-video-src)="\/assets\//g, '$1="https://songaday.studio/assets/')
+    .replaceAll(/\bsrcset="([^"]*)"/g, (match, list) =>
+      `srcset="${list.replaceAll(/(^|,\s*)\/assets\//g, "$1https://songaday.studio/assets/")}"`);
 await writePage("films/index.html", documentHtml({
   title: "Films · Song A Day Studio",
   description: "Mini-docs by Jonathan Mann about making something every day.",
   url: "https://songaday.studio/films/",
+  share: "films",
   body: hostedMedia(filmsBody),
   script: filmsJs,
 }));
 
-// /everything and /now share the Films page's header and footer.
+// /everything, /now and /gallery share the Films page's header.
 const header = filmsSource.match(/  <header class="site-header">[\s\S]*?<\/header>/)[0].replace(' aria-current="page"', "");
+// Marks where a page is in the menu. A link is the page itself; a group's word (Hire me) stands
+// for a page that more than one of its links lead to. It refuses to do nothing, so a menu that
+// changes can't quietly leave a page unmarked.
+const markMenu = (html, from, to) => {
+  if (!html.includes(from)) throw new Error(`The menu has no ${from}`);
+  return html.replace(from, to);
+};
 const footer = filmsSource.match(/  <footer>[\s\S]*?<\/footer>/)[0];
-const withChrome = (page) => page.replace("{{HEADER}}", () => header).replace("{{FOOTER}}", () => footer);
+await writePage("gallery/studio-header.txt", hostedMedia(markMenu(header, 'href="/gallery/"', 'href="/gallery/" aria-current="page"')));
+await writePage("gallery/studio.css", `${chromeCss}\n${await source("gallery.css")}`);
+// The commission and store pages are purchases from Jonathan, so their own words say nothing
+// about donating: no footer link to the form or to the patrons, and a purchase line in place of
+// the fiscal sponsor's. They wear the same menu as every other page, Donate button included: it
+// goes to the form on the home page, and a menu that changes from page to page reads as a mistake.
+const purchaseHeader = markMenu(header, '<a href="/commission">Personal</a>', '<a href="/commission" aria-current="page">Personal</a>');
+const purchaseFooter = footer.replace(/\n\s*<a href="\/#donate" data-donate="footer">Donate<\/a>/, "")
+  .replace(/\n\s*<a href="\/patrons\/">Patrons<\/a>/, "")
+  .replace(/<p class="sponsor-line">[\s\S]*?<\/p>/, '<p class="sponsor-line">Song commissions are purchases from Jonathan Mann.</p>');
+const withChrome = (page, { purchase = false } = {}) => page
+  .replace("{{HEADER}}", () => purchase ? purchaseHeader : header)
+  .replace("{{FOOTER}}", () => purchase ? purchaseFooter : footer);
 
 await writePage("everything/index.html", documentHtml({
   title: "Everything · Song A Day Studio",
   description: "Every place Song A Day lives: songs, games, plugins, films, and what's coming next.",
   url: "https://songaday.studio/everything/",
+  share: "everything",
   body: hostedMedia(withChrome(everythingSource).replace("{{EVERYTHING}}", () => renderEverything(projects))),
   script: `(() => {\n  "use strict";\n${walletGateScript}\n  applyWalletGate();\n})();`,
 }));
@@ -168,6 +252,7 @@ await writePage("press/index.html", documentHtml({
   title: "Press · Song A Day Studio",
   description: "Press, podcasts, radio and TV about Jonathan Mann and Song A Day.",
   url: "https://songaday.studio/press/",
+  share: "press",
   body: hostedMedia(withChrome(pressSource)
     .replace("{{PRESS_SUMMARY}}", () => renderPressSummary(press.items))
     .replace("{{PRESS}}", () => renderPress(press.items))),
@@ -176,9 +261,153 @@ await writePage("press/index.html", documentHtml({
 
 await writePage("now/index.html", documentHtml({
   title: "Now · Song A Day Studio",
-  description: "What Jonathan Mann is doing now, October 2026.",
+  description: "What Jonathan Mann is doing now, November 2026.",
   url: "https://songaday.studio/now/",
+  share: "now",
   body: hostedMedia(withChrome(nowSource).replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))),
+}));
+
+// songaday.studio/story/: how Song A Day has paid for itself, patronage, the games, and what else
+// the studio makes. These sections were the lower two-thirds of the home page; the home page now
+// keeps the goals and a link here. The video dialog's markup comes from profile.html, so the two
+// pages share one copy of it, as they share its script (video-modal.mjs).
+const videoModalMarkup = htmlSource.match(/    <div class="video-modal" id="video-modal"[\s\S]*?\n    <\/div>\n/)?.[0];
+if (!videoModalMarkup) throw new Error("profile.html's video dialog changed; update the match for it in build.mjs.");
+const storyTokens = {
+  VIDEO_MODAL: videoModalMarkup,
+  GOAL_FIRST: dollars(MONTHLY_GOALS.first),
+  GOAL_DREAM: dollars(MONTHLY_GOALS.dream),
+  NEXT_SONG_NUMBER: String(number + 1),
+};
+await writePage("story/index.html", documentHtml({
+  title: "The story · Song A Day Studio",
+  description: "How Jonathan Mann has kept Song A Day going since 2009: video contests, conferences, commissions, patronage, and now games.",
+  url: "https://songaday.studio/story/",
+  share: "story",
+  body: hostedMedia(withChrome(storySource).replaceAll(/\{\{([A-Z_]+)\}\}/g, (match, name) => {
+    if (!(name in storyTokens)) throw new Error(`story.html has an unknown {{${name}}}.`);
+    return storyTokens[name];
+  })),
+  script: withPageHelpers(storyJs),
+}));
+
+// songaday.studio/patrons/: the people and organizations who support Song A Day, one row each in
+// patrons.json (patrons.mjs): a small picture, a name and where to find them, with a line about
+// them that pops up above the picture (patrons.css, and patrons-page.js for a finger).
+await writePage("patrons/index.html", documentHtml({
+  title: "Patrons · Song A Day Studio",
+  description: "The people and organizations who keep Song A Day going.",
+  url: "https://songaday.studio/patrons/",
+  share: "patrons",
+  body: hostedMedia(withChrome(await source("patrons.html")).replace("{{PATRONS}}", () => renderPatrons(patrons))),
+  script: await source("patrons-page.js"),
+  extraCss: await source("patrons.css"),
+}));
+
+// songaday.studio/conference-troubadour/: the Conference Troubadour, a keynote that ends the day
+// with a song about it. The words are from the old jonathanmann.net pages (/conf and
+// /conf-troubadour). Its videos are the films page's cards and play in place with its script.
+// A booking is a purchase from Jonathan, like a commission, so the page's own words say nothing
+// about donating (purchaseFooter). Book me opens a short form in a dialog (troubadour-page.js),
+// whose answers troubadour.mjs emails to Jonathan; its budget choices are that file's BUDGETS.
+// Underneath, Book me is the one email link below, for when the form can't be used.
+const TROUBADOUR_BOOK_HREF = "mailto:jonathan@jonathanmann.net?subject=The%20Conference%20Troubadour";
+// What the two booking forms share in the browser (booking-form.mjs) and in their styles.
+const bookingFormSource = await source("booking-form.mjs");
+const bookingFormCss = await source("booking-form.css");
+const withBookingForm = (script) => {
+  if (!script.includes("/* BOOKING_FORM_HELPER */")) throw new Error("A booking page's script has no place for the form helper.");
+  return script.replace("/* BOOKING_FORM_HELPER */", () => scriptOf(bookingFormSource, "initBookingForm"));
+};
+// A form's budget choices, the first one carrying `required` for the set.
+const budgetChoices = (budgets) => budgets.map((budget, index) =>
+  `          <label><input type="radio" name="budget" value="${budget}"${index === 0 ? " required" : ""}> ${budget}</label>`).join("\n");
+const troubadourHeader = markMenu(header, '<a href="/conference-troubadour/">', '<a href="/conference-troubadour/" aria-current="page">');
+const troubadourFooter = markMenu(purchaseFooter, 'Song commissions are purchases', 'Conference bookings and song commissions are purchases');
+await writePage("conference-troubadour/index.html", documentHtml({
+  title: "The Conference Troubadour · Song A Day Studio",
+  description: "Jonathan Mann watches every talk at your conference and ends the day with a song about it.",
+  url: "https://songaday.studio/conference-troubadour/",
+  share: "conference-troubadour",
+  body: hostedMedia((await source("conference-troubadour.html"))
+    .replace("{{HEADER}}", () => troubadourHeader).replace("{{FOOTER}}", () => troubadourFooter)
+    .replaceAll("{{BOOK_HREF}}", TROUBADOUR_BOOK_HREF)
+    .replace("{{BUDGETS}}", () => budgetChoices(BUDGETS))),
+  script: `${filmsJs}\n${withBookingForm(await source("troubadour-page.js"))}`,
+  extraCss: `${await source("conference-troubadour.css")}\n${bookingFormCss}`,
+}));
+
+// songaday.studio/business/: a song for a company, brand, event, podcast or show. Business songs
+// used to be a choice on the personal commission form; they have their own page now, with
+// examples, who they've been for, and a request form whose answers business.mjs emails to
+// Jonathan (budget choices: that file's BUSINESS_BUDGETS). A purchase page, like the others.
+const BUSINESS_BOOK_HREF = "mailto:jonathan@jonathanmann.net?subject=A%20song%20for%20my%20business";
+const businessHeader = markMenu(header, '<a href="/business/">', '<a href="/business/" aria-current="page">');
+await writePage("business/index.html", documentHtml({
+  title: "A song for your business · Song A Day Studio",
+  description: "A custom song for your company, brand, event or organization, or a theme song for your podcast, show or channel, by Jonathan Mann.",
+  url: "https://songaday.studio/business/",
+  share: "business",
+  body: hostedMedia((await source("business.html"))
+    .replace("{{HEADER}}", () => businessHeader).replace("{{FOOTER}}", () => purchaseFooter)
+    .replaceAll("{{BOOK_HREF}}", BUSINESS_BOOK_HREF)
+    .replace("{{BUDGETS}}", () => budgetChoices(BUSINESS_BUDGETS))),
+  script: `${filmsJs}\n${withBookingForm(await source("business-page.js"))}`,
+  extraCss: `${await source("business.css")}\n${bookingFormCss}`,
+}));
+
+// songaday.studio/commission: the page and request form, and the shell the Worker puts each
+// buyer's private song page into (commission.mjs). The prices and limits come from
+// commission-config.mjs, the same values the Worker checks. The Worker fills the
+// <!--commission:...--> slots and the Turnstile site key at request time.
+const money = (cents) => "$" + (cents / 100).toLocaleString("en-US");
+const listed = (items) => items.length > 1 ? `${items.slice(0, -1).join(", ")} or ${items.at(-1)}` : items.join("");
+const personal = PRICES.personal.suggested.map(money);
+const commissionTokens = {
+  PERSONAL_FROM: money(PRICES.personal.floor),
+  PERSONAL_SUGGESTED: `${personal.slice(0, -1).join(", ")}, or ${personal.at(-1)} (or more)`,
+  BUSINESS_FROM: money(PRICES.business.floor),
+  PLAN_MONTHS: listed(PLAN_MONTHS.map(String)),
+  VIDEO_LINE: VIDEO_PRICE_CENTS ? `A music video adds ${money(VIDEO_PRICE_CENTS)}.` : "A music video: tick the box on the form and I’ll be in touch about it.",
+  MEMO_MAX_BYTES: String(MEMO_MAX_BYTES),
+  MEMO_MB: String(Math.round(MEMO_MAX_BYTES / 1024 / 1024)),
+  WRITES_PER_DAY: String(WRITES_PER_DAY),
+  ...Object.fromEntries(Object.entries(LIMITS).map(([name, value]) => [`LIMIT_${name}`, String(value)])),
+};
+const commissionBody = withChrome(commissionSource, { purchase: true })
+  .replaceAll(/\{\{([A-Za-z_]+)\}\}/g, (match, name) => {
+    if (!(name in commissionTokens)) throw new Error(`commission.html has an unknown {{${name}}}.`);
+    return commissionTokens[name];
+  });
+const commissionHash = createHash("sha256").update(inlineScript(commissionJs), "utf8").digest("base64");
+// No 'unsafe-inline': the one inline script runs by its hash. form-action lists Stripe because
+// Chrome applies it to the redirect after the pay form posts.
+const commissionCsp = `default-src 'none'; img-src 'self' https: data:; media-src 'self'; style-src 'unsafe-inline' https:; font-src https: data:; script-src 'sha256-${commissionHash}' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self'; form-action 'self' https://checkout.stripe.com; base-uri 'none'`;
+await writePage("commission/index.html", documentHtml({
+  title: "Get a custom song · Song A Day Studio",
+  description: `Jonathan Mann has written a song every day since 2009. He’ll write one for you. Birthdays, weddings, anniversaries or just because! Pay what you can when it’s done (from ${money(PRICES.personal.floor)}).`,
+  url: "https://songaday.studio/commission",
+  share: "commission",
+  body: hostedMedia(commissionBody),
+  script: commissionJs,
+  csp: commissionCsp,
+  extraCss: commissionCss,
+}));
+await writePage("commission/song.html", documentHtml({
+  title: "Song A Day Studio",
+  body: hostedMedia(withChrome(`<div class="labs-page text-page commission-page" id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+{{HEADER}}
+
+  <main id="main" tabindex="-1"><!--commission:song--></main>
+
+{{FOOTER}}
+</div>`, { purchase: true })),
+  script: commissionJs,
+  csp: commissionCsp,
+  extraCss: commissionCss,
+  robots: "noindex",
 }));
 
 // The data lab (songaday.studio/data/). data-lab/lab.html is a self-contained page with its own
@@ -199,11 +428,12 @@ await writePage("data/index.html", `<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline' https:; connect-src 'self' https:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' https: data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline' https:; connect-src 'self' https:; frame-src https://www.youtube-nocookie.com;">
   <title>${labTitle}</title>
   <meta name="description" content="Every Song A Day song since 2009 next to the weather, the moon, the planets, the news and its views, and what held up.">
   <meta property="og:title" content="${labTitle}">
-  <meta property="og:url" content="https://songaday.studio/data/">
+  <meta property="og:description" content="Every Song A Day song since 2009 next to the weather, the moon, the planets, the news and its views, and what held up.">
+  <meta property="og:url" content="https://songaday.studio/data/">${shareTags("data")}
   ${labStyle}
   <style>.eyebrow a{color:inherit;text-decoration:none}.eyebrow a:hover,.eyebrow a:focus-visible{text-decoration:underline}</style>
 </head>
@@ -212,4 +442,76 @@ ${labBody}
 </body>
 </html>
 `);
-console.log(`Built Song A Day Studio index.html, films/, everything/ and now/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+console.log(`Built Song A Day Studio index.html, films/, everything/, now/, story/, patrons/, conference-troubadour/, business/, data/ and commission/${outRoot === projectRoot ? "" : ` in ${outRoot}`}`);
+
+// The store (songaday.studio/store/): a front page built from the list of what's on sale
+// (store/products.json, store-products.mjs), which opens with one picture per kind of thing and
+// then lists the albums (store/albums.json, store-albums.mjs), and the MUSCLE poster picker on a
+// page of its own (/store/muscle/). Both use the Studio purchase header/footer; no donation
+// claims on merchandise.
+const [storeSource, storeMuscleSource, storeCss, storeJsSource, productsJson, albumsJson, variantsJson, catalogJson] = await Promise.all([
+  source("store.html"), source("store-muscle.html"), source("store.css"), source("store-page.js"),
+  source("store/products.json"), source("store/albums.json"), source("store/variants.json"), source("store/catalog.json")]);
+const albums = JSON.parse(albumsJson);
+const albumIssues = albumProblems(albums);
+if (albumIssues.length) {
+  throw new Error(`store/albums.json has problems:\n${albumIssues.join("\n")}\nRun node update-albums.mjs to refresh it.`);
+}
+const albumShelf = renderAlbums(albums);
+// The values a product's note can use, each from the place that owns it.
+const storeValues = {
+  ALBUM_COUNT: String(albumShelf.count),
+  PERSONAL_FROM: money(PRICES.personal.floor),
+  POSTER_FROM: money(Math.min(...JSON.parse(variantsJson).variants.map((variant) => variant.priceCents))),
+  FIGURE_COUNT: String(JSON.parse(catalogJson).length),
+};
+const storeProducts = JSON.parse(productsJson);
+const productIssues = productProblems(storeProducts, storeValues);
+if (productIssues.length) {
+  throw new Error(`store/products.json has problems:\n${productIssues.join("\n")}`);
+}
+const storeFront = renderStore(storeProducts, { albums: albumShelf, values: storeValues });
+const storeTokens = { ...storeValues, STORE_ITEMS: storeFront.items, STORE_SECTIONS: storeFront.sections };
+const storeHeader = markMenu(header, '<a href="/store/">', '<a href="/store/" aria-current="page">');
+const storeFooter = purchaseFooter.replace('Song commissions are purchases', 'Posters and song commissions are purchases');
+const storeBody = (page) => hostedMedia(page.replace("{{HEADER}}", () => storeHeader).replace("{{FOOTER}}", () => storeFooter)
+  .replaceAll(/\{\{([A-Z_]+)\}\}/g, (match, name) => {
+    if (!(name in storeTokens)) throw new Error(`The store pages have an unknown {{${name}}}.`);
+    return storeTokens[name];
+  }));
+// The front page says "opens soon" under what the poster checkout sells until the Worker says it's open,
+// and moves each turning picture (store-products.mjs) on every 2.5 seconds, unless the visitor
+// asks for less motion or the tab is out of sight.
+const storeFrontJs = `(() => {
+ "use strict";
+ fetch("/store/config").then((response) => response.ok ? response.json() : null).then((config) => {
+  if (config && config.checkoutEnabled) for (const note of document.querySelectorAll("[data-store-opens-soon]")) note.hidden = true;
+ }).catch(() => {});
+ const still = matchMedia("(prefers-reduced-motion: reduce)");
+ for (const turns of document.querySelectorAll(".store-item-turns")) {
+  const pictures = [...turns.querySelectorAll("img")];
+  let shown = 0;
+  setInterval(() => {
+   if (still.matches || document.hidden) return;
+   pictures[shown].removeAttribute("data-shown");
+   shown = (shown + 1) % pictures.length;
+   pictures[shown].setAttribute("data-shown", "");
+  }, 2500);
+ }
+})();`;
+await writePage("store/index.html", documentHtml({
+  title: "Store · Song A Day Studio",
+  description: "Song A Day albums on Bandcamp, a song written for you, MUSCLE posters, and the Songs Hat and Songs Shirt.",
+  url: "https://songaday.studio/store/",
+  share: "store",
+  body: storeBody(storeSource),
+  script: storeFrontJs, extraCss: storeCss,
+}));
+await writePage("store/muscle/index.html", documentHtml({
+  title: "MUSCLE posters · Song A Day Studio",
+  description: `All ${storeTokens.FIGURE_COUNT} MUSCLE figures as photographic posters. Choose your figure, size and frame.`,
+  url: "https://songaday.studio/store/muscle/",
+  share: "muscle",
+  body: storeBody(storeMuscleSource),
+  script: storeJsSource.replace("/* STORE_ROOM_GEOMETRY */", () => roomGeometry.toString()), extraCss: storeCss,
+}));

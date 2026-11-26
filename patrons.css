@@ -1,0 +1,51 @@
+/* songaday.studio/patrons/: a wall of small square pictures, each with a name and where to
+   find them. The line about a patron pops up above their picture. No boxes at rest: the picture
+   is the only shape.
+
+   --patrons-across is how many squares share a row: eight at full width, fewer as the page
+   narrows, three on a phone. patrons.mjs's PATRONS_PER_ROW is the widest row, so keep the two
+   in step. Each width also names its last column (:nth-child), whose pop-up opens leftward. */
+.patrons-page main { width: var(--wrap); margin: 0 auto; padding: 3rem 0 5rem; }
+.patrons-intro { margin-bottom: 3rem; }
+.patrons-intro h1 { font-size: var(--type-display); line-height: 1; margin: 0 0 1rem; }
+.patrons-intro p { margin: 0; font-size: var(--type-body); }
+.patrons { --patrons-across: 8; --patron-gap: 1rem; list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(var(--patrons-across), minmax(0, 1fr)); gap: 2rem var(--patron-gap); }
+/* The name is first in the page for anyone listening; the picture is first to the eye. */
+.patron { min-width: 0; display: flex; flex-direction: column; }
+.patron-picture { order: -1; position: relative; aspect-ratio: 1; margin-bottom: .75rem; }
+.patron-face { position: absolute; inset: 0; display: block; box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; overflow: hidden; background: #242424; color: inherit; font: inherit; }
+.patron-face img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.patron-initial { display: grid; place-items: center; width: 100%; height: 100%; font-size: var(--type-display); font-weight: 700; letter-spacing: -.05em; line-height: 1; }
+/* The columns are narrow, so everything under a picture is the small size. */
+.patron-name { font-size: var(--type-meta); font-weight: 700; letter-spacing: 0; line-height: 1.4; margin: 0; overflow-wrap: anywhere; }
+.patron-links { display: flex; flex-wrap: wrap; gap: 0 .75rem; margin: 0; font-size: var(--type-meta); }
+/* Tall enough to tap: 14px text in a 44px line. With a mouse the lines can sit closer. */
+.patron-links a { display: inline-flex; align-items: center; min-height: 44px; }
+.patron-links a:hover, .patron-links a:focus-visible { text-decoration-color: var(--red); }
+@media (hover: hover) and (pointer: fine) { .patron-links { margin-top: .25rem; } .patron-links a { min-height: 28px; } }
+
+/* The line about a patron pops up just above their picture, up to two squares wide, in the
+   same white-edged black as the calendar's preview on the home page. The picture gets the same
+   white edge, so the two read as one piece and nothing of the patron is covered. A mouse opens
+   it by pointing and a keyboard by landing on the picture; patrons-page.js opens it for a
+   finger (.is-open) and puts it away on Escape (.is-dismissed). It lets the pointer through,
+   and it sits above the page header (z-index 20) so a picture near the top still shows it. */
+.patron-bio { position: absolute; z-index: 25; bottom: calc(100% - 2px); left: 0; box-sizing: border-box; width: max-content; min-width: 100%; max-width: calc(200% + var(--patron-gap)); margin: 0; padding: .5rem .75rem; border: 2px solid var(--white); background: var(--ink); color: var(--white); font-size: var(--type-meta); line-height: 1.4; visibility: hidden; pointer-events: none; }
+.patron-face:focus-visible + .patron-bio, .patron-picture.is-open .patron-bio { visibility: visible; }
+/* Opened by a tap, it takes the next tap itself (and closes) instead of passing it to a link underneath. */
+.patron-picture.is-open .patron-bio { pointer-events: auto; }
+.patron-picture.is-open button.patron-face { outline: 2px solid var(--white); outline-offset: -2px; }
+@media (hover: hover) { .patron-picture:hover .patron-bio { visibility: visible; } .patron-picture:hover button.patron-face { outline: 2px solid var(--white); outline-offset: -2px; } }
+.patron-picture.is-dismissed .patron-bio { visibility: hidden; }
+.patron-picture.is-dismissed button.patron-face:not(:focus-visible) { outline: 0; }
+
+.patrons-join { margin: 4rem 0 0; }
+.patrons-join a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; text-decoration-thickness: 2px; }
+
+@media (min-width: 1101px) { .patron:nth-child(8n) .patron-bio { left: auto; right: 0; } }
+@media (min-width: 801px) and (max-width: 1100px) { .patrons { --patrons-across: 6; } .patron:nth-child(6n) .patron-bio { left: auto; right: 0; } }
+@media (min-width: 561px) and (max-width: 800px) { .patrons { --patrons-across: 4; } .patron:nth-child(4n) .patron-bio { left: auto; right: 0; } }
+/* Three across, the pop-up may be as wide as the whole row: it opens rightward from the first
+   column, both ways from the middle one and leftward from the last. */
+@media (max-width: 560px) { .patrons { --patrons-across: 3; --patron-gap: .75rem; row-gap: 1.5rem; } .patron-bio { max-width: calc(300% + 2 * var(--patron-gap)); } .patron:nth-child(3n+2) .patron-bio { left: 50%; transform: translateX(-50%); } .patron:nth-child(3n) .patron-bio { left: auto; right: 0; } }
+@media (max-width: 700px) { .patrons-page main { padding-top: 2rem; } .patrons-intro { margin-bottom: 2rem; } }

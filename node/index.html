@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Jonathan Mann · WHATIF</title>
+<meta name="description" content="Jonathan Mann's video for the NODE WHATIF Residency: a Game Boy you play by breathing into it.">
+<meta property="og:title" content="Jonathan Mann · WHATIF">
+<meta property="og:description" content="A Game Boy you play by breathing into it. For the NODE WHATIF Residency.">
+<meta property="og:image" content="https://songaday.studio/assets/images/node/whatif-share.jpg">
+<meta property="og:url" content="https://songaday.studio/node/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%230f380f'/%3E%3Crect x='3' y='1' width='10' height='14' fill='%23e2f6ce'/%3E%3Crect x='4' y='2' width='8' height='6' fill='%233d3f4f'/%3E%3Crect x='5' y='3' width='6' height='4' fill='%239bbc0f'/%3E%3Crect x='4' y='10' width='3' height='1' fill='%230f380f'/%3E%3Crect x='5' y='9' width='1' height='3' fill='%230f380f'/%3E%3Crect x='10' y='10' width='2' height='2' fill='%23783c6e'/%3E%3C/svg%3E">
+<link rel="preload" href="/node/press-start-2p.woff2" as="font" type="font/woff2" crossorigin>
+<script>document.documentElement.classList.add("js");</script>
+<style>
+/* Game Boy (DMG) greens, the same four the video's windows use, and its screen bezel. */
+@font-face {
+  font-family: "Press Start 2P";
+  src: url("/node/press-start-2p.woff2") format("woff2");
+  font-display: block;
+}
+:root {
+  --d0: #0f380f;
+  --d1: #306230;
+  --d2: #8bac0f;
+  --d3: #9bbc0f;
+  --lt: #e2f6ce;
+  --deep: #061d06;
+  --dot: #133f13;
+  --bezel: #3d3f4f;
+  --stripe-a: #783c6e;
+  --stripe-b: #3c3c8c;
+  --led-off: #3a1a20;
+  --led-on: #ff3b3b;
+  --pixel: "Press Start 2P", ui-monospace, Menlo, monospace;
+  --s: 12px;
+  --m: 16px;
+  --l: 32px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--d0) conic-gradient(at 2px 2px, transparent 75%, var(--dot) 0) 0 0 / 6px 6px;
+  color: var(--lt);
+  font: var(--m)/1.6 var(--pixel);
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+h1, h2, p, ol, ul { margin: 0; padding: 0; font: inherit; }
+li { list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+main {
+  max-width: 1520px;
+  margin: 0 auto;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 40px;
+  align-items: start;
+}
+
+/* ---------- the console: a Game Boy screen bezel around the video ---------- */
+.console {
+  justify-self: center;
+  width: min(100%, max(560px, calc((100vh - 270px) * 16 / 9 + 56px)));
+  width: min(100%, max(560px, calc((100svh - 270px) * 16 / 9 + 56px)));
+  filter: drop-shadow(10px 10px 0 var(--deep));
+}
+.bezel {
+  position: relative;
+  background: var(--bezel);
+  padding: 44px 28px 28px;
+  /* The DMG's one curved corner, drawn in 6px pixels. */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 42px), calc(100% - 6px) calc(100% - 42px), calc(100% - 6px) calc(100% - 30px), calc(100% - 12px) calc(100% - 30px), calc(100% - 12px) calc(100% - 18px), calc(100% - 18px) calc(100% - 18px), calc(100% - 18px) calc(100% - 12px), calc(100% - 30px) calc(100% - 12px), calc(100% - 30px) calc(100% - 6px), calc(100% - 42px) calc(100% - 6px), calc(100% - 42px) 100%, 0 100%);
+}
+.bezel::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  left: 28px;
+  right: 28px;
+  height: 14px;
+  background: linear-gradient(var(--stripe-a) 0 6px, var(--bezel) 6px 10px, var(--stripe-b) 10px 14px);
+}
+.led {
+  position: absolute;
+  left: 9px;
+  top: 34%;
+  width: 10px;
+  height: 10px;
+  background: var(--led-off);
+}
+.playing .led { background: var(--led-on); }
+
+.screen {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #141414;
+  overflow: hidden;
+  outline: 4px solid #141414;
+}
+.screen video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: #141414;
+}
+
+/* Boot: the name scrolls down the way it does in the video, then the tag types out. */
+.boot, .start { display: none; }
+.js .boot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 18px;
+  text-align: center;
+  background: var(--d3);
+  color: var(--d0);
+  animation: gone 0s 2.9s forwards;
+}
+.boot-name { font-size: var(--l); line-height: 1; animation: drop 1.5s steps(18, end) both; }
+.boot-tag { width: 21ch; margin: 0 auto; font-size: var(--s); color: var(--d1); text-align: left; }
+.boot-tag span { display: block; width: 0; overflow: hidden; white-space: nowrap; animation: type .63s steps(21, end) 1.75s forwards; }
+@keyframes drop { from { transform: translateY(-900%); } }
+@keyframes type { to { width: 21ch; } }
+@keyframes gone { to { visibility: hidden; } }
+
+.js .start {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+}
+.start-label {
+  position: absolute;
+  right: 5%;
+  bottom: 9%;
+  white-space: nowrap;
+  padding: 14px 22px 12px;
+  background: var(--lt);
+  color: var(--d0);
+  border: 6px solid var(--d0);
+  box-shadow: inset 0 0 0 4px var(--lt), inset 0 0 0 6px var(--d1), 8px 8px 0 var(--d0);
+  animation: appear 0s 2.9s both;
+}
+.start:hover .start-label, .start:focus-visible .start-label { background: var(--d0); color: var(--lt); box-shadow: inset 0 0 0 4px var(--d0), inset 0 0 0 6px var(--d2), 8px 8px 0 var(--lt); }
+.start:focus-visible { outline: none; }
+.ended .start-label { animation: none; }
+.blink { display: inline-block; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { visibility: hidden; } }
+@keyframes appear { from { visibility: hidden; } }
+.screen.on .boot, .screen.on .start, .screen.ended .boot { display: none; }
+
+.label { padding-top: 22px; }
+.label h1 { font-size: var(--l); line-height: 1.2; color: var(--lt); }
+.label p { margin-top: 12px; font-size: var(--s); color: var(--d3); line-height: 1.8; }
+
+/* ---------- windows, drawn like the video's ---------- */
+.side { display: grid; gap: 36px; padding-top: 10px; }
+.win {
+  position: relative;
+  background: var(--lt);
+  color: var(--d0);
+  border: 6px solid var(--d0);
+  box-shadow: inset 0 0 0 4px var(--lt), inset 0 0 0 6px var(--d1), 10px 10px 0 var(--deep);
+  padding: 34px 16px 18px;
+}
+.tab {
+  position: absolute;
+  top: -10px;
+  left: 16px;
+  padding: 5px 10px 4px;
+  background: var(--d0);
+  color: var(--lt);
+  font-size: var(--s);
+  line-height: 1.4;
+}
+.menu a, .menu button {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  width: 100%;
+  padding: 6px 8px 6px 34px;
+  color: var(--d0);
+  text-align: left;
+  text-decoration: none;
+}
+.menu a::before, .menu button::before {
+  content: "▶";
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  visibility: hidden;
+}
+.menu a:hover, .menu a:focus-visible, .menu button:hover, .menu button:focus-visible {
+  background: var(--d0);
+  color: var(--lt);
+  outline: none;
+}
+.menu a:hover::before, .menu a:focus-visible::before,
+.menu button:hover::before, .menu button:focus-visible::before,
+.menu button[aria-current]::before { visibility: visible; }
+.playing .menu button[aria-current]::before { animation: blink 1s steps(1) infinite; }
+.time { flex: none; width: 5ch; font-size: var(--s); color: var(--d1); }
+.menu a:hover .time, .menu a:focus-visible .time, .menu button:hover .time, .menu button:focus-visible .time { color: var(--d3); }
+.box { flex: none; width: 12px; height: 12px; background: var(--d1); align-self: center; }
+.menu a:hover .box, .menu a:focus-visible .box { background: var(--d3); }
+
+/* WHATIF?: a dialog box. ▼ (or a click anywhere on it) moves on to the next one. */
+.dialog { position: relative; padding: 0 8px 0 8px; cursor: pointer; line-height: 1.75; }
+.lines { display: grid; padding-bottom: 28px; }
+.lines > span { grid-area: 1 / 1; }
+.sizer, .rest { visibility: hidden; }
+.more {
+  position: absolute;
+  right: 0;
+  bottom: -6px;
+  width: 36px;
+  height: 36px;
+  color: var(--d0);
+  visibility: hidden;
+}
+.more.ready { visibility: visible; animation: blink 1s steps(1) infinite; }
+.more:focus-visible { outline: 4px solid var(--d1); outline-offset: -4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .js .boot { display: none; }
+  .start-label { animation: none; }
+  .blink, .more.ready, .playing .menu button[aria-current]::before { animation: none; }
+}
+
+@media (max-width: 1100px) {
+  main { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .console { width: 100%; }
+  .side { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+}
+@media (max-width: 700px) {
+  main { padding: 16px 16px 40px; gap: 32px; }
+  .bezel { padding: 34px 16px 22px; }
+  .bezel::before { top: 12px; left: 16px; right: 16px; }
+  .led { left: 4px; width: 8px; height: 8px; }
+  .boot-name, .label h1 { font-size: var(--m); }
+  .start-label { padding: 10px 14px 8px; right: 4%; bottom: 7%; font-size: var(--s); }
+  .label { padding-top: 18px; }
+  .side { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body>
+<main>
+  <section class="console" aria-label="The video">
+    <div class="bezel">
+      <span class="led" aria-hidden="true"></span>
+      <div class="screen" id="screen">
+        <video id="video" controls playsinline preload="metadata" poster="/assets/images/node/whatif-poster.webp">
+          <source src="/assets/video/node-whatif.mp4" type="video/mp4">
+        </video>
+        <div class="boot" aria-hidden="true">
+          <p class="boot-name">JONATHAN MANN</p>
+          <p class="boot-tag"><span>SONG A DAY SINCE 2009</span></p>
+        </div>
+        <button class="start" id="start" type="button">
+          <span class="start-label"><span class="blink" aria-hidden="true">▶</span> <span id="start-text">PRESS START</span></span>
+        </button>
+      </div>
+      <div class="label">
+        <h1>JONATHAN MANN</h1>
+        <p>GAME BOY BREATH INSTRUMENT · FOR THE NODE WHATIF RESIDENCY</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="side">
+    <section class="win" aria-labelledby="levels-title">
+      <h2 class="tab" id="levels-title">LEVEL SELECT</h2>
+      <ol class="menu" id="levels">
+        <li><button type="button" data-t="0" aria-current="true"><span class="time">0:00</span>PROTOTYPE</button></li>
+        <li><button type="button" data-t="81.8"><span class="time">1:21</span>THE PLAN</button></li>
+        <li><button type="button" data-t="99.3"><span class="time">1:39</span>CHIPTUNE</button></li>
+        <li><button type="button" data-t="124.6"><span class="time">2:04</span>SOFTWARE</button></li>
+        <li><button type="button" data-t="186.6"><span class="time">3:06</span>MAIN QUEST</button></li>
+        <li><button type="button" data-t="214.2"><span class="time">3:34</span>FULL CIRCLE</button></li>
+        <li><button type="button" data-t="284.5"><span class="time">4:44</span>WHAT IF?</button></li>
+      </ol>
+    </section>
+
+    <section class="win" aria-labelledby="whatif-title">
+      <h2 class="tab" id="whatif-title">WHATIF?</h2>
+      <div class="dialog" id="dialog">
+        <p class="sr-only" id="whatif-said" aria-live="polite">WHAT IF OLD SCHOOL NINTENDO HARDWARE WERE ACTUAL INSTRUMENTS?</p>
+        <p class="lines" aria-hidden="true"><span class="sizer">WHAT IF OLD SCHOOL NINTENDO HARDWARE WERE ACTUAL INSTRUMENTS?</span><span><span class="typed" id="typed">WHAT IF OLD SCHOOL NINTENDO HARDWARE WERE ACTUAL INSTRUMENTS?</span><span class="rest" id="rest"></span></span></p>
+        <button class="more" id="more" type="button" aria-label="Next what if" aria-controls="whatif-said">▼</button>
+      </div>
+    </section>
+
+    <section class="win" aria-labelledby="inventory-title">
+      <h2 class="tab" id="inventory-title">INVENTORY</h2>
+      <ul class="menu">
+        <li><a href="https://songaday.studio/" target="_blank" rel="noopener"><span class="box"></span>SONG A DAY</a></li>
+        <li><a href="https://mann.cool/" target="_blank" rel="noopener"><span class="box"></span>VIDEO GAMES</a></li>
+        <li><a href="https://songaday.studio/plugins/" target="_blank" rel="noopener"><span class="box"></span>PLUGINS</a></li>
+        <li><a href="https://songaday.studio/everything/" target="_blank" rel="noopener"><span class="box"></span>WEBSITES</a></li>
+      </ul>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  "use strict";
+  const root = document.documentElement;
+  const video = document.getElementById("video");
+  const screen = document.getElementById("screen");
+  const start = document.getElementById("start");
+  const startText = document.getElementById("start-text");
+  const consoleBox = document.querySelector(".console");
+  const levels = [...document.querySelectorAll("#levels [data-t]")];
+  const marks = levels.map((button) => Number(button.dataset.t));
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+
+  // Until START, the screen belongs to the boot and the START button; the video's own
+  // controls come back once it plays (and stay, for anyone without this script).
+  video.controls = false;
+
+  function play() {
+    screen.classList.add("on");
+    screen.classList.remove("ended");
+    video.controls = true;
+    const playing = video.play();
+    if (playing) playing.catch(() => {});
+  }
+  function seek(seconds) {
+    const go = () => { video.currentTime = seconds; };
+    if (video.readyState >= 1) go();
+    else video.addEventListener("loadedmetadata", go, { once: true });
+    play();
+  }
+
+  start.addEventListener("click", () => {
+    if (video.ended) video.currentTime = 0;
+    play();
+  });
+
+  // LEVEL SELECT jumps to a part, and follows along while it plays.
+  function follow() {
+    const now = video.currentTime + 0.3;
+    let current = 0;
+    marks.forEach((mark, index) => { if (now >= mark) current = index; });
+    levels.forEach((button, index) => {
+      if (index === current) button.setAttribute("aria-current", "true");
+      else button.removeAttribute("aria-current");
+    });
+  }
+  levels.forEach((button, index) => button.addEventListener("click", () => {
+    seek(marks[index]);
+    const box = consoleBox.getBoundingClientRect();
+    if (box.top < 0 || box.bottom > innerHeight) {
+      consoleBox.scrollIntoView({ behavior: still.matches ? "auto" : "smooth", block: "start" });
+    }
+  }));
+  video.addEventListener("timeupdate", follow);
+  video.addEventListener("seeked", follow);
+
+  // The power light is on while it plays.
+  const power = () => root.classList.toggle("playing", !video.paused && !video.ended);
+  video.addEventListener("play", power);
+  video.addEventListener("pause", power);
+  video.addEventListener("ended", () => {
+    power();
+    video.controls = false;
+    startText.textContent = "PLAY AGAIN";
+    screen.classList.add("ended");
+    screen.classList.remove("on");
+  });
+
+  // WHATIF?: the three from the end of the video, one at a time, typed like the video's subtitles.
+  const whatifs = [
+    "WHAT IF OLD SCHOOL NINTENDO HARDWARE WERE ACTUAL INSTRUMENTS?",
+    "WHAT IF YOU STRUMMED YOUR NINTENDO?",
+    "WHAT IF YOU BONGO’D WITH YOUR POWER GLOVE?"
+  ];
+  const typed = document.getElementById("typed");
+  const rest = document.getElementById("rest");
+  const said = document.getElementById("whatif-said");
+  const more = document.getElementById("more");
+  const dialog = document.getElementById("dialog");
+  let shown = 0;
+  let typing = null;
+
+  function finish() {
+    clearInterval(typing);
+    typing = null;
+    typed.textContent = whatifs[shown];
+    rest.textContent = "";
+    more.classList.add("ready");
+  }
+  function show(index) {
+    shown = index;
+    said.textContent = whatifs[index];
+    clearInterval(typing);
+    if (still.matches) return finish();
+    const line = whatifs[index];
+    let count = 0;
+    more.classList.remove("ready");
+    typed.textContent = "";
+    rest.textContent = line;
+    typing = setInterval(() => {
+      count += 1;
+      typed.textContent = line.slice(0, count);
+      rest.textContent = line.slice(count);
+      if (count >= line.length) finish();
+    }, 38);
+  }
+  // Like a Game Boy dialog: pressing during the typing finishes the line, after it moves on.
+  function advance() {
+    if (typing) finish();
+    else show((shown + 1) % whatifs.length);
+  }
+  dialog.addEventListener("click", (event) => {
+    if (event.target === more) return;
+    advance();
+  });
+  more.addEventListener("click", advance);
+
+  // Type the first one when the box first comes into view, after the boot on a big screen.
+  more.classList.add("ready");
+  if (!still.matches && "IntersectionObserver" in window) {
+    const watcher = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      watcher.disconnect();
+      const wait = Math.max(0, 3000 - performance.now());
+      setTimeout(() => { if (shown === 0 && !typing) show(0); }, wait);
+    }, { threshold: 0.6 });
+    watcher.observe(dialog);
+  }
+})();
+</script>
+</body>
+</html>

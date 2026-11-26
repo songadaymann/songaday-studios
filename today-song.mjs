@@ -1,4 +1,4 @@
-// Today's song at the top of the home page: the newest "Title | Song A Day #N" upload on
+// Today's song above the home page archive: the newest "Title | Song A Day #N" upload on
 // Jonathan's YouTube channel. build.mjs bakes in a snapshot, and the Worker re-reads the feed
 // (cached for ten minutes), so the card changes soon after the day's song goes up.
 import { escapeHtml, parseFeed } from './films.mjs';
@@ -27,9 +27,9 @@ export function renderTodaySong(song, today) {
   return `<button class="today-song-play" type="button" data-video-id="${id}" data-video-title="Song A Day #${song.number}: ${title}">
   <span class="today-song-thumb"><img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="" width="320" height="180" decoding="async"><span class="today-song-icon" aria-hidden="true"></span></span>
   <span class="today-song-copy">
-    <span class="today-song-label">${songLabel(song, today)}</span>
+    <span class="today-song-label">Here is ${song.number === today ? "today’s" : "the latest"} song, #${song.number.toLocaleString("en-US")}</span>
     <span class="today-song-title">${title}</span>
-    <span class="today-song-meta">${songMeta(song)}</span>
+    <span class="today-song-meta">${formatSongDate(song.number)}</span>
   </span>
 </button>`;
 }

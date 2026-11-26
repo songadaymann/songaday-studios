@@ -1,0 +1,35 @@
+/* songaday.studio/business/: a song for a company, brand, event, podcast or show. What it is and
+   one video, who it's been for (four square logos), two more videos, and the request form
+   (booking-form.css; business.mjs emails its answers to Jonathan). The videos are the films
+   page's cards (.film, in profile.css).
+
+   Three sizes only, as everywhere: display for the name, the headings and "Got it."; body for
+   everything read; meta for the buttons, the field names and the names under the logos. */
+.business-page main { width: var(--wrap); margin: 0 auto; padding: 3rem 0 5rem; }
+.business-page main:focus { outline: none; }
+.business-top { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 3rem; align-items: center; }
+.business-intro p { max-width: 36ch; margin: 1.5rem 0 0; font-size: var(--type-body); line-height: 1.5; }
+.business-intro .business-go { margin-top: 2rem; }
+/* Who it's been for: small square pictures with a name under each, like the patrons. */
+.business-logos { display: grid; grid-template-columns: repeat(4, minmax(0, 8rem)); gap: 1.5rem; margin: 4rem 0 0; padding: 0; list-style: none; }
+.business-logos li { min-width: 0; }
+.business-logos img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; background: #242424; }
+/* A logo that is a mark with no background of its own sits inside the square, not across it. */
+.business-logos img.business-mark { padding: 1.25rem; object-fit: contain; }
+/* One whose own words are dark needs a white square to be read on. */
+.business-logos img.business-mark-light { padding: .6rem; background: var(--white); }
+.business-logos span { display: block; margin-top: .6rem; font-size: var(--type-meta); font-weight: 700; line-height: 1.3; }
+/* The header stays at the top, so the form stops below it when "Tell me about it" jumps there. */
+.business-section { margin-top: 5rem; scroll-margin-top: calc(var(--header-clearance) + 1rem); }
+.business-section > h2 { margin-bottom: 2rem; }
+.business-section .films-list { margin-top: 0; }
+.business-request { max-width: 40rem; }
+.business-got { font-size: var(--type-display); font-weight: 700; letter-spacing: -.052em; line-height: .9; }
+.booking-done:focus { outline: none; }
+.business-request .booking-done p + p { margin-top: 1rem; }
+
+@media (max-width: 900px) {
+  .business-top { grid-template-columns: 1fr; gap: 2rem; }
+  .business-logos { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-top: 3rem; }
+  .business-section { margin-top: 3.5rem; }
+}

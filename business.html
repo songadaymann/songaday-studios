@@ -1,0 +1,80 @@
+<div class="labs-page business-page" id="top">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+{{HEADER}}
+
+  <main id="main" tabindex="-1">
+    <div class="business-top">
+      <div class="business-intro">
+        <h1>A song for your business</h1>
+        <p>I’ve written a song every day since January 1, 2009. I’ll write one for your company, brand, event or organization, or a theme song for your podcast, show or channel.</p>
+        <p class="business-go"><a class="booking-send" href="#request">Tell me about it</a></p>
+      </div>
+      <article class="film">
+        <button class="film-play" type="button" data-film-id="tYeOAECmHig" aria-label="Play You Can Do It For Free">
+          <img src="https://i.ytimg.com/vi/tYeOAECmHig/maxresdefault.jpg" alt="" width="1280" height="720" decoding="async" data-fallback="https://i.ytimg.com/vi/tYeOAECmHig/hqdefault.jpg">
+          <span class="film-play-icon" aria-hidden="true"></span>
+        </button>
+        <h2 class="film-title">ENS, for its partnership with GoDaddy</h2>
+      </article>
+    </div>
+
+    <ul class="business-logos" aria-label="Some of the companies and shows I’ve written for">
+      <li><img class="business-mark business-mark-light" src="/assets/logos/1password.png" alt="" width="250" height="250" loading="lazy" decoding="async"><span>1Password</span></li>
+      <li><img src="/assets/logos/ens.jpg" alt="" width="400" height="400" loading="lazy" decoding="async"><span>ENS</span></li>
+      <li><img src="/assets/logos/accidental-tech-podcast.jpg" alt="" width="400" height="400" loading="lazy" decoding="async"><span>Accidental Tech Podcast</span></li>
+      <li><img class="business-mark" src="/assets/logos/sleep-with-me.png" alt="" width="86" height="80" loading="lazy" decoding="async"><span>Sleep With Me</span></li>
+    </ul>
+
+    <section class="business-section" aria-labelledby="examples-title">
+      <h2 id="examples-title">More examples</h2>
+      <div class="films-list">
+        <article class="film">
+          <button class="film-play" type="button" data-film-id="oBBk_dpOX7w" aria-label="Play How To Choose A Password">
+            <img src="https://i.ytimg.com/vi/oBBk_dpOX7w/maxresdefault.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" data-fallback="https://i.ytimg.com/vi/oBBk_dpOX7w/hqdefault.jpg">
+            <span class="film-play-icon" aria-hidden="true"></span>
+          </button>
+          <h3 class="film-title">1Password</h3>
+        </article>
+        <article class="film">
+          <button class="film-play" type="button" data-film-id="iCXItGrjqrw" aria-label="Play ATP Ending Theme">
+            <img src="https://i.ytimg.com/vi/iCXItGrjqrw/maxresdefault.jpg" alt="" width="1280" height="720" loading="lazy" decoding="async" data-fallback="https://i.ytimg.com/vi/iCXItGrjqrw/hqdefault.jpg">
+            <span class="film-play-icon" aria-hidden="true"></span>
+          </button>
+          <h3 class="film-title">Accidental Tech Podcast</h3>
+        </article>
+      </div>
+    </section>
+
+    <!-- The answers go to Jonathan as an email (business.mjs); business-page.js sends them. -->
+    <section class="business-section business-request" id="request" aria-labelledby="request-title">
+      <h2 id="request-title">Tell me about it</h2>
+      <form class="booking-form" action="/business/request" method="post" data-booking>
+        <label class="booking-field">Your name<input type="text" name="name" maxlength="120" autocomplete="name" required></label>
+        <label class="booking-field">Your email<input type="email" name="email" maxlength="254" autocomplete="email" required></label>
+        <label class="booking-field">Company or project<input type="text" name="company" maxlength="160" autocomplete="organization" required></label>
+        <label class="booking-field">What’s the song for?<input type="text" name="purpose" maxlength="160" required></label>
+        <label class="booking-field booking-wide">Is there a deadline?<input type="text" name="deadline" maxlength="80"></label>
+        <fieldset class="booking-budget">
+          <legend>Budget</legend>
+{{BUDGETS}}
+        </fieldset>
+        <label class="booking-field booking-story">Tell me everything<span class="booking-hint">What you do, who’ll hear it, where it’ll play, and what it should sound like.</span><textarea name="story" minlength="20" maxlength="4000" rows="8" required></textarea></label>
+        <input class="booking-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="booking-check" data-booking-check></div>
+        <p class="booking-status" role="status" data-booking-status></p>
+        <noscript><p class="booking-status">This form needs JavaScript for its check that you’re human. Email me instead.</p></noscript>
+        <p class="booking-actions">
+          <button class="booking-send" type="submit">Send</button>
+          <a class="booking-quiet" href="{{BOOK_HREF}}">Email me instead</a>
+        </p>
+      </form>
+      <div class="booking-done" data-booking-done tabindex="-1" hidden>
+        <p class="business-got">Got it.</p>
+        <p>I’ll write back soon.</p>
+      </div>
+    </section>
+  </main>
+
+{{FOOTER}}
+</div>

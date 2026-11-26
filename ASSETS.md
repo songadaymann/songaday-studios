@@ -1,8 +1,9 @@
 # Assets
 
-The MIT license covers code only. The public repository contains no media files;
-the existing local bundle is excluded in `private-assets/site/` and exposed to
-local previews through the ignored `assets` symlink.
+The MIT license covers code only. The only media files in the public repository
+are the charts in `campaign-images/` (section 1); the existing local bundle is
+excluded in `private-assets/site/` and exposed to local previews through the
+ignored `assets` symlink.
 
 ## 1. Ours
 
@@ -10,6 +11,12 @@ Media wholly authored by Jonathan Mann is CC BY 4.0 unless separately licensed.
 Credit "Jonathan Mann (Song A Day)". This does not license third-party content
 appearing in videos, screenshots, game art, or branding. The mixed site bundle
 has not been audited for redistribution, so it is not included in the repository.
+
+`campaign-images/` holds ten pictures drawn for tweets from the Song A Day catalog
+(the calendar on five dates, and charts and lists of song titles). They are text
+and shapes only, wholly ours, CC BY 4.0. Company names in them are named as past
+clients; no logos are used. Pictures drawn from private order forms, invoices or
+sales are not included.
 
 ## 2. Free third-party assets included under their own licenses
 
@@ -31,9 +38,11 @@ permission to redistribute that media.
 | `private-assets/site/brand/icons/` | White single-path logos for Spotify, Apple Music, Tidal, YouTube, Instagram, X, Bluesky and Discord, used on songaday.studio/links to link to Jonathan's profiles. Paths from Simple Icons (https://simpleicons.org, `simple-icons@11.14.0` via https://cdn.jsdelivr.net/npm/simple-icons@11.14.0/icons/), retrieved October 21, 2026; the SVG data is CC0 1.0, recolored white. The marks are trademarks of their owners (Spotify, Apple, TIDAL, Google, Meta, X Corp., Bluesky, Discord), each brand's own guidelines apply, and they're not covered by this repository's MIT or CC BY licenses. |
 | `private-assets/site/brand/endaoment-wordmark-white.svg` | Monochrome logo paths from https://endaoment.org/, retrieved October 14, 2026; brand kit: https://www.figma.com/design/PU2pJCQLvWYnHjMinrQ3mo/Endaoment-Brand-Kit. Trademark rights remain with Endaoment; no general redistribution license has been verified. |
 | `private-assets/site/images/` | Photos, game screenshots, and logos from the existing site bundle. Sources and redistribution rights have not been established for each file. |
+| `private-assets/site/images/share/` | The pictures a shared songaday.studio link shows (og:image), drawn by `share-images.mjs` from the site's own words in Helvetica Neue with the site's music-note icon; the MUSCLE card also shows the store's own poster preview of figure #015, and `data.png` is the data lab's one-word-per-year image (output/share-images, number 17). Excluded from Git with the rest of the site media and served from https://songaday.studio/assets/images/share/. Redraw with `node share-images.mjs` (needs Google Chrome). |
 | `private-assets/site/calendar/` | The home page's year calendar, made by `build-calendar.mjs` from frames of Jonathan Mann's own Song A Day videos (CC BY 4.0). Some frames show other people or third-party material that appeared in the videos, which that license doesn't cover. Excluded from Git with the rest of the site media and served from https://songaday.studio/assets/calendar/. |
 | `private-assets/site/gifs/` | Game trailers may include third-party or NFT collection artwork, including Punks and Meebits. Collection terms must be established before licensing or publishing those files. |
 | `private-assets/site/icons/` | Existing site artwork; individual provenance has not been verified. |
+| `private-assets/site/patrons/` | Pictures for `/patrons/`, one per patron, named after them. Each is that person's or organization's own public profile picture (X, Instagram or Facebook) or a photo of them that Jonathan supplied, saved in November 2026 at 339 to 405 pixels square. They belong to the people shown and are used to thank them; they are not licensed for reuse, and a patron's picture comes down if they ask. |
 | `private-assets/site/plugins/` | Novox The Robot icon art and editor screenshot for `/plugins`. Jonathan Mann's own (CC BY 4.0, per the Novox repository's `ASSETS.md`); excluded from Git with the rest of the site media and served from https://songaday.studio/assets/plugins/. |
 | `private-assets/site/video/` | Large video originals and trailers, some containing third-party imagery. Excluded from Git; the public versions are kept in the R2 bucket `songaday-studio-media` (uploaded with `node upload-media.mjs`) and served from https://songaday.studio/assets/video/. |
 
@@ -49,3 +58,26 @@ D1 database and R2 bucket), not in this repository. Local copies of paintings go
 `node build.mjs` and `node build-production.mjs` use the site's hosted media when
 local `assets` is absent. They do not download or redistribute that media.
 Replace these references with your own assets for an independent deployment.
+
+## Store imagery
+
+- `private-assets/site/images/store/studio-wall.jpg` is Jonathan's own studio photo,
+  supplied October 25, 2026 for the Song A Day poster mockups. Unmodified copy of
+  `output/poster-concepts/round-8/rooms/studio-wall.jpg`. It remains in the ignored
+  private media bundle, not public Git; background artworks retain their own rights.
+  The store overlays the selected artwork in HTML/CSS. Its scale is estimated from
+  the earlier room mockups and is explicitly labeled illustrative. No image color
+  adjustments or generated room photography are applied.
+- The store's album covers are hotlinked from Bandcamp's image host (`f4.bcbits.com`),
+  at the addresses Jonathan's own Bandcamp page uses for his releases; `store/albums.json`
+  lists them (snapshot of November 9, 2026). No cover binary is copied into Git, and each
+  one links to its album on Bandcamp. The covers are Jonathan's release artwork; some
+  include other artists' illustration or photography, which this repository's licenses
+  don't cover.
+- The Songs Hat and Songs Shirt images are hotlinked from Cotton Bureau's official
+  product mockups: https://cottonbureau.com/mockup?default=1&hash=LSmS&pid=115154&w=1024
+  , https://cottonbureau.com/mockup?default=1&hash=FeeW&pid=115389&w=1024 and, for the
+  shirt's black pullover hoodie,
+  https://cottonbureau.com/mockup?vid=52875068&hash=FeeW&w=1024 . They are
+  used to link to Jonathan's listings. No image binary is copied into Git, and these
+  references grant no redistribution rights to Cotton Bureau photography.

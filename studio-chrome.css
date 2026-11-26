@@ -1,0 +1,90 @@
+@font-face {
+  font-family: "Song A Day Apercu";
+  src: local("Aperçu Regular"), local("Apercu Regular"), local("Aperçu");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Song A Day Apercu";
+  src: local("Aperçu Bold"), local("Apercu Bold");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --paper: #080808;
+  --white: #ffffff;
+  --white-muted: rgba(255, 255, 255, .72);
+  --hairline: rgba(255, 255, 255, .2);
+  --ink: #000000;
+  --red: #ff2445;
+  --red-deep: #e6203f;
+  --red-button: var(--red-deep);
+  --offset: 8px;
+  --type-display: 3.5rem;
+  --type-body: 1rem;
+  --type-meta: .875rem;
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --wrap: min(calc(100% - 2 * var(--gutter)), 1200px);
+  --header-clearance: 84px;
+  --wrap-edge: max(var(--gutter), calc((100% - 1200px) / 2));
+  --font: "Song A Day Apercu", "Aperçu", "Apercu", "Avenir Next", "Helvetica Neue", Arial, sans-serif;
+}
+
+.site-header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: clamp(1rem, 2.5vw, 2rem); min-height: 68px; padding: .5rem var(--wrap-edge); border-bottom: 4px solid var(--red); background: var(--ink); color: var(--white); }
+.brand { display: flex; flex: none; align-items: center; gap: .7rem; margin-right: auto; font-size: var(--type-body); font-weight: 700; letter-spacing: .02em; text-decoration: none; white-space: nowrap; }
+.brand-mark { width: 44px; height: 44px; object-fit: contain; transform: rotate(-5deg); }
+.brand-dot { color: var(--red); }
+.site-sections { display: flex; align-items: center; gap: clamp(1rem, 2.2vw, 1.75rem); }
+.site-sections a { display: inline-flex; align-items: center; min-height: 44px; border-bottom: 2px solid transparent; font-size: var(--type-meta); font-weight: 700; letter-spacing: .06em; text-decoration: none; text-transform: uppercase; white-space: nowrap; }
+.site-sections a:hover, .site-sections a[aria-current="page"] { border-bottom-color: var(--red); }
+.nav-out { margin-left: .25em; font-weight: 400; opacity: .6; }
+/* A section with more than one place to go is a group: a word that opens its links underneath.
+   Groups are <details> sharing one name, so opening one closes the others and none of it needs
+   a script (the commission pages allow almost none). The list hangs from the header's red line:
+   14px is the gap from the word to the header's bottom edge. */
+.site-sections .nav-group { position: relative; }
+.site-sections summary { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; border-bottom: 2px solid transparent; font-size: var(--type-meta); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; list-style: none; cursor: pointer; }
+.site-sections summary::-webkit-details-marker { display: none; }
+.site-sections summary:focus-visible { outline: 4px solid var(--red); outline-offset: 4px; }
+.site-sections summary::after { content: ""; border: 4px solid transparent; border-top: 5px solid currentColor; border-bottom: 0; }
+.site-sections summary:hover, .site-sections details[open] > summary, .site-sections summary[aria-current], .site-sections .nav-group:has(a[aria-current]) > summary { border-bottom-color: var(--red); }
+.nav-sub { position: absolute; z-index: 2; top: calc(100% + 14px); left: -1.15rem; display: grid; min-width: max-content; padding: .35rem 1.15rem .6rem; border: 4px solid var(--red); border-top: 0; background: var(--ink); }
+/* A click anywhere else closes an open group: its word spreads an unseen layer over the page,
+   under the rest of the header, so that click lands on the word. */
+@media (min-width: 1101px) {
+  .site-sections details[open] > summary::before { content: ""; position: fixed; inset: 0; z-index: 1; cursor: default; }
+  .site-sections > a, .site-sections details:not([open]) > summary, .site-header .brand, .site-header .nav-donate { position: relative; z-index: 2; }
+}
+.nav-donate { flex: none; padding: .8rem 1.15rem; background: var(--red-button); color: var(--white); font-size: var(--type-meta); font-weight: 700; letter-spacing: .06em; line-height: 1; text-decoration: none; text-transform: uppercase; }
+.nav-donate:hover { background: var(--white); color: var(--ink); }
+
+/* Compact navigation: links scroll above the logo before the full header would overflow. */
+@media (max-width: 1100px) {
+  :root { --header-clearance: 72px; }
+  .site-header { top: -41px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "sections sections" "brand donate"; gap: 0 .75rem; min-height: 0; padding: 0 var(--gutter) .55rem; }
+  .site-header:focus-within { top: 0; }
+  /* The sections don't all fit across a phone, so the row scrolls sideways. */
+  .site-sections { grid-area: sections; gap: 1.1rem; height: 41px; margin: 0 calc(-1 * var(--gutter)) .55rem; padding: 0 var(--gutter); border-bottom: 1px solid #2a2a2a; overflow-x: auto; scrollbar-width: none; }
+  .site-sections::-webkit-scrollbar { display: none; }
+  .site-sections a { flex: none; min-height: 40px; font-size: var(--type-meta); letter-spacing: .05em; }
+  /* An open group's links are a second row under the sections, and the name moves down a row.
+     The row is placed against the header, so the sideways-scrolling sections don't clip it. */
+  .site-sections .nav-group { position: static; flex: none; }
+  .site-sections summary { gap: .35rem; min-height: 40px; letter-spacing: .05em; }
+  .site-sections:has(details[open]) { margin-bottom: calc(.55rem + 44px); }
+  .nav-sub { top: 41px; left: 0; right: 0; display: flex; gap: 1.1rem; min-width: 0; height: 44px; padding: 0 var(--gutter); border: 0; border-bottom: 1px solid #2a2a2a; overflow-x: auto; scrollbar-width: none; }
+  .nav-sub::-webkit-scrollbar { display: none; }
+  .nav-sub a { min-height: 43px; }
+  .brand { grid-area: brand; min-width: 0; gap: .55rem; font-size: var(--type-meta); }
+  .brand-mark { width: 34px; height: 34px; }
+  .nav-donate { grid-area: donate; align-self: center; padding: .75rem .95rem; font-size: var(--type-meta); }
+}
+/* On a phone, a long Donate wording (the button test, bar/v1/donate-words.js) takes two lines
+   instead of crowding the name. */
+@media (max-width: 560px) {
+  .nav-donate { max-width: 10.5em; line-height: 1.2; text-align: center; }
+}

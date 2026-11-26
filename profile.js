@@ -38,7 +38,10 @@
 
   const cryptoDonate = document.getElementById("crypto-donate");
   const zeffyDonate = document.getElementById("zeffy-donate");
+  const directUsdc = document.getElementById("direct-usdc");
+  const hasDirectUsdc = directUsdc && !directUsdc.hidden;
   let prefersZeffy = false;
+  let donationWallet;
 
   if (cryptoDonate && zeffyDonate) {
     window.addEventListener("eip6963:announceProvider", (event) => {
@@ -46,6 +49,7 @@
       void hasStrongWalletSignal(event.detail).then((hasWallet) => {
         // ?crypto=0 (the wallet gate's "no") keeps the card and bank form too.
         if (!hasWallet || prefersZeffy || document.documentElement.dataset.wallet === "no") return;
+        donationWallet ??= event.detail.provider;
         zeffyDonate.hidden = true;
         cryptoDonate.hidden = false;
       });
@@ -55,6 +59,58 @@
       cryptoDonate.hidden = true;
       zeffyDonate.hidden = false;
       zeffyDonate.focus({ preventScroll: true });
+    });
+  }
+
+  if (hasDirectUsdc) {
+    const recipient = "0x42469B0A89cE1215E72AD1f8f5D03aD4776c1fcb";
+    const networks = new Map([
+      ["base", { name: "Base", chainId: "0x2105", usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" }],
+      ["ethereum", { name: "Ethereum", chainId: "0x1", usdc: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" }]
+    ]);
+    const amount = document.getElementById("usdc-amount");
+    const network = document.getElementById("usdc-network");
+    const button = document.getElementById("open-usdc-wallet");
+    const status = document.getElementById("usdc-status");
+
+    directUsdc.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!donationWallet || button.disabled) return;
+
+      const match = /^(\d+)(?:[.,](\d{1,6}))?$/.exec(amount.value.trim());
+      const units = match ? BigInt(match[1] + (match[2] ?? "").padEnd(6, "0")) : 0n;
+      if (units === 0n || units >= 2n ** 256n) {
+        status.textContent = "Enter a positive USDC amount with up to six decimal places.";
+        amount.focus();
+        return;
+      }
+      const selectedNetwork = networks.get(network.value);
+      if (!selectedNetwork) return;
+
+      button.disabled = true;
+      status.textContent = "Check your wallet to continue.";
+      try {
+        const [from] = await donationWallet.request({ method: "eth_requestAccounts" });
+        if (!/^0x[a-fA-F0-9]{40}$/.test(from)) throw new Error("Missing wallet account");
+
+        const { chainId, usdc } = selectedNetwork;
+        if (await donationWallet.request({ method: "eth_chainId" }) !== chainId) {
+          await donationWallet.request({ method: "wallet_switchEthereumChain", params: [{ chainId }] });
+          if (await donationWallet.request({ method: "eth_chainId" }) !== chainId) {
+            throw new Error("Wallet stayed on another network");
+          }
+        }
+        // ERC-20 transfer(address,uint256). USDC has six decimal places on both networks.
+        const data = "0xa9059cbb" + recipient.slice(2).toLowerCase().padStart(64, "0") + units.toString(16).padStart(64, "0");
+        await donationWallet.request({ method: "eth_sendTransaction", params: [{ from, to: usdc, data }] });
+        amount.value = "";
+        status.textContent = "Transfer submitted. Check your wallet for confirmation.";
+      } catch (error) {
+        status.textContent = error?.code === 4001 ? "Canceled in your wallet."
+          : `Your wallet couldn’t submit the transfer. Check that it’s connected to ${selectedNetwork.name} and try again.`;
+      } finally {
+        button.disabled = false;
+      }
     });
   }
 
@@ -148,6 +204,9 @@
     document.querySelectorAll('[data-song-day="count"]').forEach((el) => {
       el.textContent = number.toLocaleString("en-US");
     });
+    document.querySelectorAll('[data-song-day="age"]').forEach((el) => {
+      el.textContent = songADayAge(number).text;
+    });
   }
 
   renderSongNumbers();
@@ -155,16 +214,6 @@
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") renderSongNumbers();
   });
-
-  function songADayAge(date) {
-    const years = date.getFullYear() - 2009;
-    const currentDay = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
-    const anniversary = Date.UTC(date.getFullYear(), 0, 1);
-    return {
-      years,
-      days: Math.floor((currentDay - anniversary) / 86400000)
-    };
-  }
 
   function formatListenTime(totalSeconds) {
     const days = Math.floor(totalSeconds / 86400);
@@ -184,7 +233,7 @@
   function renderCatalogTicker() {
     if (!tickerTrack || !tickerSummary) return;
     const now = new Date();
-    const age = songADayAge(now);
+    const age = songADayAge(songADayNumber(now));
     const currentSongCount = Math.max(
       songADayNumber(now),
       catalogSnapshot.sourceSongCount,
@@ -468,12 +517,6 @@
     }).observe(zeffyHost, { childList: true, subtree: true });
   }
 
-  // The Game A Day montage plays only for people who haven't asked for reduced motion.
-  const gameMontage = document.querySelector(".video-game-card-media video");
-  if (gameMontage && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    void gameMontage.play().catch(() => {});
-  }
-
   // The profile is rendered from srcdoc. Prevent fragment links from resolving
   // against the parent profile URL and recursively loading the public page.
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
@@ -491,82 +534,22 @@
     });
   });
 
-  const videoModal = document.getElementById("video-modal");
-  const videoModalFrame = document.getElementById("video-modal-frame");
-  const videoModalVideo = document.getElementById("video-modal-video");
-  const videoModalTitle = document.getElementById("video-modal-title");
-  const videoTriggers = [...document.querySelectorAll("[data-video-id], [data-video-src]")];
-  let lastVideoTrigger = null;
+  // The video dialog (video-modal.mjs), inlined by build.mjs. One soundtrack at a time: it
+  // pauses the hero film, and brings back the film's muted preview when it closes.
+  /* VIDEO_MODAL_HELPER */
   let resumeHeroPreview = false;
-
-  function closeVideoModal() {
-    if (!videoModal || !videoModalFrame) return;
-    if (resumeHeroPreview) void heroVideo?.play().catch(() => {});
-    resumeHeroPreview = false;
-    videoModal.hidden = true;
-    videoModalFrame.src = "about:blank";
-    videoModalFrame.hidden = false;
-    if (videoModalVideo) {
-      videoModalVideo.pause();
-      videoModalVideo.removeAttribute("src");
-      videoModalVideo.load();
-      videoModalVideo.hidden = true;
-    }
-    document.body.classList.remove("video-modal-open");
-    lastVideoTrigger?.focus();
-    lastVideoTrigger = null;
-  }
-
-  function openVideoModal(trigger) {
-    if (!videoModal || !videoModalFrame) return;
-    const videoId = trigger.dataset.videoId;
-    const videoSrc = trigger.dataset.videoSrc;
-    if (!videoId && !videoSrc) return;
-    const title = trigger.dataset.videoTitle || "Song A Day video";
-
-    if (videoSrc && videoModalVideo) {
-      videoModalFrame.src = "about:blank";
-      videoModalFrame.hidden = true;
-      videoModalVideo.src = videoSrc;
-      videoModalVideo.title = title;
-      videoModalVideo.hidden = false;
-      videoModalVideo.load();
-    } else if (videoId) {
-      const start = Number.parseInt(trigger.dataset.videoStart ?? "0", 10);
-      const startQuery = Number.isFinite(start) && start > 0 ? `&start=${start}` : "";
-      videoModalVideo?.pause();
-      if (videoModalVideo) {
-        videoModalVideo.removeAttribute("src");
-        videoModalVideo.load();
-        videoModalVideo.hidden = true;
+  const openVideoModal = initVideoModal({
+    onOpen() {
+      if (heroVideo && !heroVideo.paused) {
+        resumeHeroPreview = heroVideo.muted;
+        heroVideo.pause();
       }
-      videoModalFrame.hidden = false;
-      videoModalFrame.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0&modestbranding=1&playsinline=1${startQuery}`;
-      videoModalFrame.title = title;
-    } else {
-      return;
+    },
+    onClose() {
+      if (resumeHeroPreview) void heroVideo?.play().catch(() => {});
+      resumeHeroPreview = false;
     }
-
-    // One soundtrack at a time: pause the hero film, and bring back its muted preview on close.
-    if (heroVideo && !heroVideo.paused) {
-      resumeHeroPreview = heroVideo.muted;
-      heroVideo.pause();
-    }
-    if (videoModalTitle) videoModalTitle.textContent = title;
-    lastVideoTrigger = trigger;
-    videoModal.hidden = false;
-    document.body.classList.add("video-modal-open");
-    document.getElementById("video-modal-close")?.focus();
-    if (videoSrc && videoModalVideo) videoModalVideo.play().catch(() => {});
-  }
-
-  videoTriggers.forEach((trigger) => {
-    trigger.addEventListener("click", () => openVideoModal(trigger));
   });
-  videoModal?.querySelectorAll("[data-video-close]").forEach((closeControl) => {
-    closeControl.addEventListener("click", closeVideoModal);
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && videoModal && !videoModal.hidden) closeVideoModal();
-  });
+  /* CALENDAR_PREVIEW_HELPER */
+  initCalendarPreview(openVideoModal);
 })();

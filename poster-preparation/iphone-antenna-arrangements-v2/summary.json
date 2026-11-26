@@ -1,0 +1,79 @@
+[
+  {
+    "variant": "a",
+    "name": "Vertical film strips",
+    "description": "Chronological order down columns",
+    "frame_count": 3608,
+    "grid": [
+      54,
+      67
+    ],
+    "size_inches": [
+      40,
+      30
+    ],
+    "all_source_frames_once": true,
+    "dark_threshold_luma": null,
+    "dark_frame_count": null,
+    "unchanged_frame_images": true,
+    "pdf_sha256": "a0d3e028d5c43db78ef101f1a836b8842fe80253c7ef49d24eb7cc63ee04734b"
+  },
+  {
+    "variant": "b",
+    "name": "Center-out spiral",
+    "description": "Chronological order spiraling outward",
+    "frame_count": 3608,
+    "grid": [
+      54,
+      67
+    ],
+    "size_inches": [
+      40,
+      30
+    ],
+    "all_source_frames_once": true,
+    "dark_threshold_luma": null,
+    "dark_frame_count": null,
+    "unchanged_frame_images": true,
+    "pdf_sha256": "7cec5dfe52488d0e641d854a11391b39ac45f4f391c0ee53b5fc21b3609f8a13"
+  },
+  {
+    "variant": "c",
+    "name": "Dispersed mosaic",
+    "description": "All frames shuffled; fixed seed 561",
+    "frame_count": 3608,
+    "grid": [
+      54,
+      67
+    ],
+    "size_inches": [
+      40,
+      30
+    ],
+    "all_source_frames_once": true,
+    "dark_threshold_luma": null,
+    "dark_frame_count": null,
+    "unchanged_frame_images": true,
+    "pdf_sha256": "6c71294b9f6919879981fee4abc23ab17eb2219db22c9ff547f2d7e8de1f4fb7"
+  },
+  {
+    "variant": "d",
+    "name": "Dark frames at the edge",
+    "description": "Dark credits and typography form the border",
+    "frame_count": 3608,
+    "grid": [
+      54,
+      67
+    ],
+    "size_inches": [
+      40,
+      30
+    ],
+    "all_source_frames_once": true,
+    "dark_threshold_luma": 58,
+    "dark_frame_count": 893,
+    "green_fraction_threshold": 0.12,
+    "unchanged_frame_images": true,
+    "pdf_sha256": "8db2c7187676bc5a1b612ae48e735a4c4180de7e2cc46752dd50187cac734e71"
+  }
+]

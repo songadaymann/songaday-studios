@@ -4,43 +4,100 @@ import test from 'node:test';
 import worker from '../worker.mjs';
 import { FILMS_FEED_URL, parseFeed, renderFilms } from '../films.mjs';
 import { SONGS_FEED_URL, latestSong, renderTodaySong, renderTodaySongLink } from '../today-song.mjs';
-import { renderCalendar, songNumberFor, yearImageSize } from '../calendar.mjs';
+import { calendarSongAtPoint, renderCalendar, songNumberFor, yearImageSize } from '../calendar.mjs';
 import { songADayNumber } from '../song-day.mjs';
 
 const root = new URL('../', import.meta.url);
 
 function fetchPath(path, origin = 'https://songaday.studio') {
+  const staticResponse = async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } });
   const env = {
-    ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) }
+    ASSETS: { fetch: staticResponse },
+    GALLERY: { fetch: staticResponse },
   };
   return worker.fetch(new Request(origin + path), env);
 }
 
 test('section URLs redirect temporarily and are never cached', async () => {
   const cases = {
-    '/all': 'https://gallery.songaday.world/',
-    '/songs': 'https://gallery.songaday.world/',
-    '/songs/': 'https://gallery.songaday.world/',
+    '/all': '/gallery/',
+    '/songs': '/gallery/',
+    '/songs/': '/gallery/',
+    '/all?song=1&zoom=2': '/gallery/?song=1&zoom=2',
+    '/songs/?date=2009-01-01': '/gallery/?date=2009-01-01',
+    '/Gallery?song=1': '/gallery/?song=1',
     '/listen': 'https://songaday.fan/challenge',
     '/suggest': 'https://songaday.fan/suggestions',
     '/Jamuary': 'https://songaday.fan/jamuary',
     '/today': '/#today',
     '/Games': 'https://mann.cool/',
     '/wamp': 'https://wamp.land/',
-    '/commission': 'https://jonathanmann.bandcamp.com/merch',
-    '/commissions/': 'https://jonathanmann.bandcamp.com/merch',
+    '/commissions': '/commission',
+    '/commissions/': '/commission',
+    '/custom': '/commission',
+    '/Custom/': '/commission',
     '/albums': 'https://jonathanmann.bandcamp.com/music',
     '/discord': 'https://discord.gg/rGTQH7mFNS',
     '/me': 'https://www.jonathanmann.net/',
     '/motba': 'https://motba.art/',
     '/mini-docs': '/films/',
-    '/donate': '/#donate'
+    '/donate': '/#donate',
+    '/about': '/story/',
+    '/About/': '/story/'
   };
   for (const [path, location] of Object.entries(cases)) {
     const response = await fetchPath(path);
     assert.equal(response.status, 302, path);
     assert.equal(response.headers.get('Location'), location, path);
     assert.equal(response.headers.get('Cache-Control'), 'no-store', path);
+  }
+});
+
+test('the footer’s first row is the menu again: a group’s word, then its links', async () => {
+  const hrefs = (block) => [...block.matchAll(/href="([^"]+)"/g)].map((match) => match[1]);
+  for (const file of ['profile.html', 'films.html']) {
+    const html = await readFile(new URL(file, root), 'utf8');
+    const menu = html.match(/<nav class="site-sections"[\s\S]*?<\/nav>/)[0];
+    const footer = html.match(/<footer>[\s\S]*?<\/footer>/)[0];
+    const row = footer.match(/<nav class="footer-menu" aria-label="Footer sections">[\s\S]*?<\/nav>/)[0];
+    assert.deepEqual(hrefs(row), hrefs(menu), file);
+    assert.deepEqual([...row.matchAll(/<span class="footer-group"><span>([^<]+)<\/span>/g)].map((match) => match[1]), ['Songs', 'Software', 'Hire me'], file);
+    // The pages the menu doesn't have follow in a row of their own, and the old names are gone.
+    assert.deepEqual([...footer.match(/<nav aria-label="More pages">[\s\S]*?<\/nav>/)[0].matchAll(/>([^<]+)<\/a>/g)].map((match) => match[1]),
+      ['Everything', 'Now', 'Press', 'Story', 'Patrons', 'Donate'], file);
+    assert.doesNotMatch(footer, /All songs|Get a song/, file);
+  }
+});
+
+test('gallery routing preserves the origin and query without sending Studio credentials', async () => {
+  const env = { GALLERY: { fetch: async (request) => {
+    assert.equal(request.url, 'https://songaday.studio/gallery/api/ens?addresses=0xabc');
+    assert.equal(request.headers.get('Origin'), 'https://songaday.studio');
+    assert.equal(request.headers.get('Sec-Fetch-Site'), 'same-origin');
+    assert.equal(request.headers.get('Cookie'), null);
+    assert.equal(request.headers.get('Authorization'), null);
+    return Response.json({ names: {} });
+  } } };
+  const request = new Request('https://songaday.studio/gallery/api/ens?addresses=0xabc', {
+    headers: { Origin: 'https://songaday.studio', 'Sec-Fetch-Site': 'same-origin', Cookie: 'test=value', Authorization: 'Bearer test' },
+  });
+  assert.deepEqual(await (await worker.fetch(request, env)).json(), { names: {} });
+  assert.equal((await worker.fetch(new Request('https://songaday.studio/gallery/studio-header.txt'), env)).status, 404);
+});
+
+test('/commission is a page here once requests open, and the Bandcamp listings until then', async () => {
+  for (const path of ['/commission', '/commission/']) {
+    const before = await fetchPath(path);
+    assert.equal(before.status, 302, path);
+    assert.equal(before.headers.get('Location'), 'https://jonathanmann.bandcamp.com/merch', path);
+    assert.equal(before.headers.get('Cache-Control'), 'no-store', path);
+    const env = {
+      COMMISSION_REQUESTS: 'open',
+      ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) }
+    };
+    const open = await worker.fetch(new Request(`https://songaday.studio${path}`), env);
+    assert.equal(open.status, 200, path);
+    assert.match(await open.text(), /Get a custom song written for you/, path);
   }
 });
 
@@ -67,7 +124,7 @@ test('same-site redirects keep the query string', async () => {
   assert.equal(games.headers.get('Location'), 'https://mann.cool/');
 });
 
-test('HTML pages answer GET and HEAD with fresh, uncached headers', async () => {
+test('HTML pages revalidate, and only the personalized home page is private and uncached', async () => {
   // Node has no HTMLRewriter; this stand-in returns a response with immutable headers,
   // like the real one does for HEAD requests.
   globalThis.HTMLRewriter = class {
@@ -85,16 +142,67 @@ test('HTML pages answer GET and HEAD with fresh, uncached headers', async () => 
     }
   };
   try {
-    for (const method of ['GET', 'HEAD']) {
-      const env = { ASSETS: { fetch: async () => new Response(method === 'HEAD' ? null : '<p>hi</p>', {
-        headers: { 'Content-Type': 'text/html; charset=utf-8', ETag: '"abc"' }
-      }) } };
-      const response = await worker.fetch(new Request('https://songaday.studio/', { method }), env);
-      assert.equal(response.status, 200, method);
-      assert.equal(response.headers.get('Cache-Control'), 'no-cache', method);
-      assert.equal(response.headers.get('ETag'), null, method);
+    for (const [path, cache] of [['/', 'private, no-store'], ['/index.html', 'private, no-store'], ['/plugins/', 'no-cache']]) {
+      for (const method of ['GET', 'HEAD']) {
+        const label = `${method} ${path}`;
+        const env = { ASSETS: { fetch: async () => new Response(method === 'HEAD' ? null : '<p>hi</p>', {
+          headers: { 'Content-Type': 'text/html; charset=utf-8', ETag: '"abc"' }
+        }) } };
+        const response = await worker.fetch(new Request(`https://songaday.studio${path}`, { method }), env);
+        assert.equal(response.status, 200, label);
+        assert.equal(response.headers.get('Cache-Control'), cache, label);
+        assert.equal(response.headers.get('ETag'), null, label);
+      }
     }
   } finally {
+    delete globalThis.HTMLRewriter;
+  }
+});
+
+test('the home page shows only the crypto method for the visitor’s country', async () => {
+  const realFetch = globalThis.fetch;
+  let cryptoMethodHandler;
+  globalThis.fetch = async () => new Response(null, { status: 503 });
+  globalThis.HTMLRewriter = class {
+    on(selector, handler) {
+      if (selector === '[data-crypto-method]') cryptoMethodHandler = handler;
+      return this;
+    }
+    transform(response) { return response; }
+  };
+  const env = { ASSETS: { fetch: async () => new Response('<main></main>', { headers: { 'Content-Type': 'text/html' } }) } };
+  const cases = [
+    ['/', 'US', 'endaoment'],
+    ['/', 'CA', 'direct'],
+    ['/index.html', 'GB', 'direct'],
+    ['/', undefined, 'endaoment'],
+    ['/', null, 'endaoment'],
+    ['/', 'XX', 'endaoment'],
+    ['/', 'T1', 'endaoment']
+  ];
+  try {
+    for (const [path, country, expected] of cases) {
+      cryptoMethodHandler = undefined;
+      const request = new Request(`https://songaday.studio${path}`);
+      if (country !== undefined) Object.defineProperty(request, 'cf', { value: { country } });
+      await worker.fetch(request, env);
+      assert.ok(cryptoMethodHandler, `${path} ${country}`);
+
+      for (const method of ['endaoment', 'direct']) {
+        const actions = [];
+        cryptoMethodHandler.element({
+          getAttribute(name) {
+            assert.equal(name, 'data-crypto-method');
+            return method;
+          },
+          removeAttribute(name) { actions.push(`remove ${name} attribute`); },
+          remove() { actions.push('remove element'); }
+        });
+        assert.deepEqual(actions, [method === expected ? 'remove hidden attribute' : 'remove element'], `${country} ${method}`);
+      }
+    }
+  } finally {
+    globalThis.fetch = realFetch;
     delete globalThis.HTMLRewriter;
   }
 });
@@ -105,6 +213,27 @@ test('the plugins, films and links pages and assets still come from static asset
     assert.equal(response.status, 200, path);
     assert.equal(await response.text(), 'asset', path);
   }
+});
+
+// songaday.studio/node: the NODE application video page. Nothing links to it, search engines are
+// asked to skip it, and its video and pictures are the ones the build and R2 actually have.
+test('the NODE page stays unlisted and points at its own video, poster and font', async () => {
+  const html = await readFile(new URL('node/index.html', root), 'utf8');
+  assert.match(html, /<meta name="robots" content="noindex, nofollow">/);
+  assert.match(html, /<source src="\/assets\/video\/node-whatif\.mp4" type="video\/mp4">/);
+  assert.match(html, /poster="\/assets\/images\/node\/whatif-poster\.webp"/);
+  assert.match(html, /url\("\/node\/press-start-2p\.woff2"\)/);
+  for (const file of ['profile.html', 'films.html', 'plugins/index.html', 'projects.json', 'links/index.html']) {
+    assert.doesNotMatch(await readFile(new URL(file, root), 'utf8'), /\/node\//, file);
+  }
+  // Every level starts where the video says it does.
+  const levels = [...html.matchAll(/data-t="([\d.]+)"[^>]*><span class="time">(\d+):(\d\d)<\/span>/g)];
+  assert.equal(levels.length, 7);
+  for (const [, seconds, minutes, rest] of levels) {
+    assert.equal(Math.floor(Number(seconds)), Number(minutes) * 60 + Number(rest), seconds);
+  }
+  const production = await readFile(new URL('build-production.mjs', root), 'utf8');
+  assert.match(production, /cp\('node', 'dist\/node'/);
 });
 
 test('www and http go to https://songaday.studio, but local previews stay on http', async () => {
@@ -126,7 +255,13 @@ test('every page header links to the same sections', async () => {
   const home = await readFile(new URL('profile.html', root), 'utf8');
   const plugins = await readFile(new URL('plugins/index.html', root), 'utf8');
   const films = await readFile(new URL('films.html', root), 'utf8');
-  assert.deepEqual(navLinks(home), ['/all', '/listen', '/games', '/films/', '/plugins/', '/commission']);
+  // Songs (Listen, See) · Films · Games · Software (Apps, Plugins) · Hire me (Personal,
+  // Business, Conference troubadour) · Store.
+  assert.deepEqual(navLinks(home), ['/listen', '/gallery/', '/films/', '/games', '/everything/', '/plugins/',
+    '/commission', '/business/', '/conference-troubadour/', '/store/']);
+  // The groups are <details> sharing a name, so one opens at a time and none needs a script.
+  assert.deepEqual([...home.matchAll(/<details class="nav-group" name="site-nav">\s*<summary>([^<]+)<\/summary>/g)].map((match) => match[1]), ['Songs', 'Software', 'Hire me']);
+  assert.match(plugins, /<a href="\/plugins\/" aria-current="page">Plugins<\/a>/);
   assert.deepEqual(navLinks(plugins), navLinks(home));
   assert.deepEqual(navLinks(films), navLinks(home));
   assert.match(plugins, /class="nav-donate" href="\/#donate"/);
@@ -154,7 +289,7 @@ test('the films feed is read in playlist order and rendered safely', async () =>
 });
 
 test('any spelling of /films or /links lands on the page', async () => {
-  for (const path of ['/films', '/Films', '/FILMS/', '/links', '/Links', '/LINKS/', '/data', '/Data']) {
+  for (const path of ['/films', '/Films', '/FILMS/', '/links', '/Links', '/LINKS/', '/data', '/Data', '/node', '/NODE']) {
     const response = await fetchPath(path + '?from=x');
     assert.equal(response.status, 302, path);
     assert.equal(response.headers.get('Location'), path.replace(/\/$/, '').toLowerCase() + '/?from=x', path);
@@ -219,12 +354,12 @@ test('the newest song is picked from the channel feed and rendered safely', asyn
   assert.deepEqual(song, { id: 'VNWfqsdMXl8', title: 'The Broken Keys & <The Internet>', number: 6503 });
   const today = renderTodaySong(song, 6503);
   assert.match(today, /data-video-id="VNWfqsdMXl8"/);
-  assert.match(today, /Today’s song/);
+  assert.match(today, /Here is today’s song, #6,503/);
   assert.match(today, /The Broken Keys &amp; &lt;The Internet&gt;/);
   assert.doesNotMatch(today, /<The Internet>/);
-  assert.match(today, /#6,503 · Oct 21, 2026/);
-  assert.match(renderTodaySong(song, 6504), /Latest song/);
-  assert.match(renderTodaySong(song), /Latest song/);
+  assert.match(today, /Oct 21, 2026/);
+  assert.match(renderTodaySong(song, 6504), /Here is the latest song, #6,503/);
+  assert.match(renderTodaySong(song), /Here is the latest song, #6,503/);
   assert.equal(latestSong('<feed></feed>'), null);
 });
 
@@ -281,7 +416,7 @@ test('the calendar numbers days like Song A Day and renders every year', () => {
     { year: 2009, songs: 365, home: 'Berkeley' },
     { year: 2026, songs: 293, home: 'Hartford' }
   ] });
-  assert.match(html, /id="year-2009">\s*<img src="assets\/calendar\/2009\.webp\?v=6502"/);
+  assert.match(html, /id="year-2009">\s*<button[^>]+>\s*<img src="assets\/calendar\/2009\.webp\?v=6502"/);
   assert.match(html, /srcset="assets\/calendar\/2026\.webp\?v=6502 526w, assets\/calendar\/2026-2x\.webp\?v=6502 1052w"/);
   // No "@" in image paths: Cloudflare redirects it to "%40", an extra round trip per image.
   assert.doesNotMatch(html, /@/);
@@ -338,4 +473,42 @@ test('every link on the links page goes somewhere', async () => {
   assert.match(html, /open\.spotify\.com\/artist\/4O4Rkb6K3ppeXyVvD6zBJA/);
   assert.match(html, /music\.apple\.com\/us\/artist\/jonathan-mann\/188742143/);
   assert.doesNotMatch(html, /patreon/i);
+});
+
+
+test('calendar pointer selection respects scaled cells, leap days, gaps and snapshot limits', () => {
+  const at = (year, day, month, through = 6502) => calendarSongAtPoint(year, ((day - 1) * 17 + 8) / 2, (month * 10 + 4) / 2, 263, 59.5, through);
+  assert.equal(at(2009, 1, 0), 1);
+  assert.equal(at(2009, 31, 11), 365);
+  assert.equal(at(2024, 29, 1), songNumberFor(2024, 1, 29));
+  assert.equal(at(2025, 29, 1), 0);
+  assert.equal(at(2026, 20, 9), 6502);
+  assert.equal(at(2026, 21, 9), 0);
+  assert.equal(calendarSongAtPoint(2009, 16.5, 4, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, 8, 9.5, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, -1, 4, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, 526, 4, 526, 119, 6502), 0);
+  assert.equal(calendarSongAtPoint(2009, 8, 119, 526, 119, 6502), 0);
+});
+
+test('in one column the hero reads in page order: introduction, film, form, then the link back', async () => {
+  const [html, css] = await Promise.all([readFile(new URL('profile.html', root), 'utf8'), readFile(new URL('profile.css', root), 'utf8')]);
+  const area = { 'hero-intro': 'intro', 'hero-video': 'video', 'hero-donate': 'donate', 'hero-ask-row': 'ask' };
+  const stage = html.slice(html.indexOf('<div class="hero-stage">'), html.indexOf('id="every-song"'));
+  const written = Object.keys(area).sort((a, b) => stage.indexOf(`class="${a}"`) - stage.indexOf(`class="${b}"`)).map((name) => area[name]);
+  assert.deepEqual(written, ['intro', 'video', 'donate', 'ask']);
+  // The film is the reason and the form is the ask, so a phone shows them in that order too.
+  const oneColumn = css.match(/@media \(max-width: 960px\) \{\s*\.hero-stage \{[^}]*grid-template-areas: ([^;]+);/)[1];
+  assert.deepEqual([...oneColumn.matchAll(/"(\w+)"/g)].map((match) => match[1]), written);
+});
+
+test('the calendar only tells a mouse to hover', async () => {
+  const [html, css, preview] = await Promise.all(['profile.html', 'profile.css', 'calendar-preview.mjs'].map((file) => readFile(new URL(file, root), 'utf8')));
+  const help = html.match(/<p class="calendar-help" id="calendar-help">([\s\S]*?)<\/p>/)[1];
+  assert.match(help, /^Each square is one day’s song\. <span class="calendar-help-mouse">Hover to preview; click to watch\.<\/span><span class="calendar-help-touch">Tap one to watch\.<\/span>/);
+  // The page hides the hover wording under the same condition the preview script uses to skip hovering.
+  const condition = preview.match(/matchMedia\('([^']+)'\)/)[1];
+  assert.equal(condition, '(hover: hover) and (pointer: fine)');
+  assert.match(css, /\.calendar-help-mouse \{ display: none; \}/);
+  assert.ok(css.includes(`@media ${condition} {\n  .calendar-help-mouse { display: inline; }\n  .calendar-help-touch { display: none; }\n}`));
 });

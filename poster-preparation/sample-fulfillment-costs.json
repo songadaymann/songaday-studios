@@ -1,0 +1,72 @@
+[
+  {
+    "variant": "12x16-black",
+    "currency": "USD",
+    "productCost": 33.59,
+    "cheapestSampleShipping": 13.9,
+    "carrierSurcharge": 0.4,
+    "sampleDestination": "Brooklyn, NY, US",
+    "checked": "2026-11-04",
+    "retailPrice": null
+  },
+  {
+    "variant": "12x16-unframed",
+    "currency": "USD",
+    "productCost": 5.79,
+    "cheapestSampleShipping": 4.9,
+    "carrierSurcharge": 0.4,
+    "sampleDestination": "Brooklyn, NY, US",
+    "checked": "2026-11-04",
+    "retailPrice": null
+  },
+  {
+    "variant": "12x16-white",
+    "currency": "USD",
+    "productCost": 33.59,
+    "cheapestSampleShipping": 13.9,
+    "carrierSurcharge": 0.4,
+    "sampleDestination": "Brooklyn, NY, US",
+    "checked": "2026-11-04",
+    "retailPrice": null
+  },
+  {
+    "variant": "18x24-black",
+    "currency": "USD",
+    "productCost": 48.47,
+    "cheapestSampleShipping": 21.9,
+    "carrierSurcharge": 0.4,
+    "sampleDestination": "Brooklyn, NY, US",
+    "checked": "2026-11-04",
+    "retailPrice": null
+  },
+  {
+    "variant": "18x24-unframed",
+    "currency": "USD",
+    "productCost": 8.69,
+    "cheapestSampleShipping": 4.9,
+    "carrierSurcharge": 0.4,
+    "sampleDestination": "Brooklyn, NY, US",
+    "checked": "2026-11-04",
+    "retailPrice": null
+  },
+  {
+    "variant": "18x24-white",
+    "currency": "USD",
+    "productCost": 48.47,
+    "cheapestSampleShipping": 21.9,
+    "carrierSurcharge": 0.4,
+    "sampleDestination": "Brooklyn, NY, US",
+    "checked": "2026-11-04",
+    "retailPrice": null
+  },
+  {
+    "variant": "30x40-unframed",
+    "currency": "USD",
+    "productCost": 13.39,
+    "cheapestSampleShipping": 5.9,
+    "carrierSurcharge": 0.4,
+    "sampleDestination": "Brooklyn, NY, US",
+    "checked": "2026-11-04",
+    "retailPrice": null
+  }
+]

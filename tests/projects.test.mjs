@@ -41,14 +41,14 @@ test('the validator catches what would break the bar or the pages', () => {
 test('the places the front door promises are listed', () => {
   const expect = {
     'songaday-fan': { verb: 'listen', inBar: true },
-    gallery: { verb: 'see', url: 'https://gallery.songaday.world/', inBar: true },
+    gallery: { verb: 'see', path: '/gallery/', url: 'https://songaday.studio/gallery/', inBar: true },
     'songaday-world': { verb: 'collect', crypto: true, inBar: true },
     'mann-cool': { verb: 'play', inBar: true },
     'mann-cool-lab': { verb: 'play', url: 'https://mann.cool/lab', status: 'soon' },
     wamp: { verb: 'build' },
     novox: { verb: 'make', status: 'active' },
     'drum-expander': { verb: 'make', status: 'soon', sourceUrl: 'https://github.com/songadaymann/drum-expander' },
-    commissions: { verb: 'get-a-song', path: '/commission', inBar: true },
+    commissions: { verb: 'get-a-song', path: '/commission', url: 'https://songaday.studio/commission', inBar: true },
     suggest: { verb: 'join' },
     jamuary: { verb: 'join', status: 'seasonal', season: 'Dec-Jan' },
     fumble: { verb: 'join', path: '/fumble' },
@@ -78,7 +78,10 @@ test('the places the front door promises are listed', () => {
 });
 
 test('every short address in projects.json answers on songaday.studio', async () => {
-  const env = { ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) } };
+  const env = {
+    ASSETS: { fetch: async () => new Response('asset', { headers: { 'Content-Type': 'image/png' } }) },
+    GALLERY: { fetch: async () => new Response('gallery') }
+  };
   for (const project of projects.projects.filter((item) => item.path)) {
     const response = await worker.fetch(new Request('https://songaday.studio' + project.path), env);
     // Without its database (as here) the Fumble page still renders, closed to posts, as a 503.
@@ -86,7 +89,7 @@ test('every short address in projects.json answers on songaday.studio', async ()
     assert.ok([200, 302].includes(response.status) || fumbleClosed, `${project.id} ${project.path} answered ${response.status}`);
   }
   // A path that redirects off the studio goes where the project's url says.
-  for (const id of ['songaday-fan', 'albums', 'mann-cool', 'wamp', 'commissions', 'suggest', 'jamuary', 'discord', 'motba', 'jonathanmann-net']) {
+  for (const id of ['songaday-fan', 'albums', 'mann-cool', 'wamp', 'suggest', 'jamuary', 'discord', 'motba', 'jonathanmann-net']) {
     const response = await worker.fetch(new Request('https://songaday.studio' + byId[id].path), env);
     assert.equal(new URL(response.headers.get('Location')).hostname, new URL(byId[id].url).hostname, id);
   }
@@ -96,7 +99,7 @@ test('the home page directory groups live places by verb and hides crypto ones w
   const html = renderDirectory(projects);
   const headings = [...html.matchAll(/<h3 id="directory-[^"]+">([^<]+)<\/h3>/g)].map((match) => match[1]);
   assert.deepEqual(headings, ['Listen', 'See', 'Play', 'Build', 'Make', 'Get a song', 'Join', 'Watch', 'Collect']);
-  assert.match(html, /<a href="\/listen">songaday\.fan<span class="nav-out" aria-hidden="true">↗<\/span><\/a> <span>Every song/);
+  assert.match(html, /<a href="\/listen">songaday\.fan<span class="nav-out" aria-hidden="true">↗<\/span><\/a> <span>Listen to every song from the beginning/);
   assert.match(html, /<a href="\/fumble">The Museum of Fumbled Bags<\/a>/);
   assert.match(html, /Suggest tomorrow&#39;s song/);
   // Only live places: nothing coming soon, nothing archived, no donate (it's the rest of the page).

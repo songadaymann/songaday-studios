@@ -70,14 +70,46 @@ section > header { display: grid; gap: 12px; max-width: 680px; }
 .readout b { color: var(--ink); font-family: var(--mono); font-weight: 600; }
 .readout .t { color: var(--ink); font-weight: 700; font-size: 1.05rem; }
 
+/* Look something up */
+.tools { display: grid; gap: 56px; }
+.tool { display: grid; gap: 16px; }
+.pick { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; }
+.pick label { display: grid; gap: 4px; font-size: .8125rem; color: var(--ink-2); }
+.pick select { font: 400 1rem var(--font); color: var(--ink); background: var(--bg); border: 2px solid var(--rule); border-radius: 0; padding: 7px 10px; max-width: 100%; }
+.pick select:hover, .pick select:focus { border-color: var(--ink); }
+.minis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 28px; }
+.minis text { font-size: 9px; }
+@media (max-width: 760px) { .minis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Pictures of songs: press one and the video plays in its place */
+.frames { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 2px; }
+.frame { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: 0; background: #111; color: var(--ink); font: inherit; cursor: pointer; overflow: hidden; }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame span { position: absolute; left: 0; bottom: 0; background: var(--bg); font-weight: 700; font-size: .8125rem; padding: 2px 8px; }
+.frame:hover, .frame:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+iframe.frame { cursor: auto; }
+.one { display: grid; gap: 12px; align-content: start; }
+.one .frame { max-width: 480px; }
+.wheel path { cursor: pointer; }
+.wheel path:hover, .wheel path:focus-visible, .wheel path[aria-pressed="true"] { fill: var(--ink); outline: none; }
+.wheel text { pointer-events: none; }
+.tempo rect.bar[data-on] { fill: var(--red); }
+input[type="range"] { width: 100%; margin: 0; accent-color: var(--red); }
+.scrub { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: end; }
+.scrub img { width: 240px; height: 240px; display: block; background: #111; }
+.scrub > div { display: grid; gap: 12px; }
+@media (max-width: 560px) { .scrub { grid-template-columns: minmax(0, 1fr); } }
+.plain { font: inherit; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.plain:hover, .plain[aria-pressed="true"] { color: var(--red); }
+.sub { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; justify-items: start; }
+.sub:not(:empty) { margin-top: 8px; }
+
 /* Findings */
 .findings { display: grid; gap: 64px; }
 .finding { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: start; }
 .finding .copy { display: grid; gap: 12px; }
 .finding .copy p { color: var(--ink-2); }
 .finding .copy p strong { color: var(--ink); }
-.sure { justify-self: start; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--ink-3); color: var(--ink-2); padding: 3px 8px; }
-.sure.real { border-color: var(--ink); color: var(--ink); }
 .chart { min-width: 0; display: grid; gap: 8px; }
 .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
 .chart text { fill: var(--ink-2); font: 12px var(--font); }
@@ -103,7 +135,6 @@ details.table td, details.table th { padding: 3px 12px 3px 0; text-align: left; 
 .null { background: var(--bg); padding: 18px; display: grid; gap: 8px; align-content: start; }
 .null h3 { font-size: 1.05rem; }
 .null p { color: var(--ink-2); font-size: .9rem; }
-.verdict { justify-self: start; font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--bg); background: var(--ink-2); padding: 3px 7px; }
 
 /* Along the way */
 .notes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--rule); }
@@ -120,6 +151,7 @@ footer.credits a { color: var(--ink-2); }
 
 #tip { position: fixed; z-index: 20; pointer-events: none; background: var(--ink); color: var(--bg); font-size: .8125rem; line-height: 1.35; padding: 6px 9px; max-width: 260px; }
 #tip[hidden] { display: none; }
+section[hidden], .tool[hidden], .lens[hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -127,23 +159,23 @@ footer.credits a { color: var(--ink-2); }
 
 <header class="col" style="display:grid; gap:18px">
   <p class="eyebrow">Song A Day · Data lab</p>
-  <h1>Seventeen years of songs, measured.</h1>
-  <p class="lede">Every Song A Day song from January 1, 2009 to October 20, 2026, set next to the weather where it was recorded, the moon, the planets, the day's news and how many people watched it. Then the hunches got tested, superstitions included.</p>
+  <h1>Song A Day in numbers</h1>
+  <p class="lede">Every song since January 1, 2009, next to that day's weather, moon, planets, news and YouTube views.</p>
 </header>
 
 <div class="stats" id="stats" aria-label="The numbers">
-  <div class="stat"><b data-meta="songs">6,502</b><span>songs</span></div>
-  <div class="stat"><b data-meta="hours">254</b><span>hours of music</span></div>
-  <div class="stat"><b data-meta="places">118</b><span>places recorded</span></div>
+  <div class="stat"><b data-meta="songs">6,538</b><span>songs</span></div>
+  <div class="stat"><b data-meta="hours">255</b><span>hours of music</span></div>
+  <div class="stat"><b data-meta="places">119</b><span>places recorded</span></div>
   <div class="stat"><b data-meta="views">39.3M</b><span>YouTube views</span></div>
-  <div class="stat"><b data-meta="headlines">99,951</b><span>news headlines compared</span></div>
+  <div class="stat"><b data-meta="headlines">100,638</b><span>news headlines</span></div>
   <div class="stat"><b>67</b><span>questions tested</span></div>
 </div>
 
 <section id="every-day" aria-labelledby="field-title">
   <header>
-    <h2 id="field-title">Every day, one square</h2>
-    <p class="muted">Each block is a year, months down and days across. Pick what to color by, then hover or tap a square to see that day's song.</p>
+    <h2 id="field-title">One square per day</h2>
+    <p class="muted">Each block is a year, months down and days across. Hover or tap a square for that day's song.</p>
   </header>
   <div class="field-bar" role="group" aria-label="Color the days by">
     <button class="lens" type="button" data-lens="family" aria-pressed="true">Mood</button>
@@ -153,65 +185,138 @@ footer.credits a { color: var(--ink-2); }
     <button class="lens" type="button" data-lens="views" aria-pressed="false">Views</button>
     <button class="lens" type="button" data-lens="away" aria-pressed="false">Home or away</button>
     <button class="lens" type="button" data-lens="beard" aria-pressed="false">Beard</button>
+    <button class="lens" type="button" data-lens="home" aria-pressed="false" hidden>Home city</button>
   </div>
   <div class="legend" id="legend" aria-hidden="true"></div>
   <canvas id="field" role="img" aria-label="A calendar of every Song A Day song from 2009 to 2026, one square per day."></canvas>
-  <div class="readout" id="readout" aria-live="polite"><span>Loading 6,502 songs…</span></div>
+  <div class="readout" id="readout" aria-live="polite"><span>Loading every song…</span></div>
+</section>
+
+<section id="tools" aria-labelledby="tools-title">
+  <header>
+    <h2 id="tools-title">Look something up</h2>
+  </header>
+  <div class="tools">
+    <div class="tool">
+      <h3>One day, every year</h3>
+      <div class="pick">
+        <label>Month <select id="bd-month"></select></label>
+        <label>Day <select id="bd-day"></select></label>
+      </div>
+      <div class="frames" id="bd-frames"></div>
+    </div>
+    <div class="tool" id="find-tool">
+      <h3>Find a song</h3>
+      <div class="pick" id="find-pick"></div>
+      <p class="muted small" id="find-count" aria-live="polite"></p>
+      <ul class="notes" id="find-list"></ul>
+      <div><button class="lens" type="button" id="find-more">Show others</button></div>
+    </div>
+    <div class="tool" id="year-tool">
+      <h3>One year</h3>
+      <div class="pick"><label>Year <select id="yr"></select></label></div>
+      <ul class="notes" id="yr-list"></ul>
+    </div>
+  </div>
+</section>
+
+<section id="press" aria-labelledby="press-title">
+  <header>
+    <h2 id="press-title">Things to press</h2>
+    <p class="muted">Press a picture to play the song.</p>
+  </header>
+  <div class="tools">
+    <div class="tool" id="sets-tool">
+      <h3>Most watched, and every thousandth</h3>
+      <div class="field-bar" role="group" aria-label="Which songs">
+        <button class="lens" type="button" data-set="top" aria-pressed="true">Most watched each year</button>
+        <button class="lens" type="button" data-set="thousand" aria-pressed="false">Every thousandth song</button>
+      </div>
+      <div class="frames" id="set-frames"></div>
+    </div>
+    <div class="tool">
+      <h3>Keys</h3>
+      <div class="finding">
+        <figure class="chart" style="margin:0">
+          <div class="wheel" id="key-wheel"></div>
+          <figcaption>Songs in each key. Major keys point out, their relative minors point in.</figcaption>
+        </figure>
+        <div class="one" id="key-one"></div>
+      </div>
+    </div>
+    <div class="tool" id="tempo-tool">
+      <h3>Tempo</h3>
+      <div class="finding">
+        <figure class="chart" style="margin:0">
+          <div class="tempo" id="tempo-chart"></div>
+          <input type="range" id="tempo-range" min="44" max="220" step="1" value="120" aria-label="Beats per minute">
+          <figcaption>Songs at each tempo, in beats per minute.</figcaption>
+        </figure>
+        <div class="one" id="tempo-one"></div>
+      </div>
+    </div>
+    <div class="tool" id="beard-tool" hidden>
+      <h3>Beard</h3>
+      <div class="scrub">
+        <img id="beard-face" alt="" width="240" height="240">
+        <div>
+          <p id="beard-text" aria-live="polite"></p>
+          <input type="range" id="beard-range" min="0" max="0" step="1" value="0" aria-label="Month">
+          <div><button class="lens" type="button" id="beard-play" aria-pressed="false">Play</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section id="real" aria-labelledby="real-title">
   <header>
-    <h2 id="real-title">What the numbers say</h2>
-    <p class="muted">These held up. Each compares like with like (songs from the same month, week or year), so the seasons, the moves between cities and YouTube's slow drift can't fake a result. Two separate reviewers then tried to knock each one down.</p>
+    <h2 id="real-title">What held up</h2>
+    <p class="muted">Each result compares songs with others from the same month, week or year. Two reviewers re-ran each one.</p>
   </header>
   <div class="findings">
 
     <article class="finding">
       <div class="copy">
         <h3>Weekend songs are mellower.</h3>
-        <p>On Saturdays and Sundays, about <strong>one song in three</strong> is excited, silly, angry or otherwise high-energy. On weekdays it's closer to <strong>one in two</strong>. Compared within the same week, weekends run <strong>10 points lower</strong>. Monday to Friday don't differ from each other.</p>
-        <span class="sure real">Holds up</span>
+        <p>On Saturdays and Sundays about one song in three is excited, silly, angry or otherwise high-energy. On weekdays it's closer to one in two.</p>
       </div>
       <figure class="chart" style="margin:0">
         <div id="chart-weekday"></div>
-        <figcaption>Share of high-energy moods by day of the week, all 6,502 songs.</figcaption>
+        <figcaption>Share of high-energy moods by day of the week, all 6,538 songs.</figcaption>
       </figure>
     </article>
 
     <article class="finding">
       <div class="copy">
         <h3>On the road, songs run longer and get fewer views.</h3>
-        <p>About one song in five was written away from home. Those run <strong>17 seconds longer</strong> on average, are <strong>less often anxious</strong>, and get about <strong>28% fewer views</strong> than songs from the same month at home.</p>
-        <span class="sure real">Holds up</span>
+        <p>1,329 of the 6,538 songs were written away from home.</p>
       </div>
       <div class="chart">
         <div class="tiles">
-          <div class="tile"><b>+17 s</b><span>longer than songs at home (95% range +12 to +23 s)</span></div>
-          <div class="tile"><b>−28%</b><span>views, against songs from the same month</span></div>
-          <div class="tile"><b>−31%</b><span>anxious songs: 33 on the road where 48 were expected</span></div>
+          <div class="tile"><b>+17 s</b><span>longer than at home (95% range +12 to +22 s)</span></div>
+          <div class="tile"><b>−28%</b><span>views, against the same month at home</span></div>
+          <div class="tile"><b>−31%</b><span>anxious songs: 33 where 48 were expected</span></div>
         </div>
-        <p class="note">1,328 songs on the road, 5,174 at home.</p>
       </div>
     </article>
 
     <article class="finding">
       <div class="copy">
-        <h3>The news shows up within a day, and people watch.</h3>
-        <p>Songs name that day's headlines far more often than chance: <strong>167 strong matches</strong> where 48 would turn up by accident. Most come from the same day or the day before. Those news songs get about <strong>twice the views</strong> of songs from the same month.</p>
-        <p>Around US elections and inaugurations, <strong>32%</strong> of songs are about politics, against 9.5% the rest of the time.</p>
-        <span class="sure real">Holds up</span>
+        <h3>News songs come within a day and get twice the views.</h3>
+        <p>169 songs closely match a headline from the same day or the two before. Chance would give 48.</p>
+        <p>Around US elections and inaugurations, 35% of songs are about politics. The rest of the time it's 9.7%.</p>
       </div>
       <figure class="chart" style="margin:0">
         <div id="chart-news"></div>
-        <figcaption>When the news a song names happened, for the 167 strongest matches.</figcaption>
+        <figcaption>When the news a song names happened, for the 169 strongest matches.</figcaption>
       </figure>
     </article>
 
     <article class="finding">
       <div class="copy">
-        <h3>The beard matters (to YouTube).</h3>
-        <p>Clean-shaven songs get about <strong>1.7 times the views</strong> of bearded songs from the same month, and still <strong>1.44 times</strong> with topic, mood and everything else held equal. Clean-shaven days also bring <strong>fewer tired songs</strong>: 65 where 106 were expected.</p>
-        <span class="sure real">Holds up</span>
+        <h3>Clean-shaven songs get more views.</h3>
+        <p>About 1.7 times the views of bearded songs from the same month, or 1.44 times with topic, mood and the rest held equal. Clean-shaven days also have fewer tired songs: 65 where 108 were expected.</p>
       </div>
       <figure class="chart" style="margin:0">
         <div id="chart-beard"></div>
@@ -221,9 +326,8 @@ footer.credits a { color: var(--ink-2); }
 
     <article class="finding">
       <div class="copy">
-        <h3>Angrier, not sadder.</h3>
-        <p>The share of dark moods jumped around <strong>2016 and 2017</strong>, from about 11% of songs to about 21%, and stayed there. Almost all of the rise is <strong>angry</strong> songs, mostly about politics. Sad songs swing from year to year but show no trend.</p>
-        <span class="sure real">Holds up, as a step</span>
+        <h3>The songs got angrier around 2016.</h3>
+        <p>Dark moods went from about 11% of songs to about 21% in 2016 and 2017 and stayed there. Almost all of the rise is angry songs, mostly about politics. Sad songs show no trend.</p>
       </div>
       <figure class="chart" style="margin:0">
         <div id="chart-angry"></div>
@@ -234,9 +338,8 @@ footer.credits a { color: var(--ink-2); }
     <article class="finding">
       <div class="copy">
         <h3>What gets watched.</h3>
-        <p>Against songs from the same month, with everything else held equal, songs about <strong>Apple get 4.7 times the views</strong>. Politics, Trump, TV and pop culture beat the average too. Poetic songs, commissions and conference songs get about half.</p>
-        <p>Silly, excited, angry and happy songs all beat pensive ones by 1.4 to 1.6 times. And it's a long tail: <strong>Baby Yoda alone is a quarter of all views</strong>, and the top 1% of songs have three quarters of them.</p>
-        <span class="sure real">Holds up</span>
+        <p>Songs about Apple get 4.7 times the views of other songs from the same month. Politics, Trump, TV and pop culture also beat the average. Poetic songs, commissions and conference songs get about half.</p>
+        <p>Silly, excited, angry and happy songs get 1.4 to 1.6 times the views of pensive ones. Baby Yoda alone has a quarter of all views, and the top 1% of songs have three quarters.</p>
       </div>
       <figure class="chart" style="margin:0">
         <div id="chart-views"></div>
@@ -249,19 +352,19 @@ footer.credits a { color: var(--ink-2); }
 
 <section id="superstitions" aria-labelledby="sup-title">
   <header>
-    <h2 id="sup-title">Superstitions, tested</h2>
-    <p class="muted">None of these change anything. Where the test had enough songs to see a small effect, it says how small.</p>
+    <h2 id="sup-title">Superstitions</h2>
+    <p class="muted">None of these made a difference.</p>
   </header>
   <div class="nulls">
-    <div class="null"><span class="verdict">No effect</span><h3>Full moons</h3><p>High-energy moods on 42.7% of 220 full-moon songs against 41.5% on other days. Same tempo (105.5 vs 105.8 bpm), same length, same share of minor keys.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Mercury retrograde</h3><p>Anxious, confused, angry or annoyed moods on 11.6% of 1,243 songs against 10.5% otherwise. The test could have seen a 2-point shift and didn't. Views and minor keys are unchanged too.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Friday the 13th</h3><p>Unhappy moods on 15.6% of 32 songs against 17.1% on other days.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Supermoons and eclipses</h3><p>Supermoons: 44.9% high-energy against 41.5%. Eclipse days were, if anything, a little lighter: 11.1% unhappy against 17.1%.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Planet parades</h3><p>When the planets bunch up in the sky (tightest: April 20, 2024), songs are no wilder and no faster. Conjunctions and retrograde planets change nothing either.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Star signs</h3><p>Neither the Sun's sign nor the Moon's shifts the mood mix once the season is accounted for.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Monday blues</h3><p>Tired or sad songs on 13.9% of Mondays against 14.3% on other days.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Rainy days</h3><p>Sad songs on 6.5% of wet days against 7.0% of dry ones, comparing the same month. No link to minor keys or tempo either.</p></div>
-    <div class="null"><span class="verdict">No effect</span><h3>Hot and cold</h3><p>Warm days aren't faster, cold days aren't more minor, and sunshine doesn't lift the mood. Short winter days hint at a few more sad songs, but not reliably.</p></div>
+    <div class="null"><h3>Full moons</h3><p>High-energy moods on 42.8% of 222 full-moon songs, 41.6% on other days. Tempo, length and minor keys are the same.</p></div>
+    <div class="null"><h3>Mercury retrograde</h3><p>Anxious, confused, angry or annoyed moods on 11.6% of 1,263 songs, 10.5% otherwise.</p></div>
+    <div class="null"><h3>Friday the 13th</h3><p>Unhappy moods on 15.2% of 33 songs, 17.1% on other days.</p></div>
+    <div class="null"><h3>Supermoons and eclipses</h3><p>Supermoons: 45.7% high-energy against 41.6%. Eclipse days: 11.1% unhappy against 17.2%.</p></div>
+    <div class="null"><h3>Planet parades</h3><p>When the planets bunch up in the sky (tightest: April 20, 2024), songs are no wilder and no faster.</p></div>
+    <div class="null"><h3>Star signs</h3><p>Neither the Sun's sign nor the Moon's shifts the moods once the season is accounted for.</p></div>
+    <div class="null"><h3>Monday blues</h3><p>Tired or sad songs on 13.9% of Mondays, 14.3% of other days.</p></div>
+    <div class="null"><h3>Rainy days</h3><p>Sad songs on 6.5% of wet days, 7.0% of dry ones in the same month.</p></div>
+    <div class="null"><h3>Hot and cold</h3><p>Warm days aren't faster, cold days aren't more minor, and sunshine doesn't lift the mood.</p></div>
   </div>
 </section>
 
@@ -270,16 +373,39 @@ footer.credits a { color: var(--ink-2); }
     <h2 id="notes-title">Found along the way</h2>
   </header>
   <ul class="notes" id="notes">
-    <li><span class="tag">Weather</span><p><a data-song="1397">#1397 “Hurricane Song One”</a> went up the day before Hurricane Sandy hit. The next day, <a data-song="1398">#1398</a>, had the strongest wind of any song day: 60.6 km/h with 32 mm of rain.</p></li>
-    <li><span class="tag">Weather</span><p>Songs with “snow” in the title fall on snow days 44% of the time. All songs: 7%. <a data-song="3683">#3683 “It's Sunny But It's Cold Outside”</a> was clear with a high of −8.3 °C.</p></li>
-    <li><span class="tag">Extremes</span><p>Hottest song day: <a data-song="6422">#6422</a> in Palm Springs, 46.1 °C. Coldest: <a data-song="2246">#2246</a> in Jersey City, −22.4 °C. Wettest: <a data-song="286">#286</a> in Berkeley, 80 mm.</p></li>
+    <li><span class="tag">Weather</span><p><a data-song="1397">#1397 “Hurricane Song One”</a> went up the day before Hurricane Sandy hit. The next day, <a data-song="1398">#1398</a>, had the strongest wind of any song day: 38 mph with 1.3 inches of rain.</p></li>
+    <li><span class="tag">Weather</span><p>Songs with “snow” in the title fall on snow days 44% of the time. All songs: 7%. <a data-song="3683">#3683 “It's Sunny But It's Cold Outside”</a> was clear with a high of 17 °F.</p></li>
+    <li><span class="tag">Extremes</span><p>Hottest song day: <a data-song="6422">#6422</a> in Palm Springs, 115 °F. Coldest: <a data-song="2246">#2246</a> in Jersey City, −8 °F. Wettest: <a data-song="286">#286</a> in Berkeley, 3.2 inches of rain.</p></li>
     <li><span class="tag">Sky</span><p><a data-song="4373">#4373 “Jupiter and Saturn”</a> was written the day of their closest meeting since 1623, and <a data-song="5577">#5577</a> on the day of the 2024 total solar eclipse.</p></li>
     <li><span class="tag">News</span><p>Written the same day as the story: <a data-song="2843">Bob Dylan's Nobel</a>, <a data-song="2387">the first close-up of Pluto</a>, <a data-song="3696">the end of the Opportunity rover</a> and <a data-song="4466">the Ever Given</a>.</p></li>
-    <li><span class="tag">Views</span><p><a data-song="3974">#3974 “Baby Yoda Baby Baby Yoda”</a> has 9.8 million views. The median song has about 400. <a data-song="1618">#1618 “SOHCAHTOA”</a> gained 283,000 views between August and October 2026. Back-to-school season.</p></li>
+    <li><span class="tag">Views</span><p><a data-song="3974">#3974 “Baby Yoda Baby Baby Yoda”</a> has 9.8 million views. The median song has about 400. <a data-song="1618">#1618 “SOHCAHTOA”</a> gained 283,000 views between August and October 2026, when school went back.</p></li>
     <li><span class="tag">Lengths</span><p>Shortest: <a data-song="5097">#5097 “This Is The Whole Song”</a>, 5 seconds. Longest: <a data-song="4908">#4908</a>, 19 minutes 37 seconds. The median is 2:13.</p></li>
     <li><span class="tag">The sheet</span><p>The public spreadsheet stops at #5101 (December 19, 2022). A find-and-replace that fixed instrument typos also rewrote seven YouTube IDs: “bAsE45R51bs” became “BassE45R51bs”.</p></li>
-    <li><span class="tag">Keys</span><p>79% of songs with a known key are major. C leads (778 songs), then F, D and G. Most of 2010 (#358 to #727) has no minor keys at all, which is how keys were written down that year, not how the songs sounded.</p></li>
+    <li><span class="tag">Keys</span><p>79% of songs with a known key are major. C leads (784 songs), then F, D and G. For most of 2010 (#358 to #727) and #212 to #271 only the root was written down. For 305 of those 429 songs, major or minor is estimated from the recording and drawn paler; tested on songs whose key was written down, the estimates were right 95 to 98% of the time.</p></li>
   </ul>
+</section>
+
+<section id="years" aria-labelledby="years-title">
+  <header>
+    <h2 id="years-title">Over the years</h2>
+    <p class="muted">Plain counts. These weren't tested like the results above.</p>
+  </header>
+  <div class="finding">
+    <div class="copy">
+      <h3>The main instrument changes every few years.</h3>
+      <p>Baritone ukulele from 2011 to 2014, acoustic guitar from 2014 to 2018, synths in 2020 and 2021.</p>
+      <p>Length and tempo barely move. The median song is between 1:51 and 2:34 every year, and the median tempo between 95 and 108 bpm until 2026, which is at 120.</p>
+    </div>
+    <figure class="chart" style="margin:0">
+      <div class="minis" id="chart-inst"></div>
+      <figcaption>Share of each year's songs by main instrument, 2009 to 2026. Each chart's top is 50%.</figcaption>
+    </figure>
+  </div>
+  <div class="tool">
+    <h3>Most common topics each year</h3>
+    <p class="muted small">Press a topic for its songs.</p>
+    <ul class="notes" id="year-topics"></ul>
+  </div>
 </section>
 
 <section id="method" aria-labelledby="method-title">
@@ -287,9 +413,9 @@ footer.credits a { color: var(--ink-2); }
     <h2 id="method-title">How this was done</h2>
   </header>
   <div class="method col">
-    <p>Songs come from the Song A Day spreadsheet and catalog, cleaned and checked against YouTube. Each song's place was matched to coordinates and its day's weather fetched from <a href="https://open-meteo.com/">Open-Meteo</a>. Moon phase, planet positions, retrogrades and eclipses were computed for 5 pm New York time. Headlines are from Wikipedia's <a href="https://en.wikipedia.org/wiki/Portal:Current_events">Current events</a> portal, 99,951 of them. Views are from YouTube in October 2026.</p>
-    <p><strong>67 questions</strong> were tested with shuffle tests that compare songs only with others from the same month, week or year, then corrected for how many questions were asked. Two reviewers re-ran every result that looked real with different methods. They kept the ones above and <strong>downgraded four</strong>: the moods don't really change between the cities he lived in, seasons don't shift the mood mix, the politics link is mostly election weeks, and “darker over time” turned out to be a jump in angry songs.</p>
-    <p>Everything is public: the cleaned data (one row per song, 121 columns), the code, every result and both reviews, at <a href="https://github.com/songadaymann/songaday-data">github.com/songadaymann/songaday-data</a>.</p>
+    <p>Songs come from the Song A Day spreadsheet and catalog, checked against YouTube. Weather for each song's place and day is from <a href="https://open-meteo.com/">Open-Meteo</a>. Moon phase, planet positions, retrogrades and eclipses were computed for 5 pm New York time. Headlines are from Wikipedia's <a href="https://en.wikipedia.org/wiki/Portal:Current_events">Current events</a> portal, 100,638 of them. Views are from YouTube in October 2026.</p>
+    <p>67 questions were tested by shuffling songs within the same month, week or year, then corrected for the number of questions. Two reviewers re-ran every result that looked real with different methods. They kept the ones above and downgraded four: moods don't change between the cities he lived in, seasons don't shift the moods, the politics link is mostly election weeks, and “darker over time” was a jump in angry songs.</p>
+    <p>The data (one row per song, 121 columns), the code, every result and both reviews are at <a href="https://github.com/songadaymann/songaday-data">github.com/songadaymann/songaday-data</a>.</p>
   </div>
   <footer class="credits">
     <p>Song data by Jonathan Mann (Song A Day), CC BY 4.0. <a href="https://open-meteo.com/">Weather data by Open-Meteo.com</a>, CC BY 4.0. Headlines from Wikipedia, CC BY-SA 4.0.</p>
@@ -329,6 +455,7 @@ footer.credits a { color: var(--ink-2); }
   function songDate(n) { return new Date(SONG_ONE + (n - 1) * DAY); }
   function fmtDate(n) { var d = songDate(n); return WD[d.getUTCDay()] + ', ' + MONTHS[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear(); }
   function fmtInt(v) { return v == null ? '–' : v.toLocaleString('en-US'); }
+  function fahrenheit(c) { return Math.round(c * 9 / 5 + 32); }
   function compact(v) { return v >= 1e6 ? (v / 1e6).toFixed(1) + 'M' : v >= 1e3 ? Math.round(v / 1e3) + 'K' : String(v); }
 
   var tip = document.getElementById('tip');
@@ -363,14 +490,17 @@ footer.credits a { color: var(--ink-2); }
     var viewLo = hex('#184f95'), viewHi = hex('#cde2fb');
     var moonLo = hex('#1e1e1e'), moonHi = hex('#f2e6b8');
     function cat(arr, colors) { return function (i) { var v = arr[i]; return v == null ? hex(C.none) : hex(colors[v]); }; }
+    var est = s.minor_est || {}, white = [255, 255, 255], majorEst = mix(hex(C.orange), white, .45), minorEst = mix(hex(C.blue), white, .45);
     return {
       family: { color: cat(s.family, [C.orange, C.aqua, C.blue]),
         legend: [[C.orange, 'Bright (silly, excited, happy)'], [C.aqua, 'Calm (pensive, chill, tired)'], [C.blue, 'Dark (sad, angry, anxious, intense)'], [C.none, 'Other']] },
-      minor: { color: cat(s.minor, [C.orange, C.blue]),
-        legend: [[C.orange, 'Major'], [C.blue, 'Minor'], [C.none, 'Not recorded']] },
+      // Where only the root was written down, major or minor is estimated from the recording, drawn paler.
+      minor: { color: function (i) { var v = s.minor[i]; if (v != null) return hex(v ? C.blue : C.orange);
+          var e = est[i]; return e == null ? hex(C.none) : e ? minorEst : majorEst; },
+        legend: [[C.orange, 'Major'], [C.blue, 'Minor'], [rgb(majorEst), 'Major, estimated'], [rgb(minorEst), 'Minor, estimated'], [C.none, 'Not recorded']] },
       temp: { color: function (i) { var t = s.temp[i]; if (t == null) return hex(C.none);
           var mid = 12; return t < mid ? mix(cold, midT, Math.max(0, (t + 20) / (mid + 20))) : mix(midT, hot, Math.min(1, (t - mid) / (38 - mid))); },
-        ramp: ['linear-gradient(90deg,' + C.blue + ',#383835,#e66767)', '−20 °C', '12 °C', '38 °C'] },
+        ramp: ['linear-gradient(90deg,' + C.blue + ',#383835,#e66767)', '−4 °F', '54 °F', '100 °F'] },
       moon: { color: function (i) { var m = s.moon[i]; return m == null ? hex(C.none) : mix(moonLo, moonHi, m / 100); },
         ramp: ['linear-gradient(90deg,#1e1e1e,#f2e6b8)', 'New moon', '', 'Full moon'] },
       views: { color: function (i) { var v = s.views[i]; if (v == null) return hex(C.none);
@@ -459,8 +589,9 @@ footer.credits a { color: var(--ink-2); }
       add(s.title[i], 't'); add(fmtDate(n));
       if (s.place[i] != null) add(data.labels.place[s.place[i]]);
       if (s.mood[i] != null) add(data.labels.mood[s.mood[i]]);
-      if (s.key[i]) add(s.key[i] + (s.minor[i] === 1 ? ' (minor)' : s.minor[i] === 0 ? ' (major)' : ''));
-      if (s.temp[i] != null) add(Math.round(s.temp[i]) + ' °C');
+      var guess = (s.minor_est || {})[i];
+      if (s.key[i]) add(s.key[i] + (s.minor[i] === 1 ? ' (minor)' : s.minor[i] === 0 ? ' (major)' : guess === 1 ? ' (minor, estimated)' : guess === 0 ? ' (major, estimated)' : ''));
+      if (s.temp[i] != null) add(fahrenheit(s.temp[i]) + ' °F');
       if (s.moon[i] != null) add('Moon ' + s.moon[i] + '%');
       if (s.views[i] != null) add(fmtInt(s.views[i]) + ' views');
       if (s.yt[i]) { var a = document.createElement('a'); a.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(s.yt[i]); a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Watch ↗'; readout.appendChild(a); }
@@ -469,7 +600,7 @@ footer.credits a { color: var(--ink-2); }
       if (l === lens) return;
       var current = to.map(function (c, i) { return from && t < 1 ? mix(from[i], c, t) : c; });
       lens = l; from = current; to = colors(l); drawLegend();
-      document.querySelectorAll('.lens').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lens === l)); });
+      document.querySelectorAll('.lens[data-lens]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lens === l)); });
       if (reduce.matches) { from = null; t = 1; draw(); return; }
       t = 0; var t0 = performance.now(); cancelAnimationFrame(anim);
       (function step(now) {
@@ -477,7 +608,7 @@ footer.credits a { color: var(--ink-2); }
         if (k < 1) anim = requestAnimationFrame(step); else { from = null; t = 1; }
       })(t0);
     }
-    document.querySelectorAll('.lens').forEach(function (b) { b.addEventListener('click', function () { setLens(b.dataset.lens); }); });
+    document.querySelectorAll('.lens[data-lens]').forEach(function (b) { b.addEventListener('click', function () { setLens(b.dataset.lens); }); });
     canvas.addEventListener('pointermove', function (e) { if (e.pointerType !== 'mouse') return; var n = hit(e); if (n !== hoverN) { hoverN = n; if (!pinned) setReadout(n); draw(); } });
     canvas.addEventListener('pointerleave', function () { hoverN = 0; if (!pinned) setReadout(0); draw(); });
     canvas.addEventListener('click', function (e) { var n = hit(e); pinned = n && n !== pinned ? n : 0; setReadout(pinned || n); draw(); });
@@ -515,9 +646,9 @@ footer.credits a { color: var(--ink-2); }
   }
 
   function newsChart() {
-    var el = document.getElementById('chart-news'), rows = [['Same day', 77], ['Day before', 66], ['Two days before', 24]];
+    var el = document.getElementById('chart-news'), rows = [['Same day', 77], ['Day before', 67], ['Two days before', 25]];
     var W = 520, L = 120, R = 40, bh = 22, gap = 18, H = rows.length * (bh + gap);
-    var s = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Strong news matches: 77 same day, 66 the day before, 24 two days before' }, el);
+    var s = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Strong news matches: 77 same day, 67 the day before, 25 two days before' }, el);
     rows.forEach(function (r, i) {
       var y = i * (bh + gap), w = (W - L - R) * r[1] / 80;
       svg('text', { x: 0, y: y + bh / 2 + 4 }, s).textContent = r[0];
@@ -618,6 +749,291 @@ footer.credits a { color: var(--ink-2); }
     table(el, ['Group', 'Views multiplier', '95% range', 'Songs'], rows.filter(function (r) { return !r.heading; }).map(function (r) { return [r.term, r.x.toFixed(2) + '×', r.lo.toFixed(2) + '–' + r.hi.toFixed(2), fmtInt(r.n)]; }));
   }
 
+  // ---------- look something up ----------
+  function option(select, value, text) { var o = document.createElement('option'); o.value = value; o.textContent = text; select.appendChild(o); return o; }
+  function row(list, tag, fill) {
+    var li = document.createElement('li'), t = document.createElement('span'), p = document.createElement('p');
+    t.className = 'tag'; t.textContent = tag; li.appendChild(t); li.appendChild(p); fill(p); list.appendChild(li);
+  }
+  function songLink(data, n) {
+    var a = document.createElement('a'), yt = data.songs.yt[n - 1];
+    a.textContent = data.songs.title[n - 1] || 'Untitled';
+    if (yt) { a.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(yt); a.target = '_blank'; a.rel = 'noopener'; }
+    return a;
+  }
+  function meta(data, n, withDate) {
+    var s = data.songs, i = n - 1, bits = [];
+    if (withDate) bits.push(fmtDate(n));
+    if (s.place[i] != null) bits.push(data.labels.place[s.place[i]]);
+    if (s.mood[i] != null) bits.push(data.labels.mood[s.mood[i]]);
+    if (s.temp[i] != null) bits.push(fahrenheit(s.temp[i]) + ' °F');
+    return bits.length ? ' · ' + bits.join(' · ') : '';
+  }
+  function topOf(counts, labels) {
+    var best = null; for (var k in counts) if (best == null || counts[k] > counts[best]) best = k;
+    return best == null ? null : (labels ? labels[best] : best) + ' (' + fmtInt(counts[best]) + ')';
+  }
+  function clock(seconds) { var m = Math.floor(seconds / 60), s = Math.round(seconds % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
+
+  // A song's picture. Pressing it plays the video in its place; only one plays at a time.
+  var playing = null;
+  function frame(data, n, tag, eager) {
+    var yt = data.songs.yt[n - 1], title = data.songs.title[n - 1] || 'Untitled';
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'frame';
+    b.title = '#' + n + ' ' + title + ', ' + fmtDate(n); b.setAttribute('aria-label', 'Play ' + b.title);
+    if (yt) { var img = document.createElement('img'); img.alt = ''; img.loading = eager ? 'eager' : 'lazy'; img.src = 'https://i.ytimg.com/vi/' + encodeURIComponent(yt) + '/mqdefault.jpg'; b.appendChild(img); }
+    if (tag) { var t = document.createElement('span'); t.textContent = tag; b.appendChild(t); }
+    b.addEventListener('click', function () {
+      if (!yt) return;
+      if (playing && playing[0].parentNode) playing[0].replaceWith(playing[1]);
+      var f = document.createElement('iframe'); f.className = 'frame'; f.title = title; f.allow = 'autoplay; encrypted-media; picture-in-picture'; f.allowFullscreen = true;
+      f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(yt) + '?autoplay=1';
+      b.replaceWith(f); playing = [f, b];
+    });
+    return b;
+  }
+  function frames(el, data, list) { el.textContent = ''; list.forEach(function (it) { el.appendChild(frame(data, it[0], it[1])); }); }
+  // One song out of a list, with a way to ask for another.
+  function oneOf(el, data, heading, list) {
+    el.textContent = '';
+    var h = document.createElement('p'); h.textContent = heading; el.appendChild(h);
+    if (!list.length) return;
+    var n = list[Math.floor(Math.random() * list.length)];
+    el.appendChild(frame(data, n, '', true));
+    var p = document.createElement('p'); p.className = 'muted small'; p.appendChild(songLink(data, n)); p.appendChild(document.createTextNode(meta(data, n, true))); el.appendChild(p);
+    if (list.length > 1) {
+      var wrap = document.createElement('div'), more = document.createElement('button'); more.type = 'button'; more.className = 'lens'; more.textContent = 'Another';
+      more.addEventListener('click', function () { oneOf(el, data, heading, list); }); wrap.appendChild(more); el.appendChild(wrap);
+    }
+  }
+
+  function birthday(data) {
+    var N = data.songs.title.length, month = document.getElementById('bd-month'), day = document.getElementById('bd-day'), box = document.getElementById('bd-frames');
+    LONG_MONTHS.forEach(function (m, i) { option(month, i, m); });
+    for (var d = 1; d <= 31; d++) option(day, d, d);
+    var now = new Date(); month.value = now.getMonth(); day.value = now.getDate();
+    function show() {
+      var m = Number(month.value), d = Number(day.value), list = [];
+      for (var y = 2009; y <= songDate(N).getUTCFullYear(); y++) {
+        var ts = Date.UTC(y, m, d); if (new Date(ts).getUTCMonth() !== m) continue;
+        var n = Math.round((ts - SONG_ONE) / DAY) + 1; if (n >= 1 && n <= N) list.push([n, String(y)]);
+      }
+      frames(box, data, list);
+      if (!list.length) { var p = document.createElement('p'); p.className = 'muted'; p.textContent = 'No songs on that date.'; box.appendChild(p); }
+    }
+    month.addEventListener('change', show); day.addEventListener('change', show); show();
+  }
+
+  function finder(data, extra) {
+    var s = data.songs, x = extra.songs, N = s.title.length, pick = document.getElementById('find-pick');
+    var list = document.getElementById('find-list'), count = document.getElementById('find-count'), more = document.getElementById('find-more');
+    var TEMPS = [['Below 32 °F', -99, 32], ['32 to 50 °F', 32, 50], ['50 to 70 °F', 50, 70], ['70 to 85 °F', 70, 85], ['Above 85 °F', 85, 999]];
+    function numbered(labels, limit) { return labels.slice(0, limit || labels.length).map(function (l, i) { return [i, l]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); }); }
+    var filters = [
+      { name: 'Mood', options: numbered(data.labels.mood), test: function (i, v) { return s.mood[i] === v; } },
+      { name: 'Topic', options: numbered(extra.labels.topic, 30), test: function (i, v) { return x.topics[i].indexOf(v) >= 0; } },
+      { name: 'Instrument', options: numbered(extra.labels.inst, 12), test: function (i, v) { return x.inst[i] === v; } },
+      { name: 'Key', options: [[0, 'Major'], [1, 'Minor']], test: function (i, v) { return s.minor[i] === v; } },
+      { name: 'Weather', options: extra.labels.wx.map(function (l, i) { return [i, l]; }), test: function (i, v) { return x.wx[i] === v; } },
+      { name: 'Temperature', options: TEMPS.map(function (t, i) { return [i, t[0]]; }), test: function (i, v) { if (s.temp[i] == null) return false; var f = s.temp[i] * 9 / 5 + 32; return f >= TEMPS[v][1] && f < TEMPS[v][2]; } }
+    ];
+    filters.forEach(function (f) {
+      var label = document.createElement('label'); label.appendChild(document.createTextNode(f.name + ' '));
+      f.select = document.createElement('select'); option(f.select, '', 'Any');
+      f.options.forEach(function (o) { option(f.select, o[0], o[1]); });
+      label.appendChild(f.select); pick.appendChild(label); f.select.addEventListener('change', show);
+    });
+    function show() {
+      var on = filters.filter(function (f) { return f.select.value !== ''; }), hits = [];
+      for (var i = 0; i < N; i++) { var ok = true; for (var k = 0; k < on.length && ok; k++) ok = on[k].test(i, Number(on[k].select.value)); if (ok) hits.push(i + 1); }
+      count.textContent = fmtInt(hits.length) + (hits.length === 1 ? ' song' : ' songs');
+      for (var j = hits.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)), t = hits[j]; hits[j] = hits[r]; hits[r] = t; }
+      list.textContent = '';
+      hits.slice(0, 8).forEach(function (n) { row(list, '#' + n, function (p) { p.appendChild(songLink(data, n)); p.appendChild(document.createTextNode(meta(data, n, true))); }); });
+      more.hidden = hits.length <= 8;
+    }
+    more.addEventListener('click', show); show();
+  }
+
+  function oneYear(data, extra) {
+    var s = data.songs, x = extra.songs, N = s.title.length, select = document.getElementById('yr'), list = document.getElementById('yr-list');
+    var last = songDate(N).getUTCFullYear();
+    for (var y = last; y >= 2009; y--) option(select, y, y);
+    function show() {
+      var y = Number(select.value), from = Math.round((Date.UTC(y, 0, 1) - SONG_ONE) / DAY) + 1, to = Math.min(N, Math.round((Date.UTC(y + 1, 0, 1) - SONG_ONE) / DAY));
+      var mood = {}, key = {}, inst = {}, topic = {}, place = {}, top = 0, longest = 0, seconds = 0;
+      function bump(c, v) { if (v != null && v !== '') c[v] = (c[v] || 0) + 1; }
+      for (var n = from; n <= to; n++) {
+        var i = n - 1; bump(mood, s.mood[i]); bump(key, s.key[i]); bump(inst, x.inst[i]); bump(place, s.place[i]);
+        x.topics[i].forEach(function (t) { if (extra.labels.topic[t] !== 'Poetic' && extra.labels.topic[t] !== 'Life') bump(topic, t); });
+        if (s.views[i] != null && (!top || s.views[i] > s.views[top - 1])) top = n;
+        if (x.len[i] != null) { seconds += x.len[i]; if (!longest || x.len[i] > x.len[longest - 1]) longest = n; }
+      }
+      list.textContent = '';
+      function fact(tag, text) { if (text) row(list, tag, function (p) { p.textContent = text; }); }
+      fact('Songs', fmtInt(to - from + 1) + ', ' + (seconds / 3600).toFixed(1) + ' hours');
+      fact('Mood', topOf(mood, data.labels.mood)); fact('Key', topOf(key)); fact('Instrument', topOf(inst, extra.labels.inst));
+      fact('Topic', topOf(topic, extra.labels.topic)); fact('Place', topOf(place, data.labels.place));
+      if (top) row(list, 'Most watched', function (p) { p.appendChild(songLink(data, top)); p.appendChild(document.createTextNode(', ' + fmtInt(s.views[top - 1]) + ' views')); });
+      if (longest) row(list, 'Longest', function (p) { p.appendChild(songLink(data, longest)); p.appendChild(document.createTextNode(', ' + clock(x.len[longest - 1]))); });
+    }
+    select.addEventListener('change', show); show();
+  }
+
+  // ---------- over the years ----------
+  function instrumentCharts(extra) {
+    var el = document.getElementById('chart-inst'), years = extra.years, n = years.length, W = 170, H = 96, T = 6, B = 16, max = 0.5;
+    extra.inst_share.names.forEach(function (name, k) {
+      var share = extra.inst_share.share[k], box = document.createElement('div'); box.style.display = 'grid'; box.style.gap = '4px';
+      var s = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': name + ' share by year' }, box);
+      function px(i) { return W * i / (n - 1); } function py(v) { return T + (H - T - B) * (1 - Math.min(v, max) / max); }
+      svg('path', { d: 'M0,' + py(0) + share.map(function (v, i) { return 'L' + px(i) + ',' + py(v); }).join('') + 'L' + W + ',' + py(0) + 'Z', fill: C.blue }, s);
+      svg('line', { x1: 0, x2: W, y1: py(0), y2: py(0), class: 'axis-ref' }, s);
+      svg('text', { x: 0, y: H - 2 }, s).textContent = years[0];
+      svg('text', { x: W, y: H - 2, 'text-anchor': 'end' }, s).textContent = years[n - 1];
+      years.forEach(function (yr, i) {
+        var r = svg('rect', { x: px(i) - W / (n - 1) / 2, y: 0, width: W / (n - 1), height: H - B, fill: 'transparent' }, s);
+        hover(r, name + ', ' + yr + ': ' + Math.round(share[i] * 100) + '% of songs');
+      });
+      var cap = document.createElement('div'); cap.className = 'small'; cap.textContent = name; box.appendChild(cap);
+      el.appendChild(box);
+    });
+  }
+  function yearTopics(data, extra) {
+    var list = document.getElementById('year-topics'), x = extra.songs, N = data.songs.title.length, open = null;
+    extra.years.forEach(function (yr, i) {
+      row(list, String(yr), function (p) {
+        var sub = document.createElement('div'); sub.className = 'sub';
+        extra.topics_by_year[i].forEach(function (t, k) {
+          if (k) p.appendChild(document.createTextNode(', '));
+          var b = document.createElement('button'); b.type = 'button'; b.className = 'plain'; b.textContent = t[0] + ' (' + t[1] + ')'; b.setAttribute('aria-pressed', 'false');
+          b.addEventListener('click', function () {
+            if (open) { open[0].setAttribute('aria-pressed', 'false'); open[1].textContent = ''; }
+            if (open && open[0] === b) { open = null; return; }
+            open = [b, sub]; b.setAttribute('aria-pressed', 'true');
+            var id = extra.labels.topic.indexOf(t[0]), from = Math.round((Date.UTC(yr, 0, 1) - SONG_ONE) / DAY) + 1, to = Math.min(N, Math.round((Date.UTC(yr + 1, 0, 1) - SONG_ONE) / DAY));
+            for (var n = from; n <= to; n++) if (x.topics[n - 1].indexOf(id) >= 0) sub.appendChild(songLink(data, n));
+          });
+          p.appendChild(b);
+        });
+        p.appendChild(sub);
+      });
+    });
+  }
+
+  // ---------- things to press ----------
+  function sets(data, extra) {
+    var s = data.songs, N = s.title.length, box = document.getElementById('set-frames'), gone = {};
+    extra.gone.forEach(function (n) { gone[n] = 1; });
+    var top = [];
+    for (var y = 2009; y <= songDate(N).getUTCFullYear(); y++) {
+      var from = Math.round((Date.UTC(y, 0, 1) - SONG_ONE) / DAY) + 1, to = Math.min(N, Math.round((Date.UTC(y + 1, 0, 1) - SONG_ONE) / DAY)), best = 0;
+      for (var n = from; n <= to; n++) if (!gone[n] && s.views[n - 1] != null && (!best || s.views[n - 1] > s.views[best - 1])) best = n;
+      if (best) top.push([best, y + '  ' + compact(s.views[best - 1])]);
+    }
+    var thousand = [[1, '#1']];
+    for (var k = 1000; k < N; k += 1000) thousand.push([k, '#' + fmtInt(k)]);
+    thousand.push([N, '#' + fmtInt(N)]);
+    var which = { top: top, thousand: thousand };
+    document.querySelectorAll('.lens[data-set]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelectorAll('.lens[data-set]').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+        frames(box, data, which[b.dataset.set]);
+      });
+    });
+    frames(box, data, top);
+  }
+
+  var FIFTHS = [['C', 'Am'], ['G', 'Em'], ['D', 'Bm'], ['A', 'F#m'], ['E', 'C#m'], ['B', 'G#m'], ['F#', 'Ebm'], ['Db', 'Bbm'], ['Ab', 'Fm'], ['Eb', 'Cm'], ['Bb', 'Gm'], ['F', 'Dm']];
+  function keyWheel(data) {
+    var s = data.songs, N = s.title.length, by = {}, el = document.getElementById('key-wheel'), one = document.getElementById('key-one');
+    for (var i = 0; i < N; i++) if (s.key[i]) (by[s.key[i]] = by[s.key[i]] || []).push(i + 1);
+    function count(k) { return (by[k] || []).length; }
+    var maxOut = 0, maxIn = 0; FIFTHS.forEach(function (p) { maxOut = Math.max(maxOut, count(p[0])); maxIn = Math.max(maxIn, count(p[1])); });
+    var W = 360, c = W / 2, r0 = 62, band = 20, out = 78, inn = 40;
+    var g = svg('svg', { viewBox: '0 0 ' + W + ' ' + W, role: 'group', 'aria-label': 'Songs per key' }, el), chosen = null;
+    function wedge(a, from, to) {
+      var h = Math.PI / 12 - 0.03, p = function (r, t) { return (c + Math.cos(t) * r).toFixed(1) + ',' + (c + Math.sin(t) * r).toFixed(1); };
+      return 'M' + p(from, a - h) + 'L' + p(to, a - h) + 'A' + to + ',' + to + ' 0 0 1 ' + p(to, a + h) + 'L' + p(from, a + h) + 'A' + from + ',' + from + ' 0 0 0 ' + p(from, a - h) + 'Z';
+    }
+    function pick(k, path) {
+      if (chosen) chosen.setAttribute('aria-pressed', 'false');
+      chosen = path; path.setAttribute('aria-pressed', 'true');
+      oneOf(one, data, fmtInt(count(k)) + (count(k) === 1 ? ' song in ' : ' songs in ') + k, by[k] || []);
+    }
+    var first = null;
+    FIFTHS.forEach(function (pair, i) {
+      var a = -Math.PI / 2 + i * Math.PI / 6;
+      [[pair[0], r0 + band, r0 + band + Math.max(4, out * count(pair[0]) / maxOut), C.orange], [pair[1], r0 - Math.max(4, inn * count(pair[1]) / maxIn), r0, C.blue]].forEach(function (w) {
+        var path = svg('path', { d: wedge(a, w[1], w[2]), fill: w[3], tabindex: 0, role: 'button', 'aria-pressed': 'false', 'aria-label': w[0] + ', ' + fmtInt(count(w[0])) + ' songs' }, g);
+        path.addEventListener('click', function () { pick(w[0], path); });
+        path.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(w[0], path); } });
+        hover(path, w[0] + ': ' + fmtInt(count(w[0])) + ' songs');
+        if (!first) first = [w[0], path];
+      });
+      var ro = r0 + band + Math.max(4, out * count(pair[0]) / maxOut) + 12;
+      svg('text', { x: c + Math.cos(a) * ro, y: c + Math.sin(a) * ro + 4, 'text-anchor': 'middle', class: 'label-strong' }, g).textContent = pair[0];
+      svg('text', { x: c + Math.cos(a) * (r0 + band / 2), y: c + Math.sin(a) * (r0 + band / 2) + 3.5, 'text-anchor': 'middle', style: 'font-size:9px' }, g).textContent = pair[1];
+    });
+    pick(first[0], first[1]);
+  }
+
+  function tempo(data, extra) {
+    var bpm = extra.songs.bpm, N = bpm.length, by = {}, el = document.getElementById('tempo-chart'), range = document.getElementById('tempo-range'), one = document.getElementById('tempo-one');
+    var lo = Number(range.min), hi = Number(range.max), max = 0;
+    for (var i = 0; i < N; i++) if (bpm[i] != null && bpm[i] >= lo && bpm[i] <= hi) { (by[bpm[i]] = by[bpm[i]] || []).push(i + 1); max = Math.max(max, by[bpm[i]].length); }
+    var W = 520, H = 220, B = 22, T = 6, bw = W / (hi - lo + 1), bars = {};
+    var g = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Songs at each tempo; the most are at 120, 100 and 90 beats per minute' }, el);
+    for (var b = lo; b <= hi; b++) {
+      var h = by[b] ? Math.max(1, (H - B - T) * by[b].length / max) : 0;
+      if (h) bars[b] = svg('rect', { class: 'bar', x: (b - lo) * bw, y: H - B - h, width: Math.max(1, bw - 0.6), height: h, fill: C.ink2 }, g);
+      if (b % 20 === 0) svg('text', { x: (b - lo + 0.5) * bw, y: H - 6, 'text-anchor': 'middle' }, g).textContent = b;
+    }
+    var on = null;
+    function nearest(v) { for (var d = 0; d <= hi - lo; d++) { if (by[v - d]) return v - d; if (by[v + d]) return v + d; } return v; }
+    function mark(v) { if (on) on.removeAttribute('data-on'); on = bars[v]; if (on) on.setAttribute('data-on', ''); }
+    function choose(v) { v = nearest(v); range.value = v; mark(v); oneOf(one, data, v + ' beats per minute, ' + fmtInt(by[v].length) + (by[v].length === 1 ? ' song' : ' songs'), by[v]); }
+    function at(e) { var r = g.getBoundingClientRect(); return Math.round(lo + (e.clientX - r.left) / r.width * (hi - lo + 1) - 0.5); }
+    g.style.cursor = 'pointer'; g.style.touchAction = 'pan-y';
+    g.addEventListener('pointermove', function (e) { if (e.buttons) { var v = nearest(Math.max(lo, Math.min(hi, at(e)))); range.value = v; mark(v); } });
+    g.addEventListener('click', function (e) { choose(Math.max(lo, Math.min(hi, at(e)))); });
+    range.addEventListener('input', function () { mark(nearest(Number(range.value))); });
+    range.addEventListener('change', function () { choose(Number(range.value)); });
+    choose(120);
+  }
+
+  // One face per month, lined up by the eyes, so sliding through them plays like a film.
+  function beardSlider(data, faces) {
+    var tool = document.getElementById('beard-tool'), img = document.getElementById('beard-face'), text = document.getElementById('beard-text');
+    var range = document.getElementById('beard-range'), play = document.getElementById('beard-play'), timer = 0, loaded = false;
+    var NAMES = { Beard: 'Beard', Shadow: 'Stubble', Clean: 'Clean-shaven' };
+    range.max = faces.length - 1;
+    function show(i) {
+      var f = faces[i], ym = f.month.split('-');
+      img.src = 'faces/' + f.month + '.jpg';
+      text.textContent = LONG_MONTHS[Number(ym[1]) - 1] + ' ' + ym[0] + ' · ' + (NAMES[f.beard] || f.beard) + ' · ';
+      text.appendChild(songLink(data, f.n));
+    }
+    function stop() { clearInterval(timer); timer = 0; play.textContent = 'Play'; play.setAttribute('aria-pressed', 'false'); }
+    range.addEventListener('input', function () { stop(); show(Number(range.value)); });
+    play.addEventListener('click', function () {
+      if (timer) return stop();
+      if (!loaded) { faces.forEach(function (f) { new Image().src = 'faces/' + f.month + '.jpg'; }); loaded = true; }
+      if (Number(range.value) >= faces.length - 1) range.value = 0;
+      play.textContent = 'Stop'; play.setAttribute('aria-pressed', 'true');
+      timer = setInterval(function () { var i = Number(range.value) + 1; if (i >= faces.length) return stop(); range.value = i; show(i); }, 140);
+    });
+    tool.hidden = false; show(0);
+  }
+
+  // The home-city colours for the every-day field; the lens appears once its data has loaded.
+  function homeLens(extra) {
+    var era = extra.songs.era, cols = [C.orange, '#e6b422', C.blue, C.aqua];
+    LENSES.home = { color: function (i) { return era[i] == null ? hex(C.none) : hex(cols[era[i]]); },
+      legend: extra.labels.era.map(function (name, k) { return [cols[k], name]; }) };
+    document.querySelector('.lens[data-lens="home"]').hidden = false;
+  }
+
   function fillMeta(data) {
     var m = data.meta;
     var vals = { songs: fmtInt(m.songs), hours: fmtInt(m.hours), places: fmtInt(m.places), views: compact(m.views), headlines: fmtInt(m.headlines) };
@@ -633,7 +1049,12 @@ footer.credits a { color: var(--ink-2); }
 
   fetch('lab.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (data) {
     LENSES = buildLenses(data);
-    fillMeta(data); field(data); weekdayChart(data); newsChart(); beardChart(data); angryChart(data); viewsChart(data); linkSongs(data);
+    fillMeta(data); field(data); weekdayChart(data); newsChart(); beardChart(data); angryChart(data); viewsChart(data); linkSongs(data); birthday(data); keyWheel(data);
+    // The tools read a second, smaller file; without it they stay out of the way.
+    fetch('lab-extra.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (extra) {
+      finder(data, extra); oneYear(data, extra); instrumentCharts(extra); yearTopics(data, extra); homeLens(extra); sets(data, extra); tempo(data, extra);
+    }).catch(function () { ['find-tool', 'year-tool', 'years', 'sets-tool', 'tempo-tool'].forEach(function (id) { document.getElementById(id).hidden = true; }); });
+    fetch('faces/index.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (faces) { if (faces.length) beardSlider(data, faces); }).catch(function () {});
   }).catch(function () {
     document.getElementById('readout').textContent = 'The song data didn’t load. Reload the page to try again.';
   });

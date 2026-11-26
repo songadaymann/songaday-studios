@@ -7,8 +7,11 @@
 // element `display: block; height: 36px` and the page doesn't move when the bar arrives). It
 // draws in its own shadow DOM, so it can't restyle the page or be restyled by it. The links come
 // from https://songaday.studio/projects.json; if that can't load, the built-in list below is
-// used, so a studio outage leaves a slightly stale bar, never a broken page. It makes no other
-// requests. "v1" is pinned: changes that could break a host page get a new version folder.
+// used, so a studio outage leaves a slightly stale bar, never a broken page. Its only other
+// requests are the Donate button test's counts (donate-words.js). "v1" is pinned: changes that
+// could break a host page get a new version folder.
+
+import { wireButton } from './donate-words.js';
 
 const STUDIO = 'https://songaday.studio';
 const PROJECTS_URL = new URL('/projects.json', import.meta.url);
@@ -16,7 +19,7 @@ const PROJECTS_URL = new URL('/projects.json', import.meta.url);
 // The bar's projects as of the last bar release, for when projects.json can't load.
 export const FALLBACK = [
   { verb: 'listen', label: 'Listen', href: 'https://songaday.studio/listen', crypto: false },
-  { verb: 'see', label: 'See all', href: 'https://songaday.studio/all', crypto: false },
+  { verb: 'see', label: 'See all', href: 'https://songaday.studio/gallery/', crypto: false },
   { verb: 'play', label: 'Play', href: 'https://songaday.studio/games', crypto: false },
   { verb: 'get-a-song', label: 'Get a song', href: 'https://songaday.studio/commission', crypto: false },
   { verb: 'collect', label: 'Collect', href: 'https://songaday.world/', crypto: true }
@@ -188,6 +191,8 @@ function define() {
       // "Donate", not "Support": on its own, "Support" reads like help with the website.
       const support = element('a', 'support', 'Donate');
       support.href = supportHref(location.hostname);
+      // Its words are the Donate button test's (donate-words.js), which counts its presses.
+      wireButton(support, 'bar');
       // songaday.studio's own header already has Donate, so the pill would be a second red button.
       support.hidden = location.hostname === 'songaday.studio' || location.hostname === 'www.songaday.studio';
       if (this.#here === 'support') support.setAttribute('aria-current', 'page');
