@@ -20,8 +20,16 @@ sales are not included.
 
 ## 2. Free third-party assets included under their own licenses
 
-None are bundled in the public source. Remote media references do not grant
-permission to redistribute that media.
+`data-lab/lab-map.json` is the land outline behind the map of where the songs were
+written on songaday.studio/data. It is made by `data-lab/make-map.py` from Natural Earth
+(https://www.naturalearthdata.com/, public domain, no permission or credit needed): the
+1:50m land and Great Lakes for the world and the 1:10m land around New York City,
+simplified, retrieved November 26, 2026 from
+https://github.com/nvkelso/natural-earth-vector. The page draws it itself, with no map
+service and nothing loaded from another site.
+
+No other third-party assets are bundled in the public source. Remote media references
+do not grant permission to redistribute that media.
 
 ## 3. Paid or restricted assets not included
 
