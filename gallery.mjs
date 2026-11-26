@@ -1,5 +1,7 @@
 const pagePath = '/gallery/';
 const stylesheetPath = '/gallery/studio.css';
+// What a shared /gallery/ link shows (share-images.mjs drew the picture).
+const GALLERY_SHARE_TAGS = `<meta property="og:type" content="website"><meta property="og:site_name" content="Song A Day Studio"><meta property="og:title" content="All songs · Song A Day Studio"><meta property="og:description" content="Every Song A Day song in one zoomable wall, one a day since January 1, 2009."><meta property="og:url" content="https://songaday.studio/gallery/"><meta property="og:image" content="https://songaday.studio/assets/images/share/gallery.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Every Song A Day song since 2009, on one wall."><meta name="twitter:card" content="summary_large_image">`;
 const headerPath = '/gallery/studio-header.txt';
 const forwardedHeaders = ['accept', 'origin', 'sec-fetch-site', 'cf-connecting-ip'];
 const assetHeaders = ['range', 'if-range', 'if-none-match', 'if-modified-since'];
@@ -52,7 +54,7 @@ export async function serveGallery(request, env, url) {
   const page = new Response(response.body, { status: response.status, headers: pageHeaders });
   return new HTMLRewriter()
     .on('head', { element(element) {
-      element.append(`<link rel="stylesheet" href="${stylesheetPath}"><link rel="canonical" href="https://songaday.studio/gallery/">`, { html: true });
+      element.append(`<link rel="stylesheet" href="${stylesheetPath}"><link rel="canonical" href="https://songaday.studio/gallery/">${GALLERY_SHARE_TAGS}`, { html: true });
     } })
     .on('title', { element(element) { element.setInnerContent('All songs · Song A Day Studio'); } })
     .on('body', { element(element) { element.prepend(markup, { html: true }); } })

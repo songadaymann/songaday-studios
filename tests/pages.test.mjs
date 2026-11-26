@@ -192,3 +192,25 @@ test('the story has a page of its own, and the home page keeps the goals and a l
     await rm(out, { recursive: true, force: true });
   }
 });
+
+test('every public page has a share picture, and the large card on X', async () => {
+  const { out, read } = await build();
+  try {
+    const pages = {
+      'index.html': 'home', 'films/index.html': 'films', 'everything/index.html': 'everything',
+      'press/index.html': 'press', 'now/index.html': 'now', 'story/index.html': 'story',
+      'patrons/index.html': 'patrons', 'conference-troubadour/index.html': 'conference-troubadour',
+      'business/index.html': 'business', 'commission/index.html': 'commission', 'data/index.html': 'data',
+      'store/index.html': 'store', 'store/muscle/index.html': 'muscle',
+    };
+    for (const [page, name] of Object.entries(pages)) {
+      const html = await read(page);
+      assert.ok(html.includes(`<meta property="og:image" content="https://songaday.studio/assets/images/share/${name}.png">`), page);
+      assert.match(html, /<meta property="og:image:alt" content="[^"]+">/, page);
+      assert.match(html, /<meta name="twitter:card" content="summary_large_image">/, page);
+    }
+    assert.doesNotMatch(await read('commission/song.html'), /og:image/);
+  } finally {
+    await rm(out, { recursive: true, force: true });
+  }
+});

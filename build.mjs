@@ -15,6 +15,7 @@ import { renderDirectory, renderEverything, validateProjects } from "./projects.
 import { patronProblems, renderPatronFaces, renderPatrons } from "./patrons.mjs";
 import { BUDGETS } from "./troubadour.mjs";
 import { BUSINESS_BUDGETS } from "./business.mjs";
+import { DATA_CARD, SHARE_CARDS, SHARE_SIZE, shareImageUrl } from "./share-images.mjs";
 import { LIMITS, MEMO_MAX_BYTES, PLAN_MONTHS, PRICES, VIDEO_PRICE_CENTS, WRITES_PER_DAY } from "./commission-config.mjs";
 
 const projectRoot = path.resolve(import.meta.dirname);
@@ -136,12 +137,27 @@ const DEFAULT_CSP = "default-src 'none'; img-src https: http: data: blob:; media
 // An inline script as it goes into the page, so its CSP hash is of exactly these characters.
 const inlineScript = (script) => script.replaceAll("</script", "<\\/script");
 
-function documentHtml({ title, description, ogDescription = description, url, body, script, csp = DEFAULT_CSP, extraCss = "", robots = null }) {
+// The picture a shared link shows (share-images.mjs draws them): og:image, and the large card on X.
+const attribute = (text) => text.replaceAll("&", "&amp;").replaceAll('"', "&quot;").replaceAll("<", "&lt;");
+function shareTags(name) {
+  const { width, height, alt } = name === "data" ? DATA_CARD : { ...SHARE_SIZE, alt: SHARE_CARDS[name]?.alt };
+  if (!alt) throw new Error(`share-images.mjs has no card called ${name}.`);
+  return `
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Song A Day Studio">
+  <meta property="og:image" content="${shareImageUrl(name)}">
+  <meta property="og:image:width" content="${width}">
+  <meta property="og:image:height" content="${height}">
+  <meta property="og:image:alt" content="${attribute(alt)}">
+  <meta name="twitter:card" content="summary_large_image">`;
+}
+
+function documentHtml({ title, description, ogDescription = description, url, share, body, script, csp = DEFAULT_CSP, extraCss = "", robots = null }) {
   const og = url ? `
   <meta name="description" content="${description}">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${ogDescription}">
-  <meta property="og:url" content="${url}">` : "";
+  <meta property="og:url" content="${url}">${share ? shareTags(share) : ""}` : "";
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -169,6 +185,7 @@ await writePage("index.html", documentHtml({
   description: "Jonathan Mann has written a song every day since January 1, 2009. Help him write tomorrow's. Songs, games, films and free music software from Song A Day Studio.",
   ogDescription: "Jonathan Mann has written a song every day since January 1, 2009. Help him write tomorrow's.",
   url: "https://songaday.studio/",
+  share: "home",
   body: html,
   script: js,
 }));
@@ -185,6 +202,7 @@ await writePage("films/index.html", documentHtml({
   title: "Films · Song A Day Studio",
   description: "Mini-docs by Jonathan Mann about making something every day.",
   url: "https://songaday.studio/films/",
+  share: "films",
   body: hostedMedia(filmsBody),
   script: filmsJs,
 }));
@@ -217,6 +235,7 @@ await writePage("everything/index.html", documentHtml({
   title: "Everything · Song A Day Studio",
   description: "Every place Song A Day lives: songs, games, plugins, films, and what's coming next.",
   url: "https://songaday.studio/everything/",
+  share: "everything",
   body: hostedMedia(withChrome(everythingSource).replace("{{EVERYTHING}}", () => renderEverything(projects))),
   script: `(() => {\n  "use strict";\n${walletGateScript}\n  applyWalletGate();\n})();`,
 }));
@@ -233,6 +252,7 @@ await writePage("press/index.html", documentHtml({
   title: "Press · Song A Day Studio",
   description: "Press, podcasts, radio and TV about Jonathan Mann and Song A Day.",
   url: "https://songaday.studio/press/",
+  share: "press",
   body: hostedMedia(withChrome(pressSource)
     .replace("{{PRESS_SUMMARY}}", () => renderPressSummary(press.items))
     .replace("{{PRESS}}", () => renderPress(press.items))),
@@ -243,6 +263,7 @@ await writePage("now/index.html", documentHtml({
   title: "Now · Song A Day Studio",
   description: "What Jonathan Mann is doing now, November 2026.",
   url: "https://songaday.studio/now/",
+  share: "now",
   body: hostedMedia(withChrome(nowSource).replaceAll("{{SONG_COUNT}}", number.toLocaleString("en-US"))),
 }));
 
@@ -262,6 +283,7 @@ await writePage("story/index.html", documentHtml({
   title: "The story · Song A Day Studio",
   description: "How Jonathan Mann has kept Song A Day going since 2009: video contests, conferences, commissions, patronage, and now games.",
   url: "https://songaday.studio/story/",
+  share: "story",
   body: hostedMedia(withChrome(storySource).replaceAll(/\{\{([A-Z_]+)\}\}/g, (match, name) => {
     if (!(name in storyTokens)) throw new Error(`story.html has an unknown {{${name}}}.`);
     return storyTokens[name];
@@ -276,6 +298,7 @@ await writePage("patrons/index.html", documentHtml({
   title: "Patrons · Song A Day Studio",
   description: "The people and organizations who keep Song A Day going.",
   url: "https://songaday.studio/patrons/",
+  share: "patrons",
   body: hostedMedia(withChrome(await source("patrons.html")).replace("{{PATRONS}}", () => renderPatrons(patrons))),
   script: await source("patrons-page.js"),
   extraCss: await source("patrons.css"),
@@ -305,6 +328,7 @@ await writePage("conference-troubadour/index.html", documentHtml({
   title: "The Conference Troubadour · Song A Day Studio",
   description: "Jonathan Mann watches every talk at your conference and ends the day with a song about it.",
   url: "https://songaday.studio/conference-troubadour/",
+  share: "conference-troubadour",
   body: hostedMedia((await source("conference-troubadour.html"))
     .replace("{{HEADER}}", () => troubadourHeader).replace("{{FOOTER}}", () => troubadourFooter)
     .replaceAll("{{BOOK_HREF}}", TROUBADOUR_BOOK_HREF)
@@ -323,6 +347,7 @@ await writePage("business/index.html", documentHtml({
   title: "A song for your business · Song A Day Studio",
   description: "A custom song for your company, brand, event or organization, or a theme song for your podcast, show or channel, by Jonathan Mann.",
   url: "https://songaday.studio/business/",
+  share: "business",
   body: hostedMedia((await source("business.html"))
     .replace("{{HEADER}}", () => businessHeader).replace("{{FOOTER}}", () => purchaseFooter)
     .replaceAll("{{BOOK_HREF}}", BUSINESS_BOOK_HREF)
@@ -362,6 +387,7 @@ await writePage("commission/index.html", documentHtml({
   title: "Get a custom song · Song A Day Studio",
   description: `Jonathan Mann has written a song every day since 2009. He’ll write one for you. Birthdays, weddings, anniversaries or just because! Pay what you can when it’s done (from ${money(PRICES.personal.floor)}).`,
   url: "https://songaday.studio/commission",
+  share: "commission",
   body: hostedMedia(commissionBody),
   script: commissionJs,
   csp: commissionCsp,
@@ -406,7 +432,8 @@ await writePage("data/index.html", `<!doctype html>
   <title>${labTitle}</title>
   <meta name="description" content="Every Song A Day song since 2009 next to the weather, the moon, the planets, the news and its views, and what held up.">
   <meta property="og:title" content="${labTitle}">
-  <meta property="og:url" content="https://songaday.studio/data/">
+  <meta property="og:description" content="Every Song A Day song since 2009 next to the weather, the moon, the planets, the news and its views, and what held up.">
+  <meta property="og:url" content="https://songaday.studio/data/">${shareTags("data")}
   ${labStyle}
   <style>.eyebrow a{color:inherit;text-decoration:none}.eyebrow a:hover,.eyebrow a:focus-visible{text-decoration:underline}</style>
 </head>
@@ -476,6 +503,7 @@ await writePage("store/index.html", documentHtml({
   title: "Store · Song A Day Studio",
   description: "Song A Day albums on Bandcamp, a song written for you, MUSCLE posters, and the Songs Hat and Songs Shirt.",
   url: "https://songaday.studio/store/",
+  share: "store",
   body: storeBody(storeSource),
   script: storeFrontJs, extraCss: storeCss,
 }));
@@ -483,6 +511,7 @@ await writePage("store/muscle/index.html", documentHtml({
   title: "MUSCLE posters · Song A Day Studio",
   description: `All ${storeTokens.FIGURE_COUNT} MUSCLE figures as photographic posters. Choose your figure, size and frame.`,
   url: "https://songaday.studio/store/muscle/",
+  share: "muscle",
   body: storeBody(storeMuscleSource),
   script: storeJsSource.replace("/* STORE_ROOM_GEOMETRY */", () => roomGeometry.toString()), extraCss: storeCss,
 }));
