@@ -11,7 +11,7 @@ line up when you slide through them.
 PYTHON needs opencv-python-headless and numpy. MODELS_DIR holds yunet.onnx and sface.onnx.
 THUMBS_DIR is a cache for the thumbnails (about 300 MB). REFERENCES.json lists one song per
 year whose thumbnail is known to show him: [{"year": 2009, "yt": "..."}, ...]. The result
-still needs a look by eye; REJECT below drops months where the match was someone else.
+still needs a look by eye; REJECT below lists the songs to pass over.
 """
 import csv, json, os, sys, urllib.request
 from pathlib import Path
@@ -20,11 +20,13 @@ import numpy as np
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "faces"
-SIZE, EYE_Y, EYE_GAP = 320, 0.42, 0.20   # the square, and where the eyes sit in it
+SIZE, EYE_Y, EYE_GAP = 320, 0.38, 0.20   # the square, and where the eyes sit in it
 FIRST_TRY = 12       # thumbnails looked at per month before trying the rest
 MATCH = 0.40         # cosine similarity with the reference needed to count as him
 MIN_EYE_GAP = 26     # pixels in the thumbnail; smaller faces are too soft
-REJECT = set()       # "YYYY-MM" months dropped after looking at the sheet
+# Song numbers passed over after looking at the sheet: someone else, a child in the picture,
+# a face filter, or too washed out.
+REJECT = {1341, 1381, 2679, 3794, 4116, 5750, 6317}
 
 
 def thumbnail(yt, folder):
@@ -60,7 +62,7 @@ def aligned(image, marks):
     centre = (float(x1 + x2) / 2, float(y1 + y2) / 2)
     matrix = cv2.getRotationMatrix2D(centre, float(np.degrees(np.arctan2(y2 - y1, x2 - x1))), scale)
     matrix[0, 2] += SIZE / 2 - centre[0]; matrix[1, 2] += SIZE * EYE_Y - centre[1]
-    return cv2.warpAffine(image, matrix, (SIZE, SIZE), flags=cv2.INTER_AREA if scale < 1 else cv2.INTER_CUBIC, borderMode=cv2.BORDER_REFLECT_101)
+    return cv2.warpAffine(image, matrix, (SIZE, SIZE), flags=cv2.INTER_AREA if scale < 1 else cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=(17, 17, 17))   # past the thumbnail's edge: the page's dark grey
 
 
 def main():
@@ -79,9 +81,7 @@ def main():
         months.setdefault(r["date"][:7], []).append(r)
     index, strips = [], []
     for month in sorted(months):
-        if month in REJECT:
-            continue
-        songs, year = months[month], int(month[:4])
+        songs, year = [r for r in months[month] if int(r["number"]) not in REJECT], int(month[:4])
         near = [known[y] for y in (year - 1, year, year + 1) if y in known]
         step = max(1, len(songs) // FIRST_TRY)
         first = songs[step // 2::step]
@@ -91,7 +91,10 @@ def main():
                 image = thumbnail(r["youtube_id"], folder)
                 if image is None:
                     continue
-                for f in faces_in(image, detector, recognizer):
+                found = faces_in(image, detector, recognizer)
+                if len(found) != 1:          # nobody else in the picture
+                    continue
+                for f in found:
                     match = max(float(f["feature"] @ k) for k in near)
                     if match >= MATCH and (best is None or f["quality"] > best[0]["quality"]):
                         best = (f, r, image, match)
