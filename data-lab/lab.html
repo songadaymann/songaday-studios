@@ -381,7 +381,7 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     <li><span class="tag">Views</span><p><a data-song="3974">#3974 “Baby Yoda Baby Baby Yoda”</a> has 9.8 million views. The median song has about 400. <a data-song="1618">#1618 “SOHCAHTOA”</a> gained 283,000 views between August and October 2026, when school went back.</p></li>
     <li><span class="tag">Lengths</span><p>Shortest: <a data-song="5097">#5097 “This Is The Whole Song”</a>, 5 seconds. Longest: <a data-song="4908">#4908</a>, 19 minutes 37 seconds. The median is 2:13.</p></li>
     <li><span class="tag">The sheet</span><p>The public spreadsheet stops at #5101 (December 19, 2022). A find-and-replace that fixed instrument typos also rewrote seven YouTube IDs: “bAsE45R51bs” became “BassE45R51bs”.</p></li>
-    <li><span class="tag">Keys</span><p>79% of songs with a known key are major. C leads (784 songs), then F, D and G. Most of 2010 (#358 to #727) has no minor keys, because of how keys were written down that year.</p></li>
+    <li><span class="tag">Keys</span><p>79% of songs with a known key are major. C leads (784 songs), then F, D and G. For most of 2010 (#358 to #727) and #212 to #271 only the root was written down. For 305 of those 429 songs, major or minor is estimated from the recording and drawn paler; tested on songs whose key was written down, the estimates were right 95 to 98% of the time.</p></li>
   </ul>
 </section>
 
@@ -490,11 +490,14 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     var viewLo = hex('#184f95'), viewHi = hex('#cde2fb');
     var moonLo = hex('#1e1e1e'), moonHi = hex('#f2e6b8');
     function cat(arr, colors) { return function (i) { var v = arr[i]; return v == null ? hex(C.none) : hex(colors[v]); }; }
+    var est = s.minor_est || {}, white = [255, 255, 255], majorEst = mix(hex(C.orange), white, .45), minorEst = mix(hex(C.blue), white, .45);
     return {
       family: { color: cat(s.family, [C.orange, C.aqua, C.blue]),
         legend: [[C.orange, 'Bright (silly, excited, happy)'], [C.aqua, 'Calm (pensive, chill, tired)'], [C.blue, 'Dark (sad, angry, anxious, intense)'], [C.none, 'Other']] },
-      minor: { color: cat(s.minor, [C.orange, C.blue]),
-        legend: [[C.orange, 'Major'], [C.blue, 'Minor'], [C.none, 'Not recorded']] },
+      // Where only the root was written down, major or minor is estimated from the recording, drawn paler.
+      minor: { color: function (i) { var v = s.minor[i]; if (v != null) return hex(v ? C.blue : C.orange);
+          var e = est[i]; return e == null ? hex(C.none) : e ? minorEst : majorEst; },
+        legend: [[C.orange, 'Major'], [C.blue, 'Minor'], [rgb(majorEst), 'Major, estimated'], [rgb(minorEst), 'Minor, estimated'], [C.none, 'Not recorded']] },
       temp: { color: function (i) { var t = s.temp[i]; if (t == null) return hex(C.none);
           var mid = 12; return t < mid ? mix(cold, midT, Math.max(0, (t + 20) / (mid + 20))) : mix(midT, hot, Math.min(1, (t - mid) / (38 - mid))); },
         ramp: ['linear-gradient(90deg,' + C.blue + ',#383835,#e66767)', '−4 °F', '54 °F', '100 °F'] },
@@ -586,7 +589,8 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
       add(s.title[i], 't'); add(fmtDate(n));
       if (s.place[i] != null) add(data.labels.place[s.place[i]]);
       if (s.mood[i] != null) add(data.labels.mood[s.mood[i]]);
-      if (s.key[i]) add(s.key[i] + (s.minor[i] === 1 ? ' (minor)' : s.minor[i] === 0 ? ' (major)' : ''));
+      var guess = (s.minor_est || {})[i];
+      if (s.key[i]) add(s.key[i] + (s.minor[i] === 1 ? ' (minor)' : s.minor[i] === 0 ? ' (major)' : guess === 1 ? ' (minor, estimated)' : guess === 0 ? ' (major, estimated)' : ''));
       if (s.temp[i] != null) add(fahrenheit(s.temp[i]) + ' °F');
       if (s.moon[i] != null) add('Moon ' + s.moon[i] + '%');
       if (s.views[i] != null) add(fmtInt(s.views[i]) + ' views');
