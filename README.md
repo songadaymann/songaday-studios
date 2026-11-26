@@ -68,7 +68,10 @@ outside the Fridays at The Park app.
   [songaday-data](https://github.com/songadaymann/songaday-data) repo: run its `web/export.py`
   and copy `web/lab.json` into `data-lab/` to refresh it. `data-lab/lab-extra.json` feeds the
   birthday lookup, song finder, one-year numbers and instrument charts; it comes from the same
-  repo's `web/export_extra.py` (standard library only). (The folder isn't called `data/`,
+  repo's `web/export_extra.py` (standard library only), which also lists the places for the map
+  of where the songs were written (all of Connecticut is one mark, with no town named).
+  `data-lab/lab-map.json` is that map's land outline, drawn by `data-lab/make-map.py` from
+  Natural Earth (see `ASSETS.md`). (The folder isn't called `data/`,
   which `.gitignore` keeps for private data.)
 - `calendar.mjs`, `build-calendar.mjs`, `calendar.json` — the calendar under the hero: every song as
   one picture, an image per year; see "Calendar" below

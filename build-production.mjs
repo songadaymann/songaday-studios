@@ -32,6 +32,8 @@ await cp('commission/song.html', 'dist/commission/song.html');
 await cp('data/index.html', 'dist/data/index.html');
 await cp('data-lab/lab.json', 'dist/data/lab.json');
 await cp('data-lab/lab-extra.json', 'dist/data/lab-extra.json');
+// The land outline for the map of where the songs were written (data-lab/make-map.py).
+await cp('data-lab/lab-map.json', 'dist/data/lab-map.json');
 // One face per month for the beard slider (data-lab/make-faces.py). The page works without them.
 if (existsSync('data-lab/faces/index.json')) await cp('data-lab/faces', 'dist/data/faces', { recursive: true });
 // The press page, built by build.mjs from press/press.json; the Worker can swap in the live sheet.

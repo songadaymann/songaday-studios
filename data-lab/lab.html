@@ -104,6 +104,14 @@ input[type="range"] { width: 100%; margin: 0; accent-color: var(--red); }
 .sub { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; justify-items: start; }
 .sub:not(:empty) { margin-top: 8px; }
 
+/* The map: one mark per place, sized by its songs */
+#map { width: 100%; aspect-ratio: 16 / 7; display: block; touch-action: manipulation; }
+#map .land { fill: var(--rule); }
+#map .water { fill: var(--bg); }
+#map circle { fill: var(--red); stroke: var(--bg); stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
+#map circle[data-on] { fill: var(--ink); }
+@media (max-width: 560px) { #map { aspect-ratio: 3 / 2; } }
+
 /* Findings */
 .findings { display: grid; gap: 64px; }
 .finding { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 32px; align-items: start; }
@@ -190,6 +198,23 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
   <div class="legend" id="legend" aria-hidden="true"></div>
   <canvas id="field" role="img" aria-label="A calendar of every Song A Day song from 2009 to 2026, one square per day."></canvas>
   <div class="readout" id="readout" aria-live="polite"><span>Loading every song…</span></div>
+</section>
+
+<section id="where" aria-labelledby="where-title">
+  <header>
+    <h2 id="where-title">Where the songs were written</h2>
+    <p class="muted">One mark per place, sized by its songs. Press one to play a song from there.</p>
+  </header>
+  <div class="field-bar" role="group" aria-label="Show">
+    <button class="lens" type="button" data-view="world" aria-pressed="true">World</button>
+    <button class="lens" type="button" data-view="america" aria-pressed="false">North America</button>
+    <button class="lens" type="button" data-view="northeast" aria-pressed="false">Northeast</button>
+    <button class="lens" type="button" data-view="nyc" aria-pressed="false">New York City</button>
+    <button class="lens" type="button" data-view="europe" aria-pressed="false">Europe</button>
+  </div>
+  <svg id="map" role="img" aria-label="A map of the world with one mark for each place a song was written. The list under it has the same places."></svg>
+  <div class="pick"><label>Place <select id="map-place"></select></label></div>
+  <div class="one" id="map-one"></div>
 </section>
 
 <section id="tools" aria-labelledby="tools-title">
@@ -761,10 +786,10 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     if (yt) { a.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(yt); a.target = '_blank'; a.rel = 'noopener'; }
     return a;
   }
-  function meta(data, n, withDate) {
+  function meta(data, n, withDate, noPlace) {
     var s = data.songs, i = n - 1, bits = [];
     if (withDate) bits.push(fmtDate(n));
-    if (s.place[i] != null) bits.push(data.labels.place[s.place[i]]);
+    if (s.place[i] != null && !noPlace) bits.push(data.labels.place[s.place[i]]);
     if (s.mood[i] != null) bits.push(data.labels.mood[s.mood[i]]);
     if (s.temp[i] != null) bits.push(fahrenheit(s.temp[i]) + ' °F');
     return bits.length ? ' · ' + bits.join(' · ') : '';
@@ -793,17 +818,17 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     return b;
   }
   function frames(el, data, list) { el.textContent = ''; list.forEach(function (it) { el.appendChild(frame(data, it[0], it[1])); }); }
-  // One song out of a list, with a way to ask for another.
-  function oneOf(el, data, heading, list) {
+  // One song out of a list, with a way to ask for another. noPlace leaves the town out of its line.
+  function oneOf(el, data, heading, list, noPlace) {
     el.textContent = '';
     var h = document.createElement('p'); h.textContent = heading; el.appendChild(h);
     if (!list.length) return;
     var n = list[Math.floor(Math.random() * list.length)];
     el.appendChild(frame(data, n, '', true));
-    var p = document.createElement('p'); p.className = 'muted small'; p.appendChild(songLink(data, n)); p.appendChild(document.createTextNode(meta(data, n, true))); el.appendChild(p);
+    var p = document.createElement('p'); p.className = 'muted small'; p.appendChild(songLink(data, n)); p.appendChild(document.createTextNode(meta(data, n, true, noPlace))); el.appendChild(p);
     if (list.length > 1) {
       var wrap = document.createElement('div'), more = document.createElement('button'); more.type = 'button'; more.className = 'lens'; more.textContent = 'Another';
-      more.addEventListener('click', function () { oneOf(el, data, heading, list); }); wrap.appendChild(more); el.appendChild(wrap);
+      more.addEventListener('click', function () { oneOf(el, data, heading, list, noPlace); }); wrap.appendChild(more); el.appendChild(wrap);
     }
   }
 
@@ -1026,6 +1051,102 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     tool.hidden = false; show(0);
   }
 
+  // ---------- where the songs were written ----------
+  // The land is Natural Earth's outline (lab-map.json, drawn by make-map.py) in Mercator, and each
+  // place is put on it with the same sums. All of Connecticut is one mark; no town there is named.
+  function placeMap(data, extra, world) {
+    var el = document.getElementById('map'), one = document.getElementById('map-one'), select = document.getElementById('map-place');
+    var spots = extra.spots, W = world.w, H = world.h, MIN = 3, gone = {}, songs = spots.map(function () { return []; });
+    function merc(lat) { return Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)); }
+    var top = merc(world.lat_top);
+    function px(lon) { return (lon + 180) / 360 * W; }
+    function py(lat) { return (top - merc(lat)) * W / (2 * Math.PI); }
+    // West, south, east, north, and how fast a mark grows: its radius is a few pixels plus this times the square root of its songs.
+    var VIEWS = { world: [-168, -45, 112, 72, .42], america: [-160, 16, -62, 52, .5], northeast: [-80.5, 37.5, -69.5, 45.5, .6],
+      nyc: [-74.35, 40.55, -73.6, 41, .7], europe: [-12, 38, 22, 58, .6] };
+    extra.gone.forEach(function (n) { gone[n] = 1; });
+    extra.songs.spot.forEach(function (k, i) { if (k != null && !gone[i + 1]) songs[k].push(i + 1); });
+
+    var far = svg('g', { transform: 'scale(' + 1 / world.scale + ')' }, el);
+    svg('path', { class: 'land', d: world.land }, far); svg('path', { class: 'water', d: world.lakes }, far);
+    // Around New York the places are a few miles apart, so that view gets a finer coastline.
+    var near = svg('g', { transform: 'scale(' + 1 / world.detail.scale + ')', display: 'none' }, el);
+    svg('path', { class: 'land', d: world.detail.land }, near);
+    var marks = svg('g', {}, el);
+    var P = spots.map(function (sp, i) {
+      var p = { x: px(sp[2]), y: py(sp[1]), n: sp[3], r: 0 };
+      p.el = svg('circle', { cx: p.x, cy: p.y, r: 0 }, marks);   // most songs first, so small marks sit on top
+      option(select, i, sp[0] + ' (' + fmtInt(sp[3]) + ')');
+      return p;
+    });
+
+    var view = 'world', vb = null, k = VIEWS.world[4], anim = 0, chosen = -1;
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // The view's box, widened or heightened to the picture's shape and kept inside the world.
+    function fit(v) {
+      var x0 = px(v[0]), x1 = px(v[2]), y0 = py(v[3]), y1 = py(v[1]), a = el.clientWidth / el.clientHeight;
+      var w = x1 - x0, h = y1 - y0;
+      if (w / h < a) w = h * a; else h = w / a;
+      return [w >= W ? (W - w) / 2 : Math.min(W - w, Math.max(0, (x0 + x1 - w) / 2)), h >= H ? (H - h) / 2 : Math.min(H - h, Math.max(0, (y0 + y1 - h) / 2)), w, h];
+    }
+    function size() { return k * (el.clientWidth < 560 ? .7 : 1); }
+    function draw() {
+      el.setAttribute('viewBox', vb.join(' '));
+      var unit = vb[2] / el.clientWidth, f = size();
+      P.forEach(function (p) { p.r = (MIN + f * Math.sqrt(p.n)) * unit; p.el.setAttribute('r', p.r); });
+    }
+    function close(on) { far.setAttribute('display', on ? 'none' : 'inline'); near.setAttribute('display', on ? 'inline' : 'none'); }
+    function setView(name) {
+      view = name; cancelAnimationFrame(anim); close(false);
+      document.querySelectorAll('.lens[data-view]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.view === name)); });
+      var from = vb, to = fit(VIEWS[name]), k0 = k, k1 = VIEWS[name][4];
+      function done() { vb = to; k = k1; draw(); close(name === 'nyc'); }
+      if (!from || reduce.matches) return done();
+      var t0 = performance.now(), zoom = Math.log(to[2] / from[2]);
+      (function step(now) {
+        var t = Math.min(1, (now - t0) / 600), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        // Zoom evenly, and move the centre in step with it, so the map doesn't swing past its target.
+        var w = from[2] * Math.exp(zoom * e), m = Math.abs(zoom) < .001 ? e : (w - from[2]) / (to[2] - from[2]), h = w * to[3] / to[2];
+        var cx = from[0] + from[2] / 2 + (to[0] + to[2] / 2 - from[0] - from[2] / 2) * m, cy = from[1] + from[3] / 2 + (to[1] + to[3] / 2 - from[1] - from[3] / 2) * m;
+        vb = [cx - w / 2, cy - h / 2, w, h]; k = k0 + (k1 - k0) * e; draw();
+        if (t < 1) anim = requestAnimationFrame(step); else done();
+      })(t0);
+    }
+    // The mark under the pointer: the smallest one it is inside, or else the nearest one close by.
+    function hit(e) {
+      var r = el.getBoundingClientRect(), unit = vb[2] / r.width, x = vb[0] + (e.clientX - r.left) * unit, y = vb[1] + (e.clientY - r.top) * unit;
+      var best = -1, inside = Infinity, near = (e.pointerType === 'mouse' ? 5 : 16) * unit;
+      P.forEach(function (p, i) {
+        var d = Math.sqrt((x - p.x) * (x - p.x) + (y - p.y) * (y - p.y)) - p.r;
+        if (d <= 0) { if (p.r < inside) { inside = p.r; best = i; } }
+        else if (inside === Infinity && d < near) { near = d; best = i; }
+      });
+      return best;
+    }
+    function label(i) { return spots[i][0] + ': ' + fmtInt(spots[i][3]) + (spots[i][3] === 1 ? ' song' : ' songs'); }
+    function choose(i) {
+      if (chosen >= 0) P[chosen].el.removeAttribute('data-on');
+      chosen = i; P[i].el.setAttribute('data-on', ''); select.value = i;
+      oneOf(one, data, fmtInt(spots[i][3]) + (spots[i][3] === 1 ? ' song in ' : ' songs in ') + spots[i][0], songs[i], true);
+    }
+    el.addEventListener('click', function (e) { var i = hit(e); if (i >= 0) choose(i); });
+    el.addEventListener('pointermove', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var i = hit(e); el.style.cursor = i >= 0 ? 'pointer' : '';
+      if (i >= 0) showTip(label(i), e.clientX, e.clientY); else hideTip();
+    });
+    el.addEventListener('pointerleave', hideTip);
+    select.addEventListener('change', function () {
+      var i = Number(select.value), p = P[i], to = fit(VIEWS[view]);
+      // A place picked from the list that this view doesn't show: go back out to the world.
+      if (p.x < to[0] || p.x > to[0] + to[2] || p.y < to[1] || p.y > to[1] + to[3]) setView('world');
+      choose(i);
+    });
+    document.querySelectorAll('.lens[data-view]').forEach(function (b) { b.addEventListener('click', function () { setView(b.dataset.view); }); });
+    var rt = 0; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { cancelAnimationFrame(anim); vb = fit(VIEWS[view]); k = VIEWS[view][4]; draw(); close(view === 'nyc'); }, 80); });
+    setView('world'); choose(0);
+  }
+
   // The home-city colours for the every-day field; the lens appears once its data has loaded.
   function homeLens(extra) {
     var era = extra.songs.era, cols = [C.orange, '#e6b422', C.blue, C.aqua];
@@ -1053,7 +1174,10 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     // The tools read a second, smaller file; without it they stay out of the way.
     fetch('lab-extra.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (extra) {
       finder(data, extra); oneYear(data, extra); instrumentCharts(extra); yearTopics(data, extra); homeLens(extra); sets(data, extra); tempo(data, extra);
-    }).catch(function () { ['find-tool', 'year-tool', 'years', 'sets-tool', 'tempo-tool'].forEach(function (id) { document.getElementById(id).hidden = true; }); });
+      // The map needs the land's outline too; without it the map stays out of the way.
+      fetch('lab-map.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (world) { placeMap(data, extra, world); })
+        .catch(function () { document.getElementById('where').hidden = true; });
+    }).catch(function () { ['where', 'find-tool', 'year-tool', 'years', 'sets-tool', 'tempo-tool'].forEach(function (id) { document.getElementById(id).hidden = true; }); });
     fetch('faces/index.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (faces) { if (faces.length) beardSlider(data, faces); }).catch(function () {});
   }).catch(function () {
     document.getElementById('readout').textContent = 'The song data didn’t load. Reload the page to try again.';
