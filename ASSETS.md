@@ -12,7 +12,7 @@ Credit "Jonathan Mann (Song A Day)". This does not license third-party content
 appearing in videos, screenshots, game art, or branding. The mixed site bundle
 has not been audited for redistribution, so it is not included in the repository.
 
-`campaign-images/` holds ten pictures drawn for tweets from the Song A Day catalog
+`campaign-images/` holds nine pictures drawn for tweets from the Song A Day catalog
 (the calendar on five dates, and charts and lists of song titles). They are text
 and shapes only, wholly ours, CC BY 4.0. Company names in them are named as past
 clients; no logos are used. Pictures drawn from private order forms, invoices or
