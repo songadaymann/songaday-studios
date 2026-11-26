@@ -183,7 +183,7 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     <button class="lens" type="button" data-lens="temp" aria-pressed="false">Temperature</button>
     <button class="lens" type="button" data-lens="moon" aria-pressed="false">Moon</button>
     <button class="lens" type="button" data-lens="views" aria-pressed="false">Views</button>
-    <button class="lens" type="button" data-lens="away" aria-pressed="false">Home or away</button>
+    <button class="lens" type="button" data-lens="away" aria-pressed="false">Home or traveling</button>
     <button class="lens" type="button" data-lens="beard" aria-pressed="false">Beard</button>
     <button class="lens" type="button" data-lens="home" aria-pressed="false" hidden>Home city</button>
   </div>
@@ -290,7 +290,7 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
     <article class="finding">
       <div class="copy">
         <h3>On the road, songs run longer and get fewer views.</h3>
-        <p>1,329 of the 6,538 songs were written away from home.</p>
+        <p>1,329 of the 6,538 songs were written while traveling.</p>
       </div>
       <div class="chart">
         <div class="tiles">
@@ -507,7 +507,7 @@ section[hidden], .tool[hidden], .lens[hidden] { display: none; }
           var t = Math.min(1, Math.max(0, (Math.log10(v + 1) - 1.5) / (5.5 - 1.5))); return mix(viewLo, viewHi, t); },
         ramp: ['linear-gradient(90deg,#184f95,#cde2fb)', '30 views', '', '300K+'] },
       away: { color: cat(s.away, [C.aqua, C.orange]),
-        legend: [[C.aqua, 'At home'], [C.orange, 'Away']] },
+        legend: [[C.aqua, 'At home'], [C.orange, 'Traveling']] },
       beard: { color: cat(s.beard, [C.orange, C.aqua, C.blue]),
         legend: [[C.orange, 'Beard'], [C.aqua, 'Stubble'], [C.blue, 'Clean-shaven'], [C.none, 'Mustache or goatee']] }
     };
