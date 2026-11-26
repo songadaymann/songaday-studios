@@ -88,7 +88,7 @@ h1, h2, h3 { max-width: 100%; margin: 0; font-family: var(--font); font-size: va
 .hero-donate { grid-area: donate; min-width: 0; }
 .hero-donate:focus { outline: none; }
 .donate-intro { margin-bottom: 1.1rem; padding-bottom: 1.1rem; border-bottom: 2px solid var(--hairline); }
-.donate-intro h2 { font-size: var(--type-body); letter-spacing: 0; line-height: 1.45; }
+.donate-intro h2 { font-size: var(--type-body); letter-spacing: .04em; line-height: 1.45; text-align: center; text-transform: uppercase; }
 .wallet-alt { margin: 0 0 .9rem; font-size: var(--type-body); line-height: 1.4; }
 .wallet-alt[hidden], .wallet-alt [hidden] { display: none; }
 /* The Apple Pay mark stays as Apple supplies it: no outline, filter or recolor on the mark itself. */
