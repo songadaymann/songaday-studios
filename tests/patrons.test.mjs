@@ -147,10 +147,10 @@ test('the home page shows a row of patron faces under the goals, as one link to 
   assert.equal(renderPatronFaces(many).split('<img ').length - 1, HOME_FACES);
   assert.equal(renderPatronFaces({ patrons: [{ name: 'No Picture' }] }), '');
 
-  // One row at full width and two on a phone, in step with HOME_FACES; solid squares, no frame.
+  // One row at full width and three on a phone, in step with HOME_FACES; solid squares, no frame.
   const css = await readFile(new URL('profile.css', root), 'utf8');
   assert.ok(css.includes(`.patron-faces { display: grid; grid-template-columns: repeat(${HOME_FACES}, minmax(0, 1fr));`));
-  assert.ok(css.includes(`.patron-faces { grid-template-columns: repeat(${HOME_FACES / 2}, minmax(0, 1fr)); }`));
+  assert.ok(css.includes(`.patron-faces { grid-template-columns: repeat(${HOME_FACES / 3}, minmax(0, 1fr)); }`));
   const rules = css.match(/\.patron-faces[^{]*\{[^}]*\}/g).join('\n');
   assert.doesNotMatch(rules, /opacity|rgba\(|border-radius|border:|box-shadow/);
 

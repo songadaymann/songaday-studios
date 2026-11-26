@@ -125,6 +125,13 @@
         { "label": "Updraft", "url": "https://updraft.fund" },
         { "label": "BrightID", "url": "https://brightid.org" }
       ]
+    },
+    {
+      "name": "Kevin Harris",
+      "image": "/assets/patrons/kevin-harris.jpg",
+      "links": [
+        { "label": "X", "url": "https://x.com/OhThankKevin7" }
+      ]
     }
   ]
 }

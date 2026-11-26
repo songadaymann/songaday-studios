@@ -18,9 +18,10 @@
 // The most squares in one row (the page at full width; --patrons-across in patrons.css).
 export const PATRONS_PER_ROW = 8;
 
-// How many patrons' faces the home page shows under its goals: one row at full width, two on a
-// phone (.patron-faces in profile.css takes its columns from this number, so keep them in step).
-export const HOME_FACES = 14;
+// How many patrons' faces the home page shows under its goals: one row at full width, three rows
+// of five on a phone (.patron-faces in profile.css takes its columns from this number, so keep
+// them in step).
+export const HOME_FACES = 15;
 
 // Long enough for a couple of sentences in a patron's own words; the pop-up grows to fit.
 const BIO_MAX = 240;
