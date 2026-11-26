@@ -1,8 +1,9 @@
 # Assets
 
-The MIT license covers code only. The public repository contains no media files;
-the existing local bundle is excluded in `private-assets/site/` and exposed to
-local previews through the ignored `assets` symlink.
+The MIT license covers code only. The only media files in the public repository
+are the charts in `campaign-images/` (section 1); the existing local bundle is
+excluded in `private-assets/site/` and exposed to local previews through the
+ignored `assets` symlink.
 
 ## 1. Ours
 
@@ -10,6 +11,12 @@ Media wholly authored by Jonathan Mann is CC BY 4.0 unless separately licensed.
 Credit "Jonathan Mann (Song A Day)". This does not license third-party content
 appearing in videos, screenshots, game art, or branding. The mixed site bundle
 has not been audited for redistribution, so it is not included in the repository.
+
+`campaign-images/` holds ten pictures drawn for tweets from the Song A Day catalog
+(the calendar on five dates, and charts and lists of song titles). They are text
+and shapes only, wholly ours, CC BY 4.0. Company names in them are named as past
+clients; no logos are used. Pictures drawn from private order forms, invoices or
+sales are not included.
 
 ## 2. Free third-party assets included under their own licenses
 
