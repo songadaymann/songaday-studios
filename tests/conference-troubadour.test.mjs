@@ -40,7 +40,7 @@ test('the build makes the Conference Troubadour page: what it is, four videos, w
     assert.deepEqual([...page.matchAll(/<figcaption>([^<]+)<\/figcaption>/g)].map((match) => match[1]),
       ['Michael Willi, Head of Communications, Novartis', 'Katherine Dillon, CCO, Gartner For Marketers', 'Amy Ledoux, SVP of Meetings, ASAE']);
     assert.deepEqual([...page.matchAll(/<dt>([^<]+)<\/dt>/g)].map((match) => match[1]),
-      ['2023', '2022', '2020–21', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011']);
+      ['2026', '2025', '2023', '2022', '2020–21', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011']);
     // One of them asked not to be named, so no picture of logos goes beside the list.
     assert.match(page, /Watchmaker that wishes to be anonymous/);
     assert.doesNotMatch(page, /logos|Tudor/i);
