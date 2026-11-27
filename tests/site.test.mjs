@@ -512,3 +512,25 @@ test('the calendar only tells a mouse to hover', async () => {
   assert.match(css, /\.calendar-help-mouse \{ display: none; \}/);
   assert.ok(css.includes(`@media ${condition} {\n  .calendar-help-mouse { display: inline; }\n  .calendar-help-touch { display: none; }\n}`));
 });
+
+test('link preview bots get the page itself where people get a redirect', async () => {
+  const asked = [];
+  const env = {
+    ASSETS: { fetch: async (request) => { asked.push(new URL(request.url).pathname); return new Response('page', { headers: { 'Content-Type': 'image/png' } }); } },
+    GALLERY: { fetch: async () => new Response('gallery', { headers: { 'Content-Type': 'image/png' } }) },
+  };
+  const get = (path, agent) => worker.fetch(new Request('https://songaday.studio' + path, { headers: { 'User-Agent': agent } }), env);
+  for (const agent of ['Twitterbot/1.0', 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)']) {
+    for (const [path, page] of [['/now', '/now/'], ['/store', '/store/'], ['/Films', '/films/'], ['/themes', '/business/']]) {
+      asked.length = 0;
+      const response = await get(path, agent);
+      assert.equal(response.status, 200, agent + ' ' + path);
+      assert.deepEqual(asked, [page], agent + ' ' + path);
+    }
+    // Other sites still redirect.
+    assert.equal((await get('/wamp', agent)).status, 302);
+  }
+  const person = await get('/now', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/131 Safari/537.36');
+  assert.equal(person.status, 302);
+  assert.equal(person.headers.get('Location'), '/now/');
+});

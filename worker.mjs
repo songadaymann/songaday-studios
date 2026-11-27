@@ -57,6 +57,11 @@ const FOLDER_PAGES = new Set(['/films', '/links', '/everything', '/now', '/story
 // links Stripe sends buyers back on, name one of these; they land on the picker's own page.
 const POSTER_PARAMS = ['figure', 'size', 'frame', 'order'];
 
+// The programs that read a page's share picture when its link is posted. X's never shows the
+// picture for a link that redirects (songaday.studio/store, /now), so they get the page itself.
+const LINK_PREVIEW_BOTS = /twitterbot|facebookexternalhit|meta-externalagent|slackbot|discordbot|linkedinbot|whatsapp|telegrambot|redditbot|bluesky|mastodon|iframely|embedly/i;
+const isLinkPreviewBot = (request) => LINK_PREVIEW_BOTS.test(request.headers.get('User-Agent') || '');
+
 // The universe bar and projects.json load on other Song A Day sites too, and module scripts and
 // cross-origin fetches need CORS. The bar is pinned by version folder (bar/v1/), so it can be
 // cached for a few hours; projects.json changes more often.
@@ -142,6 +147,11 @@ export default {
   }
 };
 
+// The page a redirect would land on, answered at the address the bot asked for.
+function pageForBot(request, env, ctx, url, location) {
+  return route(new Request(new URL(location, url), { method: request.method, headers: request.headers }), env, ctx);
+}
+
 async function route(request, env, ctx) {
   const url = new URL(request.url);
   const hostDestination = HOST_REDIRECTS[url.hostname];
@@ -167,6 +177,7 @@ async function route(request, env, ctx) {
     // Same-site destinations keep the query string (e.g. /donate?utm_source=… → /?utm_source=…#donate).
     const [target, hash = ''] = destination.split('#');
     const location = destination.startsWith('/') ? target + url.search + (hash ? '#' + hash : '') : destination;
+    if (destination.startsWith('/') && isLinkPreviewBot(request)) return pageForBot(request, env, ctx, url, target + url.search);
     return new Response(null, {
       status: 302,
       headers: { Location: location, 'Cache-Control': 'no-store' }
@@ -220,6 +231,7 @@ async function route(request, env, ctx) {
 
   // /Films, /LINKS/ etc. land on the page itself (the section redirects above ignore case too).
   if (FOLDER_PAGES.has(path) && url.pathname !== path + '/') {
+    if (isLinkPreviewBot(request)) return pageForBot(request, env, ctx, url, path + '/' + url.search);
     return new Response(null, { status: 302, headers: { Location: path + '/' + url.search, 'Cache-Control': 'no-store' } });
   }
 
